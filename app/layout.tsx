@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import Link from 'next/link'
 import ConvexClientProvider from './providers/ConvexClientProvider'
 
 export const metadata: Metadata = {
@@ -16,7 +17,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ClerkProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <Link href="/">home</Link>
+            {children}
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>

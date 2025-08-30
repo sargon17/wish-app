@@ -1,12 +1,15 @@
 'use client'
 import { SignInButton, UserButton } from '@clerk/nextjs'
+import { useStoreUserEffect } from '@effects/useStoreUserEffect'
 import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { api } from '../convex/_generated/api'
 
 export default function Home() {
+  const { isLoading, isAuthenticated } = useStoreUserEffect()
   // const [message, setMessage] = useState()
-  const tasks = useQuery(api.tasks.get)
+  // const tasks = useQuery(api.tasks.get)
 
   // useEffect(() => {
   //   const fetchData = async () => {
@@ -22,11 +25,14 @@ export default function Home() {
 
   return (
     <div>
+      {isLoading && 'loading'}
+      {isAuthenticated && 'authenticated'}
       <Authenticated>
-        {tasks?.map(({ _id, text }) => <div key={_id}>{text}</div>)}
+        <Link href="dashboard">dashboard</Link>
       </Authenticated>
       <Unauthenticated>
         <SignInButton></SignInButton>
+
       </Unauthenticated>
     </div>
   )
