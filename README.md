@@ -4,15 +4,10 @@ This projects aims to become a helpful tool in connecting the users to the devel
 
 ## Tech Stack
 ### Backend
-- hono
-- Drizzle
+- Convex
 ### Frontend
 - Next
 - React
 - Zustand
 - Tailwind
 - Shadcn
-### Auth
-- Better Auth
-### DB
-- Convex
