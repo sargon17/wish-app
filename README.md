@@ -5,9 +5,11 @@ This projects aims to become a helpful tool in connecting the users to the devel
 ## Tech Stack
 ### Backend
 - Convex
+### Auth
+- Clerk
 ### Frontend
 - Next
 - React
-- Zustand
+- Zustand?
 - Tailwind
 - Shadcn

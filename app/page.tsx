@@ -1,5 +1,6 @@
 'use client'
-import { useQuery } from 'convex/react'
+import { SignInButton, UserButton } from '@clerk/nextjs'
+import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
 import { useEffect, useState } from 'react'
 import { api } from '../convex/_generated/api'
 
@@ -21,7 +22,12 @@ export default function Home() {
 
   return (
     <div>
-      {tasks?.map(({ _id, text }) => <div key={_id}>{text}</div>)}
+      <Authenticated>
+        {tasks?.map(({ _id, text }) => <div key={_id}>{text}</div>)}
+      </Authenticated>
+      <Unauthenticated>
+        <SignInButton></SignInButton>
+      </Unauthenticated>
     </div>
   )
 }

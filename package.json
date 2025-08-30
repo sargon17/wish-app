@@ -2,23 +2,26 @@
   "name": "whish-app",
   "type": "module",
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "bun kill-port && next dev --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean-project": "rm -rf node_modules"
+    "clean-project": "rm -rf node_modules",
+    "kill-port": "lsof -ti :3001 | xargs kill -9"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.31.6",
     "convex": "^1.26.2",
     "next": "15.5.2",
     "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react-dom": "19.1.1",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.2.1",
-    "@types/node": "18.11.18",
-    "@types/react": "18.0.26",
-    "@types/react-dom": "18.0.10",
+    "@types/node": "24.3.0",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
     "eslint": "^9.33.0",
     "typescript": "^5"
   }

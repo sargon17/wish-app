@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { ConvexClientProvider } from './providers/ConvexClientProvider'
+import { ClerkProvider } from '@clerk/nextjs'
+import ConvexClientProvider from './providers/ConvexClientProvider'
 
 export const metadata: Metadata = {
   title: 'Hono | nextjs',
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ClerkProvider>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   )
