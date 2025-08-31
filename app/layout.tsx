@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import Link from 'next/link'
 import ConvexClientProvider from './providers/ConvexClientProvider'
+import './style/main.css'
 
 export const metadata: Metadata = {
   title: 'Hono | nextjs',
