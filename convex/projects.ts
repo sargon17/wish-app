@@ -16,6 +16,19 @@ import { mutation, query } from './_generated/server'
 //   },
 // })
 
+export const getProjectById = query({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
+
+    return await ctx.db.query('projects').filter(q => q.eq(q.field('_id'), args.id)).unique()
+  },
+})
+
 export const getProjectsForUser = query({
   args: {},
   handler: async (ctx) => {
