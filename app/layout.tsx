@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import Link from 'next/link'
 import ConvexClientProvider from './providers/ConvexClientProvider'
+import ThemeProvider from './providers/ThemeProvider'
 import './style/main.css'
 
 export const metadata: Metadata = {
@@ -15,13 +16,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="dark">
+    <html lang="en" suppressHydrationWarning>
+      <body>
         <ClerkProvider>
-          <ConvexClientProvider>
-            {/* <Link href="/">home</Link> */}
-            {children}
-          </ConvexClientProvider>
+          <ThemeProvider>
+            <ConvexClientProvider>
+              {/* <Link href="/">home</Link> */}
+              {children}
+            </ConvexClientProvider>
+          </ThemeProvider>
         </ClerkProvider>
       </body>
     </html>

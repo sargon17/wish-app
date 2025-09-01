@@ -1,8 +1,11 @@
-import { Calendar, Home, Inbox, LayoutDashboard, Search, Settings } from 'lucide-react'
+import { Calendar, Home, Inbox, Laptop2, LayoutDashboard, Moon, Search, Settings, Sun } from 'lucide-react'
+
+import React from 'react'
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -10,6 +13,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 
 // Menu items.
 const items = [
@@ -40,7 +49,11 @@ const items = [
   // },
 ]
 
-export function AppSidebar() {
+interface Props {
+  footer?: React.ReactNode
+}
+
+export function AppSidebar({ footer }: Props) {
   return (
     <Sidebar variant="floating">
       <SidebarContent>
@@ -62,6 +75,22 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        {footer}
+        {/* <Tabs defaultValue="account" value="">
+          <TabsList>
+            <TabsTrigger value="light">
+              <Sun />
+            </TabsTrigger>
+            <TabsTrigger value="dark">
+              <Moon />
+            </TabsTrigger>
+            <TabsTrigger value="system">
+              <Laptop2 />
+            </TabsTrigger>
+          </TabsList>
+        </Tabs> */}
+      </SidebarFooter>
     </Sidebar>
   )
 }

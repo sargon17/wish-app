@@ -72,3 +72,18 @@ export const create = mutation({
     await ctx.db.insert('requests', { ...args })
   },
 })
+
+export const updateStatus = mutation({
+  args: {
+    id: v.id('requests'),
+    status: v.id('requestStatuses'),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
+
+    await ctx.db.patch(args.id, { status: args.status })
+  },
+})
