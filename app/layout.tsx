@@ -19,7 +19,7 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <ConvexClientProvider>
-            <Link href="/">home</Link>
+            {/* <Link href="/">home</Link> */}
             {children}
           </ConvexClientProvider>
         </ClerkProvider>
