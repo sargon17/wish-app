@@ -34,9 +34,9 @@ export const getProjectsForUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity()
 
-    if (identity === null) {
-      throw new Error('Not authenticated')
-    }
+    // if (identity === null) {
+    //   throw new Error('Not authenticated')
+    // }
 
     const user = await ctx.db.query('users')
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.tokenIdentifier))

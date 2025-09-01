@@ -1,4 +1,5 @@
 'use client'
+import { homedir } from 'node:os'
 import { useQuery } from 'convex/react'
 import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 import { api } from '@/convex/_generated/api'
@@ -9,15 +10,23 @@ import DashboardProjectCard from './DashboardProjectCard'
 export default function DashboardView() {
   const projects = useQuery(api.projects.getProjectsForUser)
 
+  const breadcrumbs = [
+    {
+      label: 'home',
+      url: '/',
+    },
+  ]
+
   return (
-    <div>
+    <div className="px-6 pb-2 pt-6">
       <DashboardHeading
         title="Dashboard"
         actions={<CreateProjectDialog>New Project</CreateProjectDialog>}
+        breadcrumbs={breadcrumbs}
       />
-      <div className="grid gap-4 grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4">
         {projects?.map(project =>
-          <DashboardProjectCard project={project} />,
+          <DashboardProjectCard project={project} key={project._id} />,
         )}
       </div>
 

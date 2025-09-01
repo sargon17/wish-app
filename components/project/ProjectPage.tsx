@@ -4,6 +4,7 @@ import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { api } from '@/convex/_generated/api'
 import DashboardBoard from '../dashboard/DashboardBoard'
 import DashboardHeading from '../dashboard/DashboardHeading'
+import { Button } from '../ui/button'
 
 interface Props {
   id: string
@@ -17,14 +18,30 @@ export default function ProjectPage({ id }: Props) {
   if (!project || !statuses)
     return
 
+  const breadcrumbs = [
+    {
+      label: 'home',
+      url: '/',
+    },
+    {
+      label: 'dashboard',
+      url: '/dashboard',
+    },
+  ]
+
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6">
+      <div className="px-6 pt-6">
         <DashboardHeading
           title={project?.title}
-          actions={
-            <CreateRequestDialog project={project._id} status={statuses[0]._id}>New Request</CreateRequestDialog>
-          }
+          actions={(
+            <CreateRequestDialog project={project._id} status={statuses[0]._id}>
+              <Button>
+                New Request
+              </Button>
+            </CreateRequestDialog>
+          )}
+          breadcrumbs={breadcrumbs}
         />
       </div>
       <DashboardBoard project={project} statuses={statuses} requests={requests} />

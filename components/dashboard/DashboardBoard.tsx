@@ -25,7 +25,13 @@ export default function DashboardBoard({ statuses, project, requests }: Props) {
   return (
     <div className="flex h-full gap-2 w-full overflow-x-scroll px-6">
       {statuses?.map(status => (
-        <DashboardBoardColumn title={status.displayName} requests={sortedRequests[status._id.toString()]} projectId={project._id} statusId={status._id} />
+        <DashboardBoardColumn
+          key={status._id}
+          title={status.displayName}
+          requests={sortedRequests[status._id.toString()]}
+          projectId={project._id}
+          statusId={status._id}
+        />
       ))}
     </div>
   )

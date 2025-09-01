@@ -21,10 +21,9 @@ interface Props {
   children: React.ReactNode
   project: Id<'projects'>
   status: Id<'requestStatuses'>
-  variant?: 'outline' | 'ghost'
 }
 
-export default function CreateRequestDialog({ children, project, status, variant = 'outline' }: Props) {
+export default function CreateRequestDialog({ children, project, status }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const createRequest = useMutation(api.requests.create)
 
@@ -44,9 +43,7 @@ export default function CreateRequestDialog({ children, project, status, variant
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant={variant}>
-          {children}
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form action={handleSubmit} className="flex flex-col gap-4">

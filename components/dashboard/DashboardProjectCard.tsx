@@ -11,7 +11,7 @@ interface Props {
 export default function DashboardProjectCard({ project }: Props) {
   return (
     <Card
-      className="w-full min-w-60 relative"
+      className="w-full  relative"
       key={project._id}
     >
       <Link href={`dashboard/project/${project._id}`} className="absolute inset-0 z-0" />
