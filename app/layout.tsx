@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
-import Link from 'next/link'
 import ConvexClientProvider from './providers/ConvexClientProvider'
 import ThemeProvider from './providers/ThemeProvider'
 import './style/main.css'

@@ -1,8 +1,6 @@
 import type { Doc } from '@/convex/_generated/dataModel'
-import { Ellipsis } from 'lucide-react'
 import Link from 'next/link'
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Card, CardAction, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
 
 interface Props {

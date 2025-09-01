@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children }: Readonly<Props>) {
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar footer={( 
+      <AppSidebar footer={(
         <ThemeTabs />
       )}
       />

@@ -1,9 +1,7 @@
 'use client'
-import { homedir } from 'node:os'
 import { useQuery } from 'convex/react'
 import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 import { api } from '@/convex/_generated/api'
-import { SidebarTrigger } from '../ui/sidebar'
 import DashboardHeading from './DashboardHeading'
 import DashboardProjectCard from './DashboardProjectCard'
 

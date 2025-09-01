@@ -1,5 +1,4 @@
 import type { Doc } from '@/convex/_generated/dataModel'
-import CreateRequestDialog from '../requests/CreateRequestDialog'
 import DashboardBoardColumn from './DashboardBoardColumn'
 
 interface Props {

@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Laptop2, LayoutDashboard, Moon, Search, Settings, Sun } from 'lucide-react'
+import { LayoutDashboard } from 'lucide-react'
 
 import React from 'react'
 
@@ -13,12 +13,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
 
 // Menu items.
 const items = [

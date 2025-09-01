@@ -1,7 +1,7 @@
 'use client'
 import { SignInButton, UserButton } from '@clerk/nextjs'
 import { useStoreUserEffect } from '@effects/useStoreUserEffect'
-import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
+import { Authenticated, Unauthenticated } from 'convex/react'
 import Link from 'next/link'
 
 export default function Home() {

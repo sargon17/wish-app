@@ -1,8 +1,7 @@
 'use client'
 import type { Doc } from '@/convex/_generated/dataModel'
-import { Ellipsis, UserRound } from 'lucide-react'
-import Link from 'next/link'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Ellipsis } from 'lucide-react'
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
 
 interface Props {
   request: Doc<'requests'>
