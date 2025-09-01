@@ -16,7 +16,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api } from '@/convex/_generated/api'
 
-export default function CreateProjectDialog() {
+interface Props {
+  children: React.ReactNode
+}
+export default function CreateProjectDialog({ children }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const createProject = useMutation(api.projects.createProject)
 
@@ -36,7 +39,9 @@ export default function CreateProjectDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">New Project</Button>
+        <Button type="button" variant="outline">
+          {children}
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form action={handleSubmit} className="flex flex-col gap-4">

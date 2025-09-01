@@ -4,8 +4,8 @@ export default async function Page({ params }: { params: Promise<{ projectId: st
   const { projectId } = await params
 
   return (
-    <div>
+    <>
       <ProjectPage id={projectId} />
-    </div>
+    </>
   )
 }
