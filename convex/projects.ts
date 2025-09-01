@@ -34,9 +34,9 @@ export const getProjectsForUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity()
 
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
 
     const user = await ctx.db.query('users')
       .withIndex('by_token', q => q.eq('tokenIdentifier', identity.tokenIdentifier))
@@ -69,5 +69,18 @@ export const createProject = mutation({
 
     await ctx.db.insert('projects', { title: args.title, user: user._id })
     // do something with `taskId`
+  },
+})
+
+export const deleteProject = mutation({
+  args: { id: v.id('projects') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
+
+    await ctx.db.delete(args.id)
   },
 })
