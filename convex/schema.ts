@@ -22,8 +22,13 @@ export default defineSchema({
 
   requestStatuses: defineTable({
     name: v.string(),
+    displayName: v.string(),
     description: v.optional(v.string()),
-    project: v.id('projects'),
+    project: v.optional(v.id('projects')),
+    type: v.union(
+      v.literal('custom'),
+      v.literal('default'),
+    ),
   }).index('by_project', ['project']),
 
   // open → default, newly submitted.
