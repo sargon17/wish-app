@@ -1,5 +1,5 @@
 'use client'
-import type { Id } from '@/convex/_generated/dataModel'
+import type { Doc } from '@/convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
 import { Ellipsis } from 'lucide-react'
 import { useState } from 'react'
@@ -17,16 +17,18 @@ import { api } from '@/convex/_generated/api'
 
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import CreateRequestDialog from './CreateRequestDialog'
 
 interface Props {
-  id: Id<'requests'>
+  request: Doc<'requests'>
 }
-export default function RequestCardActions({ id }: Props) {
+export default function RequestCardActions({ request }: Props) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isEdit, setIsEdit] = useState(false)
   const deleteProject = useMutation(api.requests.deleteRequest)
 
   const handleSubmit = () => {
-    deleteProject({ id })
+    deleteProject({ id: request._id })
     setIsOpen(false)
   }
 
@@ -41,14 +43,17 @@ export default function RequestCardActions({ id }: Props) {
         <DropdownMenuContent>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setIsEdit(true) }}>
             Edit
           </DropdownMenuItem>
+
           <DropdownMenuItem variant="destructive" onClick={() => { setIsOpen(true) }}>
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <CreateRequestDialog method="edit" request={request} open={isEdit} onOpenChange={setIsEdit} />
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">

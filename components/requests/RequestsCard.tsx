@@ -1,6 +1,5 @@
 'use client'
 import type { Doc } from '@/convex/_generated/dataModel'
-import { Ellipsis } from 'lucide-react'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import RequestCardActions from './RequestCardActions'
 
@@ -36,7 +35,7 @@ export default function RequestCard({ request }: Props) {
           )
         }
         <CardAction>
-          <RequestCardActions id={request._id} />
+          <RequestCardActions request={request} />
         </CardAction>
       </CardHeader>
     </Card>

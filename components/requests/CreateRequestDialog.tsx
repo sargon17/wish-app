@@ -1,7 +1,10 @@
 'use client'
-import type { Id } from '@/convex/_generated/dataModel'
+import type { Doc, Id } from '@/convex/_generated/dataModel'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from 'convex/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,59 +16,122 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/convex/_generated/api'
 
-interface Props {
-  children: React.ReactNode
-  project: Id<'projects'>
-  status: Id<'requestStatuses'>
+interface Props extends React.ComponentProps<typeof Dialog> {
+  method: 'create' | 'edit'
+  request?: Doc<'requests'>
+  children?: React.ReactNode
+  project?: Id<'projects'>
+  status?: Id<'requestStatuses'>
 }
 
-export default function CreateRequestDialog({ children, project, status }: Props) {
-  const [isOpen, setIsOpen] = useState(false)
+export default function CreateRequestDialog({ method = 'create', request, children, project, status, open, onOpenChange }: Props) {
+  const [isOpen, setIsOpen] = useState(open)
   const createRequest = useMutation(api.requests.create)
+  const editRequest = useMutation(api.requests.edit)
 
-  async function handleSubmit(data: FormData) {
-    try {
-      const title = data.get('title')?.toString()
-      if (!title)
-        return
-      await createRequest({ text: title, clientId: 'test', project, status })
-      setIsOpen(false)
+  useEffect(() => {
+    setIsOpen(open)
+  }, [open])
+
+  const schema = z.object({
+    title: z.string().min(1, 'Title is required').max(120, 'Keep it under 120 characters'),
+    description: z.string().max(1000, 'Keep it under 1000 characters').optional().or(z.literal('')),
+  })
+
+  const isEditMode = method === 'edit' && request
+
+  type FormValues = z.infer<typeof schema>
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      title: isEditMode ? request.text : '',
+      description: isEditMode ? request.description : '',
+    },
+    mode: 'onSubmit',
+  })
+
+  async function onSubmit(values: FormValues) {
+    const description = values.description && values.description.length > 0 ? values.description : undefined
+    if (method === 'create' && project && status) {
+      await createRequest({ text: values.title, description, clientId: 'test', project, status })
     }
-    catch {
-      throw new Error('Unable to create the project')
+    else if (method === 'edit' && request) {
+      await editRequest({ text: values.title, description, status: request.status, id: request._id })
     }
+    setIsOpen(false)
+    form.reset()
   }
 
+  const handleOpenChange = (state: boolean) => {
+    setIsOpen(state)
+    onOpenChange && onOpenChange(state)
+  }
+
+  useEffect(() => {
+    if (!isOpen)
+      form.reset()
+  }, [isOpen])
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <form action={handleSubmit} className="flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
-            <DialogDescription>
-              Give a name to your new project
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-3">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" placeholder="My App" />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <DialogHeader>
+              <DialogTitle>
+                {
+                  isEditMode ? 'Edit Request' : 'Create New Request'
+                }
+              </DialogTitle>
+              <DialogDescription>
+                Give a name and optional description
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="My App" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Optional details..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit">Create</Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Create</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

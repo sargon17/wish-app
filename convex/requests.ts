@@ -62,14 +62,26 @@ export const create = mutation({
       throw new Error('Not authenticated')
     }
 
-    // // const project = await ctx.runQuery(requestS, { id: args.projectId })
-    // const status = await getStatusById(ctx, { id: args.statusId })
-    // const project = await getProjectById(ctx, { id: args.statusId })
-
-    // if (!status || !project)
-    //   return
-
     await ctx.db.insert('requests', { ...args })
+  },
+})
+
+export const edit = mutation({
+  args: {
+    id: v.id('requests'),
+    text: v.string(),
+    description: v.optional(v.string()),
+    status: v.id('requestStatuses'),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...fields } = args
+    const identity = await ctx.auth.getUserIdentity()
+
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
+
+    await ctx.db.patch(id, { ...fields })
   },
 })
 
