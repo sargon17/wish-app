@@ -16,13 +16,13 @@ export default function DashboardView() {
   ]
 
   return (
-    <div className="px-6 pb-2 pt-6">
+    <div className="md:px-6 pb-2 md:pt-6 flex flex-col h-screen">
       <DashboardHeading
         title="Dashboard"
         actions={<CreateProjectDialog>New Project</CreateProjectDialog>}
         breadcrumbs={breadcrumbs}
       />
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 max-md:px-2 overflow-y-scroll">
         {projects?.map(project =>
           <DashboardProjectCard project={project} key={project._id} />,
         )}

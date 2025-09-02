@@ -22,7 +22,7 @@ export default function DashboardBoard({ statuses, project, requests }: Props) {
   })()
 
   return (
-    <div className="flex h-full gap-2 w-full overflow-x-scroll px-6">
+    <div className="flex h-full gap-2 w-full overflow-x-scroll px-2 md:px-6">
       {statuses?.map(status => (
         <DashboardBoardColumn
           key={status._id}

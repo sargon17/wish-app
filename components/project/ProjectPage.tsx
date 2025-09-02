@@ -40,12 +40,12 @@ export default function ProjectPage({ id }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 pt-6">
+      <div className="md:px-6 md:pt-6">
         <DashboardHeading
           title={project?.title}
           actions={(
             <CreateRequestDialog project={project._id} status={statuses[0]._id}>
-              <Button>
+              <Button className="shrink-0">
                 New Request
               </Button>
             </CreateRequestDialog>
