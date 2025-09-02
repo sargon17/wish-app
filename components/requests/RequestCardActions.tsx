@@ -19,11 +19,11 @@ import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
 interface Props {
-  id: Id<'projects'>
+  id: Id<'requests'>
 }
-export default function DashboardProjectCardActions({ id }: Props) {
+export default function RequestCardActions({ id }: Props) {
   const [isOpen, setIsOpen] = useState(false)
-  const deleteProject = useMutation(api.projects.deleteProject)
+  const deleteProject = useMutation(api.requests.deleteRequest)
 
   const handleSubmit = () => {
     deleteProject({ id })
@@ -33,8 +33,10 @@ export default function DashboardProjectCardActions({ id }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="relative z-10">
-          <Ellipsis />
+        <DropdownMenuTrigger className="relative z-10" asChild>
+          <Button variant="ghost" size="icon" className="opacity-0 group-hover/request-card:opacity-100 transition-all">
+            <Ellipsis />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -52,7 +54,7 @@ export default function DashboardProjectCardActions({ id }: Props) {
         <DialogContent className="sm:max-w-[425px]">
           <form action={handleSubmit} className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Delete Project</DialogTitle>
+              <DialogTitle>Delete Request</DialogTitle>
               <DialogDescription>
                 This action is final and irreversible
               </DialogDescription>

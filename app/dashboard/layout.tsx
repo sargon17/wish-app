@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/nextjs'
 import { cookies } from 'next/headers'
 import { AppSidebar } from '@/components/Organisms/AppSidebar'
 import ThemeTabs from '@/components/Organisms/ThemeTabs'
@@ -14,7 +15,10 @@ export default async function DashboardLayout({ children }: Readonly<Props>) {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar footer={(
-        <ThemeTabs />
+        <div className="flex justify-between">
+          <ThemeTabs />
+          <UserButton />
+        </div>
       )}
       />
       <SidebarInset className=" overflow-hidden">

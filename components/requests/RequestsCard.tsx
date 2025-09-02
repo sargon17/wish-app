@@ -2,6 +2,7 @@
 import type { Doc } from '@/convex/_generated/dataModel'
 import { Ellipsis } from 'lucide-react'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import RequestCardActions from './RequestCardActions'
 
 interface Props {
   request: Doc<'requests'>
@@ -22,7 +23,7 @@ export default function RequestCard({ request }: Props) {
           // noop
         }
       }}
-      className="w-full  relative"
+      className="w-full relative group/request-card"
       key={request._id}
       data-request={request._id}
     >
@@ -35,8 +36,7 @@ export default function RequestCard({ request }: Props) {
           )
         }
         <CardAction>
-          {/* <DashboardProjectCardActions id={project._id} /> */}
-          <Ellipsis />
+          <RequestCardActions id={request._id} />
         </CardAction>
       </CardHeader>
     </Card>

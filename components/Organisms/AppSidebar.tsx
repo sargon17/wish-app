@@ -71,19 +71,6 @@ export function AppSidebar({ footer }: Props) {
       </SidebarContent>
       <SidebarFooter>
         {footer}
-        {/* <Tabs defaultValue="account" value="">
-          <TabsList>
-            <TabsTrigger value="light">
-              <Sun />
-            </TabsTrigger>
-            <TabsTrigger value="dark">
-              <Moon />
-            </TabsTrigger>
-            <TabsTrigger value="system">
-              <Laptop2 />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs> */}
       </SidebarFooter>
     </Sidebar>
   )
