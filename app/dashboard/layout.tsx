@@ -4,6 +4,8 @@ import { AppSidebar } from '@/components/Organisms/AppSidebar'
 import ThemeTabs from '@/components/Organisms/ThemeTabs'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
+import { StatusesStoreProvider } from '../providers/StatusesStoreProvider'
+
 interface Props {
   children: React.ReactNode
 }
@@ -13,19 +15,21 @@ export default async function DashboardLayout({ children }: Readonly<Props>) {
   // Theme handled client-side by next-themes
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar footer={(
-        <div className="flex justify-between">
-          <ThemeTabs />
-          <UserButton />
-        </div>
-      )}
-      />
-      <SidebarInset className=" overflow-hidden">
-        <main className="h-screen py-2">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <StatusesStoreProvider>
+      <SidebarProvider defaultOpen={defaultOpen}>
+        <AppSidebar footer={(
+          <div className="flex justify-between">
+            <ThemeTabs />
+            <UserButton />
+          </div>
+        )}
+        />
+        <SidebarInset className=" overflow-hidden">
+          <main className="h-screen py-2">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </StatusesStoreProvider>
   )
 }

@@ -61,13 +61,13 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
   }
   return (
     <div
-      className="w-90 border-2 border-zinc-100 dark:border-zinc-900 rounded-xl h-full p-3 shrink-0 flex flex-col gap-2 relative"
+      className=" group/board-column w-90 border-[1px] border-zinc-100 dark:border-zinc-900 rounded-xl h-full shrink-0 flex flex-col relative"
       onDragEnterCapture={handleDragEnter}
       onDragOverCapture={handleDragOver}
       onDragLeaveCapture={handleDragLeave}
       onDropCapture={handleDrop}
     >
-      <div className="flex justify-between items-center font-semibold">
+      <div className="flex justify-between items-center font-semibold p-3">
         {title}
         <CreateRequestDialog project={projectId} status={statusId}>
           <Button size="icon" variant="ghost">
@@ -76,14 +76,19 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
         </CreateRequestDialog>
       </div>
       <Separator />
-      <div
-        className="relative flex flex-col gap-2 min-h-14 overflow-y-scroll overflow-x-visible"
-      >
-        {requests && requests.map(request => (
-          <RequestCard request={request} key={request._id} />
-        ),
-        )}
-      </div>
+      {
+        requests && (
+          <div
+            className="relative flex flex-col gap-2 min-h-14 overflow-y-scroll overflow-x-visible p-3"
+          >
+            {requests.map(request => (
+              <RequestCard request={request} key={request._id} />
+            ),
+            )}
+          </div>
+        )
+      }
+
       {isDraggingOver && (
         <div
           className="absolute inset-0 z-10 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/30"
@@ -94,8 +99,15 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
         >
           Drop here to move
         </div>
-
       )}
+
+      <div className="w-full flex justify-center opacity-0 group-hover/board-column:opacity-100 transition-opacity p-3">
+        <CreateRequestDialog project={projectId} status={statusId}>
+          <Button size="icon" variant="ghost">
+            +
+          </Button>
+        </CreateRequestDialog>
+      </div>
     </div>
   )
 }

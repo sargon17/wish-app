@@ -1,5 +1,7 @@
 'use client'
 import { useQuery } from 'convex/react'
+import { useEffect } from 'react'
+import { useStatusesStore } from '@/app/providers/StatusesStoreProvider'
 import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { api } from '@/convex/_generated/api'
 import DashboardBoard from '../dashboard/DashboardBoard'
@@ -14,6 +16,13 @@ export default function ProjectPage({ id }: Props) {
   const project = useQuery(api.projects.getProjectById, { id })
   const statuses = useQuery(api.requestStatuses.getByProject, { id })
   const requests = useQuery(api.requests.getByProject, { id })
+
+  const { add } = useStatusesStore(state => state)
+
+  useEffect(() => {
+    statuses
+    && add(statuses)
+  }, [statuses])
 
   if (!project || !statuses)
     return
