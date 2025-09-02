@@ -79,7 +79,7 @@ export default function CreateRequestDialog({
   async function onSubmit(values: FormValues) {
     const description = values.description && values.description.length > 0 ? values.description : undefined
     if (method === 'create' && project && status) {
-      await createRequest({ text: values.title, description, clientId: 'test', project, status })
+      await createRequest({ text: values.title, description, clientId: 'test', project, status: values.status as Id<'requestStatuses'> })
     }
     else if (method === 'edit' && request) {
       await editRequest({ text: values.title, description, status: values.status as Id<'requestStatuses'>, id: request._id })
