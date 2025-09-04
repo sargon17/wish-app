@@ -50,7 +50,7 @@ export default function CreateRequestDialog({
   const [isOpen, setIsOpen] = useState(open)
   const createRequest = useMutation(api.requests.create)
   const editRequest = useMutation(api.requests.edit)
-  const { values } = useStatusesStore(state => state)
+  const { values: statuses } = useStatusesStore(state => state)
 
   useEffect(() => {
     setIsOpen(open)
@@ -64,6 +64,18 @@ export default function CreateRequestDialog({
 
   const isEditMode = method === 'edit' && request
 
+  const setDefaultStatus = (() => {
+    if (isEditMode) {
+      return request.status
+    }
+
+    if (!status && statuses[0]) {
+      return statuses[0]._id
+    }
+
+    return status || ''
+  })()
+
   type FormValues = z.infer<typeof schema>
 
   const form = useForm<FormValues>({
@@ -71,7 +83,7 @@ export default function CreateRequestDialog({
     defaultValues: {
       title: isEditMode ? request.text : '',
       description: isEditMode ? request.description : '',
-      status: isEditMode ? request.status : (status ?? ''),
+      status: setDefaultStatus,
     },
     mode: 'onSubmit',
   })
@@ -157,9 +169,9 @@ export default function CreateRequestDialog({
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {values.map(value => (
-                            <SelectItem key={value._id} value={value._id}>
-                              {value.displayName}
+                          {statuses.map(status => (
+                            <SelectItem key={status._id} value={status._id}>
+                              {status.displayName}
                             </SelectItem>
                           ))}
                         </SelectContent>

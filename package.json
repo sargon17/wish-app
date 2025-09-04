@@ -2,7 +2,7 @@
   "name": "whish-app",
   "type": "module",
   "scripts": {
-    "dev": "bun kill-port && next dev --port 3001",
+    "dev": "bun kill-port && next dev --port 3001 --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

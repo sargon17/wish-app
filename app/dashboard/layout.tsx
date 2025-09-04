@@ -9,10 +9,10 @@ import { StatusesStoreProvider } from '../providers/StatusesStoreProvider'
 interface Props {
   children: React.ReactNode
 }
+
 export default async function DashboardLayout({ children }: Readonly<Props>) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true'
-  // Theme handled client-side by next-themes
 
   return (
     <StatusesStoreProvider>

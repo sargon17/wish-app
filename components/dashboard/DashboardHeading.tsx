@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +14,7 @@ interface Props {
   title: string
   actions: React.ReactNode
   breadcrumbs: {
-    url?: string
+    url: string
     label: string
   }[]
 }
@@ -37,7 +38,11 @@ export default function DashboardHeading({ title, actions, breadcrumbs }: Props)
             breadcrumbs.map(item => (
               <div key={item.url} className=" contents">
                 <BreadcrumbItem>
-                  <BreadcrumbLink href={item.url} className=" capitalize">{item.label}</BreadcrumbLink>
+                  <BreadcrumbLink className="capitalize" asChild>
+                    <Link href={item.url}>
+                      {item.label}
+                    </Link>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
               </div>

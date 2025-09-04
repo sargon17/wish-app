@@ -1,12 +1,25 @@
 import type { Doc } from '@/convex/_generated/dataModel'
+import { useQuery } from 'convex/react'
+import { useEffect } from 'react'
+import { useStatusesStore } from '@/app/providers/StatusesStoreProvider'
+
+import { api } from '@/convex/_generated/api'
 import DashboardBoardColumn from './DashboardBoardColumn'
 
 interface Props {
-  statuses: Doc<'requestStatuses'>[]
   project: Doc<'projects'>
-  requests?: Doc<'requests'>[]
 }
-export default function DashboardBoard({ statuses, project, requests }: Props) {
+export default function DashboardBoard({ project }: Props) {
+  const statuses = useQuery(api.requestStatuses.getByProject, { id: project._id })
+  const requests = useQuery(api.requests.getByProject, { id: project._id })
+
+  const { add } = useStatusesStore(state => state)
+
+  useEffect(() => {
+    statuses
+      && add(statuses)
+  }, [statuses])
+
   const sortedRequests = (() => {
     const response: {
       [key: string]: typeof requests

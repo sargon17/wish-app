@@ -1,7 +1,8 @@
 import { LayoutDashboard } from 'lucide-react'
 
-import React from 'react'
+import Link from 'next/link'
 
+import React from 'react'
 import {
   Sidebar,
   SidebarContent,
@@ -58,10 +59,10 @@ export function AppSidebar({ footer }: Props) {
               {items.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

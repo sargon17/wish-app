@@ -23,11 +23,10 @@ export default function DashboardView() {
         breadcrumbs={breadcrumbs}
       />
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 max-md:px-2 overflow-y-scroll">
-        {projects?.map(project =>
+        {projects && projects.map(project =>
           <DashboardProjectCard project={project} key={project._id} />,
         )}
       </div>
-
     </div>
   )
 }

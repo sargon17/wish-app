@@ -35,7 +35,8 @@ export const getProjectsForUser = query({
     const identity = await ctx.auth.getUserIdentity()
 
     if (identity === null) {
-      throw new Error('Not authenticated')
+      // throw new Error('Not authenticated')
+      return
     }
 
     const user = await ctx.db.query('users')
