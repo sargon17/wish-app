@@ -13,12 +13,13 @@ export default function DashboardBoard({ project }: Props) {
   const statuses = useQuery(api.requestStatuses.getByProject, { id: project._id })
   const requests = useQuery(api.requests.getByProject, { id: project._id })
 
-  const { add } = useStatusesStore(state => state)
+  // const { values: storedStatuses, add } = useStatusesStore(state => state)
 
-  useEffect(() => {
-    statuses
-      && add(statuses)
-  }, [statuses])
+  // useEffect(() => {
+  //   statuses && statuses.map(status => {
+  //     if (!storedStatuses.find((item) => item._id === status._id)) add([status])
+  //   })
+  // }, [statuses])
 
   const sortedRequests = (() => {
     const response: {

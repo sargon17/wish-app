@@ -1,7 +1,7 @@
 'use client'
 import type { Doc, Id } from '@/convex/_generated/dataModel'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -50,7 +50,7 @@ export default function CreateRequestDialog({
   const [isOpen, setIsOpen] = useState(open)
   const createRequest = useMutation(api.requests.create)
   const editRequest = useMutation(api.requests.edit)
-  const { values: statuses } = useStatusesStore(state => state)
+  const statuses = useQuery(api.requestStatuses.getByProject, { id: (project || request?.project)! })
 
   useEffect(() => {
     setIsOpen(open)
@@ -69,7 +69,7 @@ export default function CreateRequestDialog({
       return request.status
     }
 
-    if (!status && statuses[0]) {
+    if (!status && statuses && statuses[0]) {
       return statuses[0]._id
     }
 
@@ -169,7 +169,7 @@ export default function CreateRequestDialog({
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {statuses.map(status => (
+                          {statuses && statuses.map(status => (
                             <SelectItem key={status._id} value={status._id}>
                               {status.displayName}
                             </SelectItem>
