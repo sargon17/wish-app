@@ -2,13 +2,10 @@ import type { Doc } from '@/convex/_generated/dataModel'
 import Link from 'next/link'
 import { Card, CardAction, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
+import { sluggedText } from '@/lib/slug'
 
 interface Props {
   project: Doc<'projects'>
-}
-
-const sluggedText = (text: string) => {
-  return text.replaceAll(" ", "_")
 }
 
 export default function DashboardProjectCard({ project }: Props) {

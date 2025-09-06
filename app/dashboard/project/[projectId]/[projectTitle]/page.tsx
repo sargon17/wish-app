@@ -4,6 +4,7 @@ import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { Button } from '@/components/ui/button'
 import { api } from '@/convex/_generated/api'
 import { Id } from '@/convex/_generated/dataModel'
+import { sluggedText } from '@/lib/slug'
 import { fetchQuery } from 'convex/nextjs'
 import { Suspense } from 'react'
 
@@ -16,7 +17,7 @@ export async function generateStaticParams() {
 
   return projects.map(project => ({
     projectId: project._id,
-    projectTitle: project.title
+    projectTitle: sluggedText(project.title)
   }))
 }
 
