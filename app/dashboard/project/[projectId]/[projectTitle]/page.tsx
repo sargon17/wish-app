@@ -30,7 +30,7 @@ interface Props {
 export default async function Page({ params }: Props) {
   const { projectId, projectTitle } = await params
 
-  const cleanTitle = projectTitle.replaceAll("%20", " ")
+  const cleanTitle = projectTitle.replaceAll("_", " ")
 
   const breadcrumbs = [
     {

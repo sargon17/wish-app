@@ -7,13 +7,17 @@ interface Props {
   project: Doc<'projects'>
 }
 
+const sluggedText = (text: string) => {
+  return text.replaceAll(" ", "_")
+}
+
 export default function DashboardProjectCard({ project }: Props) {
   return (
     <Card
       className="w-full  relative"
       key={project._id}
     >
-      <Link href={`dashboard/project/${project._id}/${project.title}`} className="absolute inset-0 z-0" />
+      <Link href={`dashboard/project/${project._id}/${sluggedText(project.title)}`} className="absolute inset-0 z-0" />
       <CardHeader>
         <CardTitle className=" capitalize">{project.title}</CardTitle>
         {/* <CardDescription>{project.user}</CardDescription> */}
