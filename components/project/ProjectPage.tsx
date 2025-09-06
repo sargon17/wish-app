@@ -1,51 +1,21 @@
-'use client'
-import { useQuery } from 'convex/react'
+
 import { Suspense } from 'react'
-import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { api } from '@/convex/_generated/api'
 import DashboardBoard from '../dashboard/DashboardBoard'
-import DashboardHeading from '../dashboard/DashboardHeading'
-import { Button } from '../ui/button'
+import { getAuthToken } from '@/lib/auth'
+import { preloadQuery } from "convex/nextjs";
+
 
 interface Props {
   id: string
 }
 
-export default function ProjectPage({ id }: Props) {
-  const project = useQuery(api.projects.getProjectById, { id })
-
-  if (!project)
-    return
-
-  const breadcrumbs = [
-    {
-      label: 'home',
-      url: '/',
-    },
-    {
-      label: 'dashboard',
-      url: '/dashboard',
-    },
-  ]
-
+export default async function ProjectPage({ id }: Props) {
+  const token = await getAuthToken()
+  const preloadedProject = await preloadQuery(api.projects.getProjectById, { id }, { token })
   return (
-    <div className="flex flex-col h-full">
-      <div className="md:px-6 md:pt-6">
-        <DashboardHeading
-          title={project?.title}
-          actions={(
-            <CreateRequestDialog project={project._id}>
-              <Button className="shrink-0">
-                New Request
-              </Button>
-            </CreateRequestDialog>
-          )}
-          breadcrumbs={breadcrumbs}
-        />
-      </div>
-      <Suspense fallback={<div>loading</div>}>
-        <DashboardBoard project={project} />
-      </Suspense>
-    </div>
+    <Suspense fallback="loading">
+      <DashboardBoard preloadedProject={preloadedProject} />
+    </Suspense>
   )
 }
