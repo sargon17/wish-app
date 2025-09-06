@@ -2,8 +2,8 @@
   "name": "whish-app",
   "type": "module",
   "scripts": {
-    "dev": "bun kill-port && next dev --port 3001 --turbo",
-    "build": "next build",
+    "dev": "bun kill-port && next dev --port 3001 --turbopack",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint . --fix",
     "clean-project": "rm -rf node_modules",
