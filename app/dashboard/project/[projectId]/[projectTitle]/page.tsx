@@ -1,8 +1,8 @@
 import type { Id } from '@/convex/_generated/dataModel'
 import { Suspense } from 'react'
-import DashboardHeading from '@/components/dashboard/DashboardHeading'
-import ProjectPage from '@/components/project/ProjectPage'
-import RequestCreateEditDialog from '@/components/requests/RequestCreateEditDialog'
+import DashboardHeading from '@/components/Dashboard/DashboardHeading'
+import ProjectPage from '@/components/Project/ProjectPage'
+import RequestCreateEditDialog from '@/components/Request/RequestCreateEditDialog'
 import { Button } from '@/components/ui/button'
 
 interface Props {

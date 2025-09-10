@@ -1,7 +1,7 @@
 import { preloadQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
 import { getAuthToken } from '@/lib/auth'
-import DashboardBoard from '../dashboard/DashboardBoard'
+import DashboardBoard from '../Dashboard/DashboardBoard'
 
 interface Props {
   id: string
