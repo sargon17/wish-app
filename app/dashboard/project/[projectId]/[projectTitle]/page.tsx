@@ -8,18 +8,18 @@ import { sluggedText } from '@/lib/slug'
 import { fetchQuery } from 'convex/nextjs'
 import { Suspense } from 'react'
 
-export async function generateStaticParams() {
-  const projects = await fetchQuery(api.projects.getProjectsForUser)
+// export async function generateStaticParams() {
+//   const projects = await fetchQuery(api.projects.getProjectsForUser)
 
-  if (!(projects && projects.length > 0)) {
-    return []
-  }
+//   if (!(projects && projects.length > 0)) {
+//     return []
+//   }
 
-  return projects.map(project => ({
-    projectId: project._id,
-    projectTitle: sluggedText(project.title)
-  }))
-}
+//   return projects.map(project => ({
+//     projectId: project._id,
+//     projectTitle: sluggedText(project.title)
+//   }))
+// }
 
 interface Props {
   params: Promise<{
