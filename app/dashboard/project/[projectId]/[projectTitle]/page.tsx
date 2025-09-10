@@ -2,7 +2,7 @@ import type { Id } from '@/convex/_generated/dataModel'
 import { Suspense } from 'react'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
 import ProjectPage from '@/components/project/ProjectPage'
-import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
+import RequestCreateEditDialog from '@/components/requests/RequestCreateEditDialog'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -35,11 +35,11 @@ export default async function Page({ params }: Props) {
           <DashboardHeading
             title={cleanTitle}
             actions={(
-              <CreateRequestDialog project={projectId as Id<'projects'>}>
+              <RequestCreateEditDialog project={projectId as Id<'projects'>}>
                 <Button className="shrink-0">
                   New Request
                 </Button>
-              </CreateRequestDialog>
+              </RequestCreateEditDialog>
             )}
             breadcrumbs={breadcrumbs}
           />

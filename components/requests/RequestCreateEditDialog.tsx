@@ -37,16 +37,16 @@ interface Props extends React.ComponentProps<typeof Dialog> {
   status?: Id<'requestStatuses'>
 }
 
-export default function CreateRequestDialog({
+export default function RequestCreateEditDialog({
   method = 'create',
   request,
   children,
   project,
   status,
-  open,
+  open = false,
   onOpenChange,
 }: Props) {
-  const [isOpen, setIsOpen] = useState(open)
+  const [isOpen, setIsOpen] = useState<boolean>(open)
   const createRequest = useMutation(api.requests.create)
   const editRequest = useMutation(api.requests.edit)
   const statuses = useQuery(api.requestStatuses.getByProject, { id: (project || request?.project)! })
@@ -88,15 +88,31 @@ export default function CreateRequestDialog({
   })
 
   async function onSubmit(values: FormValues) {
-    const description = values.description && values.description.length > 0 ? values.description : undefined
-    if (method === 'create' && project && status) {
-      await createRequest({ text: values.title, description, clientId: 'test', project, status: values.status as Id<'requestStatuses'> })
+    try {
+      const description = values.description && values.description.length > 0 ? values.description : ''
+      if (method === 'create' && project) {
+        await createRequest({
+          text: values.title,
+          description,
+          clientId: 'test',
+          project,
+          status: values.status as Id<'requestStatuses'>,
+        })
+      }
+      else if (method === 'edit' && request) {
+        await editRequest({
+          text: values.title,
+          description,
+          status: values.status as Id<'requestStatuses'>,
+          id: request._id,
+        })
+      }
+      setIsOpen(false)
+      form.reset()
     }
-    else if (method === 'edit' && request) {
-      await editRequest({ text: values.title, description, status: values.status as Id<'requestStatuses'>, id: request._id })
+    catch (error) {
+      console.error(error)
     }
-    setIsOpen(false)
-    form.reset()
   }
 
   const handleOpenChange = (state: boolean) => {

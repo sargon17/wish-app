@@ -17,7 +17,7 @@ import { api } from '@/convex/_generated/api'
 
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import CreateRequestDialog from './CreateRequestDialog'
+import CreateRequestDialog from './RequestCreateEditDialog'
 
 interface Props {
   request: Doc<'requests'>
