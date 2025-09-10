@@ -1,13 +1,13 @@
+import type { Id } from '@/convex/_generated/dataModel'
+import { Suspense } from 'react'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
 import ProjectPage from '@/components/project/ProjectPage'
 import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { Button } from '@/components/ui/button'
-import { Id } from '@/convex/_generated/dataModel'
-import { Suspense } from 'react'
 
 interface Props {
   params: Promise<{
-    projectId: string,
+    projectId: string
     projectTitle: string
   }>
 }
@@ -15,7 +15,7 @@ interface Props {
 export default async function Page({ params }: Props) {
   const { projectId, projectTitle } = await params
 
-  const cleanTitle = projectTitle.replaceAll("_", " ")
+  const cleanTitle = projectTitle.replaceAll('_', ' ')
 
   const breadcrumbs = [
     {
@@ -35,7 +35,7 @@ export default async function Page({ params }: Props) {
           <DashboardHeading
             title={cleanTitle}
             actions={(
-              <CreateRequestDialog project={projectId as Id<"projects">}>
+              <CreateRequestDialog project={projectId as Id<'projects'>}>
                 <Button className="shrink-0">
                   New Request
                 </Button>
@@ -46,7 +46,6 @@ export default async function Page({ params }: Props) {
         </div>
         <Suspense fallback="loading">
           <ProjectPage id={projectId} />
-          {/* <DashboardBoard project={project} /> */}
         </Suspense>
       </div>
     </>

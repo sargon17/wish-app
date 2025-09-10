@@ -1,7 +1,8 @@
-"use client"
-import { Preloaded, usePreloadedQuery, useQuery } from 'convex/react'
+'use client'
+import type { Preloaded } from 'convex/react'
+import type { api } from '@/convex/_generated/api'
 
-import { api } from '@/convex/_generated/api'
+import { usePreloadedQuery, useQuery } from 'convex/react'
 import DashboardBoardColumn from './DashboardBoardColumn'
 
 interface Props {
@@ -16,7 +17,6 @@ export default function DashboardBoard({ preloadedProject, preloadedRequests, pr
 
   if (!project)
     return
-
 
   const sortedRequests = (() => {
     const response: {
