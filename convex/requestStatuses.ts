@@ -1,9 +1,5 @@
-import type { GenericQueryCtx } from 'convex/server'
-import type { GenericId } from 'convex/values'
-
-import type { QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { query } from './_generated/server'
 import { getStatusById } from './services/queries/status/getStatusById'
 
 export const getById = query({ args: { id: v.string() }, handler: async (ctx, args) => {

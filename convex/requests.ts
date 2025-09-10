@@ -1,9 +1,6 @@
-import type { z } from 'zod'
 import { v } from 'convex/values'
 
 import { mutation, query } from './_generated/server'
-import { getProjectById } from './services/queries/projects/getProjectById'
-import { getStatusById } from './services/queries/status/getStatusById'
 
 export const getByProject = query({
   args: { id: v.string() },

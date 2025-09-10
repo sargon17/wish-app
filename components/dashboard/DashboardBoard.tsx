@@ -2,7 +2,7 @@
 import type { Preloaded } from 'convex/react'
 import type { api } from '@/convex/_generated/api'
 
-import { usePreloadedQuery, useQuery } from 'convex/react'
+import { usePreloadedQuery } from 'convex/react'
 import DashboardBoardColumn from './DashboardBoardColumn'
 
 interface Props {

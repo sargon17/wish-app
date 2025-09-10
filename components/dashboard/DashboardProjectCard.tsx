@@ -1,8 +1,8 @@
 import type { Doc } from '@/convex/_generated/dataModel'
 import Link from 'next/link'
+import { sluggedText } from '@/lib/slug'
 import { Card, CardAction, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
-import { sluggedText } from '@/lib/slug'
 
 interface Props {
   project: Doc<'projects'>

@@ -5,7 +5,6 @@ import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { useStatusesStore } from '@/app/providers/StatusesStoreProvider'
 import { Button } from '@/components/ui/button'
 
 import {

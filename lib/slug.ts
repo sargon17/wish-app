@@ -1,3 +1,3 @@
-export const sluggedText = (text: string) => {
-  return text.replaceAll(" ", "_")
+export function sluggedText(text: string) {
+  return text.replaceAll(' ', '_')
 }
