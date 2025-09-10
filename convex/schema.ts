@@ -31,11 +31,7 @@ export default defineSchema({
     ),
   }).index('by_project', ['project']),
 
-  // open → default, newly submitted.
-  // under_review → you (or your team) are checking it out.
-  // planned → accepted and will be implemented.
-  // in_progress → currently being worked on.
-  // completed → shipped / released.
-  // declined → not going to be implemented.
+  // TODO: request upvotes system
+  // TODO: requests chat system
 
 })
