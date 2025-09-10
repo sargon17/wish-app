@@ -2,24 +2,8 @@ import DashboardHeading from '@/components/dashboard/DashboardHeading'
 import ProjectPage from '@/components/project/ProjectPage'
 import CreateRequestDialog from '@/components/requests/CreateRequestDialog'
 import { Button } from '@/components/ui/button'
-import { api } from '@/convex/_generated/api'
 import { Id } from '@/convex/_generated/dataModel'
-import { sluggedText } from '@/lib/slug'
-import { fetchQuery } from 'convex/nextjs'
 import { Suspense } from 'react'
-
-// export async function generateStaticParams() {
-//   const projects = await fetchQuery(api.projects.getProjectsForUser)
-
-//   if (!(projects && projects.length > 0)) {
-//     return []
-//   }
-
-//   return projects.map(project => ({
-//     projectId: project._id,
-//     projectTitle: sluggedText(project.title)
-//   }))
-// }
 
 interface Props {
   params: Promise<{

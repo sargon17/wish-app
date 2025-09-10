@@ -1,22 +1,21 @@
 "use client"
-import type { Doc } from '@/convex/_generated/dataModel'
 import { Preloaded, usePreloadedQuery, useQuery } from 'convex/react'
-import { useEffect } from 'react'
-import { useStatusesStore } from '@/app/providers/StatusesStoreProvider'
 
 import { api } from '@/convex/_generated/api'
 import DashboardBoardColumn from './DashboardBoardColumn'
 
 interface Props {
   preloadedProject: Preloaded<typeof api.projects.getProjectById>
-  // project: Doc<'projects'>
+  preloadedStatuses: Preloaded<typeof api.requestStatuses.getByProject>
+  preloadedRequests: Preloaded<typeof api.requests.getByProject>
 }
-export default function DashboardBoard({ preloadedProject }: Props) {
+export default function DashboardBoard({ preloadedProject, preloadedRequests, preloadedStatuses }: Props) {
   const project = usePreloadedQuery(preloadedProject)
+  const statuses = usePreloadedQuery(preloadedStatuses)
+  const requests = usePreloadedQuery(preloadedRequests)
+
   if (!project)
     return
-  const statuses = useQuery(api.requestStatuses.getByProject, { id: project._id })
-  const requests = useQuery(api.requests.getByProject, { id: project._id })
 
 
   const sortedRequests = (() => {
