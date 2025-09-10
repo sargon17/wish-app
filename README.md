@@ -13,3 +13,9 @@ This projects aims to become a helpful tool in connecting the users to the devel
 - Zustand?
 - Tailwind
 - Shadcn
+
+## TODO
+
+[] Request Details view
+[] Requests UpVotes system
+[] Requests Messaging system
