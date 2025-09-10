@@ -17,7 +17,7 @@ import { api } from '@/convex/_generated/api'
 
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import CreateRequestDialog from './RequestCreateEditDialog'
+import RequestCreateEditDialog from './RequestCreateEditDialog'
 
 interface Props {
   request: Doc<'requests'>
@@ -53,7 +53,7 @@ export default function RequestCardActions({ request }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <CreateRequestDialog method="edit" request={request} open={isEdit} onOpenChange={setIsEdit} />
+      <RequestCreateEditDialog method="edit" request={request} open={isEdit} onOpenChange={setIsEdit} />
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">

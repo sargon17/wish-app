@@ -1,12 +1,12 @@
 'use client'
 import type { Doc, Id } from '@/convex/_generated/dataModel'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { arktypeResolver } from '@hookform/resolvers/arktype'
+import { type } from 'arktype'
 import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
 
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -43,22 +43,18 @@ export default function RequestCreateEditDialog({
   children,
   project,
   status,
-  open = false,
+  open,
   onOpenChange,
 }: Props) {
-  const [isOpen, setIsOpen] = useState<boolean>(open)
+  const [isOpen, setIsOpen] = useState<boolean>(false)
   const createRequest = useMutation(api.requests.create)
   const editRequest = useMutation(api.requests.edit)
   const statuses = useQuery(api.requestStatuses.getByProject, { id: (project || request?.project)! })
 
-  useEffect(() => {
-    setIsOpen(open)
-  }, [open])
-
-  const schema = z.object({
-    title: z.string().min(1, 'Title is required').max(120, 'Keep it under 120 characters'),
-    description: z.string().max(1000, 'Keep it under 1000 characters').optional().or(z.literal('')),
-    status: z.string(),
+  const ArkSchema = type({
+    title: '0 < string < 120',
+    description: 'string < 1000 | undefined',
+    status: 'string > 0',
   })
 
   const isEditMode = method === 'edit' && request
@@ -75,19 +71,19 @@ export default function RequestCreateEditDialog({
     return status || ''
   })()
 
-  type FormValues = z.infer<typeof schema>
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<typeof ArkSchema.infer>({
+    resolver: arktypeResolver(ArkSchema),
     defaultValues: {
       title: isEditMode ? request.text : '',
       description: isEditMode ? request.description : '',
       status: setDefaultStatus,
     },
-    mode: 'onSubmit',
+    mode: 'onChange',
   })
 
-  async function onSubmit(values: FormValues) {
+  const { handleSubmit, reset } = form
+
+  async function onSubmit(values: typeof ArkSchema.infer) {
     try {
       const description = values.description && values.description.length > 0 ? values.description : ''
       if (method === 'create' && project) {
@@ -108,31 +104,29 @@ export default function RequestCreateEditDialog({
         })
       }
       setIsOpen(false)
-      form.reset()
+      reset()
     }
     catch (error) {
       console.error(error)
     }
   }
 
-  const handleOpenChange = (state: boolean) => {
-    setIsOpen(state)
-    onOpenChange && onOpenChange(state)
-  }
-
   useEffect(() => {
     if (!isOpen)
-      form.reset()
+      reset()
   }, [isOpen])
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open === undefined ? isOpen : open} onOpenChange={onOpenChange === undefined ? setIsOpen : onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Form
+          {...form}
+
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>
                 {
@@ -173,7 +167,7 @@ export default function RequestCreateEditDialog({
               <FormField
                 control={form.control}
                 name="status"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>
                       Status
@@ -192,7 +186,9 @@ export default function RequestCreateEditDialog({
                         </SelectContent>
                       </Select>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage>
+                      {fieldState.error?.message}
+                    </FormMessage>
                   </FormItem>
                 )}
               />

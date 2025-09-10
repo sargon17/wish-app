@@ -1,6 +1,8 @@
 'use client'
 import type { Doc } from '@/convex/_generated/dataModel'
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { trimTo } from '@/lib/text'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import RequestDetailView from './DetailView/RequestDeatailView'
 import RequestCardActions from './RequestCardActions'
 
 interface Props {
@@ -9,35 +11,40 @@ interface Props {
 
 export default function RequestCard({ request }: Props) {
   return (
-    <Card
-      draggable
-      onDragStart={(e) => {
-        try {
-          const id = request._id as unknown as string
-          e.dataTransfer.effectAllowed = 'move'
-          e.dataTransfer.setData('requestId', id)
-          e.dataTransfer.setData('text/plain', id)
-        }
-        catch {
+    <RequestDetailView request={request}>
+      <Card
+        draggable
+        onDragStart={(e) => {
+          try {
+            const id = request._id as unknown as string
+            e.dataTransfer.effectAllowed = 'move'
+            e.dataTransfer.setData('requestId', id)
+            e.dataTransfer.setData('text/plain', id)
+          }
+          catch {
           // noop
-        }
-      }}
-      className="w-full relative group/request-card"
-      key={request._id}
-      data-request={request._id}
-    >
-      {/* <Link href={`dashboard/project/${project._id}`} className="absolute inset-0 z-0" /> */}
-      <CardHeader>
-        <CardTitle className=" capitalize">{request.text}</CardTitle>
+          }
+        }}
+        className="w-full relative group/request-card"
+        key={request._id}
+        data-request={request._id}
+      >
+        <CardHeader>
+          <CardTitle className=" capitalize">{request.text}</CardTitle>
+          <CardAction onClick={e => e.stopPropagation()}>
+            <RequestCardActions request={request} />
+          </CardAction>
+        </CardHeader>
         {
           request.description && (
-            <CardDescription>{request.description}</CardDescription>
+            <CardContent>
+              <p className="text-secondary-foreground text-sm">
+                {trimTo({ text: request.description })}
+              </p>
+            </CardContent>
           )
         }
-        <CardAction>
-          <RequestCardActions request={request} />
-        </CardAction>
-      </CardHeader>
-    </Card>
+      </Card>
+    </RequestDetailView>
   )
 }

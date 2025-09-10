@@ -1,4 +1,5 @@
 import { preloadQuery } from 'convex/nextjs'
+import { redirect } from 'next/navigation'
 import { api } from '@/convex/_generated/api'
 import { getAuthToken } from '@/lib/auth'
 import DashboardBoard from '../Dashboard/DashboardBoard'
@@ -9,16 +10,18 @@ interface Props {
 
 export default async function ProjectPage({ id }: Props) {
   const token = await getAuthToken()
+  if (!token)
+    redirect('/')
+
   const preloadedProject = await preloadQuery(api.projects.getProjectById, { id }, { token })
   const preloadedStatuses = await preloadQuery(api.requestStatuses.getByProject, { id }, { token })
   const preloadedRequests = await preloadQuery(api.requests.getByProject, { id }, { token })
+
   return (
-    <>
-      <DashboardBoard
-        preloadedProject={preloadedProject}
-        preloadedStatuses={preloadedStatuses}
-        preloadedRequests={preloadedRequests}
-      />
-    </>
+    <DashboardBoard
+      preloadedProject={preloadedProject}
+      preloadedStatuses={preloadedStatuses}
+      preloadedRequests={preloadedRequests}
+    />
   )
 }

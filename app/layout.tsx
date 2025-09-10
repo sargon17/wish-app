@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import { Toaster } from '@/components/ui/sonner'
 import ConvexClientProvider from './providers/ConvexClientProvider'
 import ThemeProvider from './providers/ThemeProvider'
 import './style/main.css'
@@ -20,8 +21,8 @@ export default function RootLayout({
         <ClerkProvider>
           <ThemeProvider>
             <ConvexClientProvider>
-              {/* <Link href="/">home</Link> */}
               {children}
+              <Toaster />
             </ConvexClientProvider>
           </ThemeProvider>
         </ClerkProvider>
