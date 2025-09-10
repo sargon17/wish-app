@@ -22,6 +22,6 @@ This projects aims to become a helpful tool in connecting the users to the devel
 
 ## TODO
 
-[] Request Details view
-[] Requests UpVotes system
-[] Requests Messaging system
+[ ] Request Details view
+[ ] Requests UpVotes system
+[ ] Requests Messaging system
