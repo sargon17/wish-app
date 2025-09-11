@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react'
 import type { Doc, Id } from '@/convex/_generated/dataModel'
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
@@ -14,31 +13,36 @@ type UseRequestSetStatusProps = Status
 
 type UseRequestSetByIdProps = Id<'requestStatuses'>
 
-type UseRequestStatusReturn = [
-  Status | undefined,
-  Status[] | undefined,
-  boolean,
-  {
-    setById: (args: UseRequestSetByIdProps) => void
-    setNext: () => void
-    save: () => void
-  },
-]
+interface UseRequestStatusState {
+  current: Status | undefined
+  statuses: Status[] | undefined
+  hasChanged: boolean
+}
+interface UseRequestStatusMethods {
+  setById: (args: UseRequestSetByIdProps) => void
+  setNext: () => void
+  save: () => void
+}
+
+export interface UseRequestStatusReturn {
+  state: UseRequestStatusState
+  methods: UseRequestStatusMethods
+}
 
 export function useRequestStatus({ request }: UseRequestStatusProps): UseRequestStatusReturn {
   const statuses = useQuery(api.requestStatuses.getByProject, { id: request.project })
   const originalStatus = findCurrentStatus({ id: request.status, statuses })
   const [status, setStatus] = useState<Doc<'requestStatuses'> | undefined>(originalStatus)
-  const [isChanged, setIsChanged] = useState(false)
+  const [hasChanged, setHasChanged] = useState(false)
 
   const editRequest = useMutation(api.requests.edit)
 
   const checkIfChanged = (status: Doc<'requestStatuses'>) => {
     if (status?._id !== originalStatus?._id) {
-      setIsChanged(true)
+      setHasChanged(true)
       return
     }
-    setIsChanged(false)
+    setHasChanged(false)
   }
 
   const set = (val: UseRequestSetStatusProps) => {
@@ -62,11 +66,17 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
     && editRequest({ id: request._id, text: request.text, status: status?._id })
   }
 
+  const state = {
+    current: status,
+    statuses,
+    hasChanged,
+  }
+
   const methods = {
     setById,
     setNext: setNextStatus,
     save,
   }
 
-  return [status, statuses, isChanged, methods]
+  return { state, methods }
 }
