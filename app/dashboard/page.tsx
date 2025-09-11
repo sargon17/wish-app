@@ -1,9 +1,9 @@
+import DashboardHeading from '@components/Dashboard/DashboardHeading'
+import DashboardView from '@components/Dashboard/DashboardView'
+import CreateProjectDialog from '@components/Project/CreateProjectDialog'
+import { Button } from '@components/ui/button'
 import { Plus } from 'lucide-react'
 import { Suspense } from 'react'
-import DashboardHeading from '@/components/Dashboard/DashboardHeading'
-import DashboardView from '@/components/Dashboard/DashboardView'
-import CreateProjectDialog from '@/components/Project/CreateProjectDialog'
-import { Button } from '@/components/ui/button'
 
 export default function Dashboard() {
   const breadcrumbs = [
