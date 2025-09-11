@@ -10,11 +10,10 @@
     ],
     "baseUrl": ".",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
+      "@/*": ["./*"],
+      "@components/*": ["./components/*"],
       "@effects/*": ["./app/effects/*"]
     },
     "resolveJsonModule": true,
