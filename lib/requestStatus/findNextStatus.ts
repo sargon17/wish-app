@@ -1,4 +1,4 @@
-import type { Doc } from '@/_generated/dataModel'
+import type { Doc } from '@/convex/_generated/dataModel'
 
 interface FindNextStatusProps {
   current: Doc<'requestStatuses'>

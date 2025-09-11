@@ -56,7 +56,7 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
   }
 
   const setNextStatus = () => {
-    if (!statuses)
+    if (!statuses || !status)
       return
     const newStatus = findNextStatus({ current: status, statuses })
     set(newStatus)
