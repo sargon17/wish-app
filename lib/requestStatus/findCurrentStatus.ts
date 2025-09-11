@@ -1,4 +1,4 @@
-import type { Doc, Id } from '@/_generated/dataModel'
+import type { Doc, Id } from '@/convex/_generated/dataModel'
 
 interface GetFullStatusProps {
   id: Id<'requestStatuses'>

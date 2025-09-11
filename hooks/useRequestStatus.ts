@@ -2,8 +2,8 @@ import type { Doc, Id } from '@/convex/_generated/dataModel'
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { api } from '@/convex/_generated/api'
-import { findCurrentStatus } from '@/convex/services/queries/status/findCurrentStatus'
-import { findNextStatus } from '@/convex/services/queries/status/findNextStatus'
+import { findCurrentStatus } from '@/lib/requestStatus/findCurrentStatus'
+import { findNextStatus } from '@/lib/requestStatus/findNextStatus'
 
 type Status = Doc<'requestStatuses'>
 interface UseRequestStatusProps {
