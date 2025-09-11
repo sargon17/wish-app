@@ -51,7 +51,8 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
   }
 
   const setById = (id: UseRequestSetByIdProps) => {
-    set(findCurrentStatus({ id, statuses }))
+    const status = findCurrentStatus({ id, statuses })
+    status && set(status)
   }
 
   const setNextStatus = () => {
