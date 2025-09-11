@@ -1,4 +1,5 @@
 import type { Id } from '@/convex/_generated/dataModel'
+import { Plus } from 'lucide-react'
 import { Suspense } from 'react'
 import DashboardHeading from '@/components/Dashboard/DashboardHeading'
 import ProjectPage from '@/components/Project/ProjectPage'
@@ -36,7 +37,8 @@ export default async function Page({ params }: Props) {
             title={cleanTitle}
             actions={(
               <RequestCreateEditDialog project={projectId as Id<'projects'>}>
-                <Button className="shrink-0">
+                <Button className="shrink-0" variant="ghost">
+                  <Plus />
                   New Request
                 </Button>
               </RequestCreateEditDialog>

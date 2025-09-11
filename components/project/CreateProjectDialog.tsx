@@ -39,9 +39,7 @@ export default function CreateProjectDialog({ children }: Props) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">
-          {children}
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form action={handleSubmit} className="flex flex-col gap-4">
