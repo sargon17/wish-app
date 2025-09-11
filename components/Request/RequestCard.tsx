@@ -1,7 +1,7 @@
 'use client'
 import type { Doc } from '@/convex/_generated/dataModel'
 import { trimTo } from '@/lib/text'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '../ui/card'
 import RequestDetailView from './DetailView/RequestDeatailView'
 import RequestCardActions from './RequestCardActions'
 
