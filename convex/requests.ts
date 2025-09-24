@@ -5,11 +5,11 @@ import { mutation, query } from './_generated/server'
 export const getByProject = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
+    // const identity = await ctx.auth.getUserIdentity()
 
-    if (identity === null) {
-      throw new Error('Not authenticated')
-    }
+    // if (identity === null) {
+    //   throw new Error('Not authenticated')
+    // }
 
     const requests = await ctx.db
       .query('requests')

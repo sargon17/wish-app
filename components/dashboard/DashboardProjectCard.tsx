@@ -1,7 +1,7 @@
 import type { Doc } from '@/convex/_generated/dataModel'
 import Link from 'next/link'
 import { sluggedText } from '@/lib/slug'
-import { Card, CardAction, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
 
 interface Props {
@@ -17,7 +17,7 @@ export default function DashboardProjectCard({ project }: Props) {
       <Link href={`dashboard/project/${project._id}/${sluggedText(project.title)}`} className="absolute inset-0 z-0" />
       <CardHeader>
         <CardTitle className=" capitalize">{project.title}</CardTitle>
-        {/* <CardDescription>{project.user}</CardDescription> */}
+        <CardDescription onClick={e => e.stopPropagation()}>{project._id}</CardDescription>
         <CardAction>
           <DashboardProjectCardActions id={project._id} />
         </CardAction>
