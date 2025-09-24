@@ -1,6 +1,11 @@
 'use client'
+import type { SubmitHandler } from 'react-hook-form'
+import { arktypeResolver } from '@hookform/resolvers/arktype'
+import { type } from 'arktype'
 import { useMutation } from 'convex/react'
+import { AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,15 +24,24 @@ import { api } from '@/convex/_generated/api'
 interface Props {
   children: React.ReactNode
 }
+
+const Schema = type({
+  title: 'string > 2',
+})
+
+type FormType = typeof Schema.infer
+
 export default function CreateProjectDialog({ children }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const createProject = useMutation(api.projects.createProject)
 
-  async function handleSubmit(data: FormData) {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormType>(
+    { resolver: arktypeResolver(Schema), mode: 'onBlur' },
+  )
+
+  const onSubmit: SubmitHandler<FormType> = async (data) => {
+    const { title } = data
     try {
-      const title = data.get('title')?.toString()
-      if (!title)
-        return
       await createProject({ title })
       setIsOpen(false)
     }
@@ -42,7 +56,7 @@ export default function CreateProjectDialog({ children }: Props) {
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <form action={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
@@ -52,7 +66,13 @@ export default function CreateProjectDialog({ children }: Props) {
           <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" placeholder="My App" />
+              <Input {...register('title')} aria-invalid={errors.title && true} />
+              {errors.title && (
+                <p className="text-red-500 text-xs flex gap-2">
+                  <AlertTriangle size={16} />
+                  {errors.title?.message}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
