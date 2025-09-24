@@ -17,7 +17,7 @@ export default function DashboardProjectCard({ project }: Props) {
       <Link href={`dashboard/project/${project._id}/${sluggedText(project.title)}`} className="absolute inset-0 z-0" />
       <CardHeader>
         <CardTitle className=" capitalize">{project.title}</CardTitle>
-        <CardDescription onClick={e => e.stopPropagation()}>{project._id}</CardDescription>
+        <CardDescription className="overflow-hidden text-ellipsis " onClick={e => e.stopPropagation()}>{project._id}</CardDescription>
         <CardAction>
           <DashboardProjectCardActions id={project._id} />
         </CardAction>
