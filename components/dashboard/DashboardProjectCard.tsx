@@ -1,5 +1,4 @@
 import type { Doc } from '@/convex/_generated/dataModel'
-import { text } from 'node:stream/consumers'
 import { Copy } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
