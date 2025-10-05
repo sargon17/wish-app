@@ -28,24 +28,19 @@ app.get('/api/project/:id/requests/', async (c) => {
 })
 
 const RequestValidator = type({
-  'text': 'string',
+  'text': 'string > 3',
   'description?': 'string | undefined',
-  'status': 'string',
   'project': 'string',
   'clientId': 'string',
 })
-
-// const RequestValidator = typeof <Omit<Doc<'requests'>, '_id' | '_creationTime'>>
 
 app.post('/api/project/:id/request/', arktypeValidator('json', RequestValidator), async (c) => {
   const id = c.req.param('id')
   const body = await c.req.valid('json')
 
-  console.log('post is happening', id, body)
-
   try {
     const project = await c.env.runQuery(api.projects.getProjectById, { id })
-    const status = await c.env.runQuery(api.requestStatuses.getById, { id: body.status })
+    const status = (await c.env.runQuery(api.requestStatuses.getByProject, { id })).find(v => v.name === 'open')
 
     if (!project || !status)
       throw new Error('invalid project or status')

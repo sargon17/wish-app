@@ -31,7 +31,7 @@ export default async function Page({ params }: Props) {
 
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="h-[calc(100dvh-8px)] flex flex-col overflow-hidden">
         <div className="md:px-6 md:pt-6">
           <DashboardHeading
             title={cleanTitle}

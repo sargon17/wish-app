@@ -6,6 +6,7 @@ import { api } from '@/convex/_generated/api'
 import RequestCard from '../Request/RequestCard'
 import CreateRequestDialog from '../Request/RequestCreateEditDialog'
 import { Button } from '../ui/button'
+import { ScrollArea } from '../ui/scroll-area'
 import { Separator } from '../ui/separator'
 
 interface Props {
@@ -76,38 +77,40 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
         </CreateRequestDialog>
       </div>
       <Separator />
-      {
-        requests && (
-          <div
-            className="relative flex flex-col gap-2 min-h-14 overflow-y-scroll overflow-x-visible p-3"
-          >
-            {requests.map(request => (
-              <RequestCard request={request} key={request._id} />
-            ),
-            )}
+      <ScrollArea
+        className="relative  bg-zinc-100 dark:bg-zinc-900/50 h-full flex-1 min-h-0"
+      >
+        { requests && (
+          <div className="flex flex-col gap-2 p-3">
+            {
+              requests.map(request => (
+                <RequestCard request={request} key={request._id} />
+              ),
+              )
+            }
           </div>
-        )
-      }
+        )}
 
-      {isDraggingOver && (
-        <div
-          className="absolute inset-0 z-10 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/30"
-          onDragEnter={handleDragEnter}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          Drop here to move
+        {isDraggingOver && (
+          <div
+            className="absolute inset-0 z-10 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/30"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            Drop here to move
+          </div>
+        )}
+
+        <div className="w-full flex justify-center opacity-0 group-hover/board-column:opacity-100 transition-opacity p-3">
+          <CreateRequestDialog project={projectId} status={statusId}>
+            <Button size="icon" variant="ghost">
+              +
+            </Button>
+          </CreateRequestDialog>
         </div>
-      )}
-
-      <div className="w-full flex justify-center opacity-0 group-hover/board-column:opacity-100 transition-opacity p-3">
-        <CreateRequestDialog project={projectId} status={statusId}>
-          <Button size="icon" variant="ghost">
-            +
-          </Button>
-        </CreateRequestDialog>
-      </div>
+      </ScrollArea>
     </div>
   )
 }
