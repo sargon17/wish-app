@@ -100,11 +100,11 @@ export const updateStatus = mutation({
 export const deleteRequest = mutation({
   args: { id: v.id('requests') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
+    // const identity = await ctx.auth.getUserIdentity()
 
-    if (identity === null) {
-      throw new Error('Not authenticated')
-    }
+    // if (identity === null) {
+    //   throw new Error('Not authenticated')
+    // }
 
     await ctx.db.delete(args.id)
   },

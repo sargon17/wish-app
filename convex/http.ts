@@ -1,5 +1,5 @@
 import type { HonoWithConvex } from 'convex-helpers/server/hono'
-import type { Doc } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 import type { ActionCtx } from './_generated/server'
 import { arktypeValidator } from '@hono/arktype-validator'
 import { type } from 'arktype'
@@ -46,6 +46,22 @@ app.post('/api/project/:id/request/', arktypeValidator('json', RequestValidator)
       throw new Error('invalid project or status')
 
     await c.env.runMutation(api.requests.create, { ...body, project: project._id, status: status._id })
+  }
+  catch {
+    return c.json({}, 400)
+  }
+
+  return c.json({}, 200)
+})
+
+app.get('/api/project/:id/request/delete/:reqID', async (c) => {
+  const reqId = c.req.param('reqID')
+
+  try {
+    if (!reqId)
+      throw new Error('invalid request id')
+
+    await c.env.runMutation(api.requests.deleteRequest, { id: reqId as Id<'requests'> })
   }
   catch {
     return c.json({}, 400)
