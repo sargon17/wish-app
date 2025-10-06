@@ -54,7 +54,7 @@ app.post('/api/project/:id/request/', arktypeValidator('json', RequestValidator)
   return c.json({}, 200)
 })
 
-app.get('/api/project/:id/request/delete/:reqID', async (c) => {
+app.delete('/api/project/:id/request/:reqID', async (c) => {
   const reqId = c.req.param('reqID')
 
   try {

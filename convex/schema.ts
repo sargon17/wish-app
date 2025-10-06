@@ -29,6 +29,7 @@ export default defineSchema({
       v.literal('custom'),
       v.literal('default'),
     ),
+    color: v.optional(v.string()),
   }).index('by_project', ['project']),
 
   // TODO: request upvotes system

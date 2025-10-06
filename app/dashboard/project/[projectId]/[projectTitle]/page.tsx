@@ -1,10 +1,14 @@
 import type { Id } from '@/convex/_generated/dataModel'
-import { Plus } from 'lucide-react'
+import { Cog, Divide, Plus } from 'lucide-react'
 import { Suspense } from 'react'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
+import Loading from '@/components/Organisms/Loading'
 import ProjectPage from '@/components/project/ProjectPage'
+import ProjectSettings from '@/components/project/ProjectSettings'
 import RequestCreateEditDialog from '@/components/Request/RequestCreateEditDialog'
 import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Props {
   params: Promise<{
@@ -36,17 +40,28 @@ export default async function Page({ params }: Props) {
           <DashboardHeading
             title={cleanTitle}
             actions={(
-              <RequestCreateEditDialog project={projectId as Id<'projects'>}>
-                <Button className="shrink-0" variant="ghost">
-                  <Plus />
-                  New Request
-                </Button>
-              </RequestCreateEditDialog>
+              <ButtonGroup>
+                <RequestCreateEditDialog project={projectId as Id<'projects'>}>
+                  <Button className="shrink-0" variant="outline">
+                    <Plus />
+                    New Request
+                  </Button>
+                </RequestCreateEditDialog>
+
+                <ProjectSettings projectID={projectId as Id<'projects'>}>
+                  <Button variant="outline" className="group/button">
+                    <Cog className="group-hover/button:rotate-45 transition-all" />
+                  </Button>
+                </ProjectSettings>
+              </ButtonGroup>
             )}
             breadcrumbs={breadcrumbs}
           />
         </div>
-        <Suspense fallback="loading">
+        <Suspense fallback={(
+          <Loading />
+        )}
+        >
           <ProjectPage id={projectId} />
         </Suspense>
       </div>

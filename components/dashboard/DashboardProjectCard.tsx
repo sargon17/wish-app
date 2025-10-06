@@ -3,23 +3,13 @@ import { Copy } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { sluggedText } from '@/lib/slug'
-import { copyToClipboard } from '@/lib/text'
+import CopyButton from '../Organisms/CopyButton'
 import { Button } from '../ui/button'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
 
 interface Props {
   project: Doc<'projects'>
-}
-
-interface HandleCopyClickProps extends Pick<Parameters<typeof copyToClipboard>[0], 'text'> {}
-
-function handleCopyClick({ text }: HandleCopyClickProps) {
-  copyToClipboard({
-    text,
-    onSuccess: () => toast.info('Project ID copied successfully'),
-    onFail: () => toast.error('Error during Project ID copy'),
-  })
 }
 
 export default function DashboardProjectCard({ project }: Props) {
@@ -32,11 +22,10 @@ export default function DashboardProjectCard({ project }: Props) {
       <CardHeader>
         <CardTitle className=" capitalize">{project.title}</CardTitle>
         <div className="overflow-hidden flex gap-2 items-center">
-          <CardDescription className="overflow-hidden text-ellipsis" onClick={e => e.stopPropagation()}>{project._id}</CardDescription>
-          <Button variant="ghost" size="icon" className="relative z-1" onClick={() => handleCopyClick({ text: project._id })}>
-            <Copy size={12} />
-          </Button>
-
+          <CardDescription className="overflow-hidden text-ellipsis text-nowrap" onClick={e => e.stopPropagation()}>
+            {`ID: ${project._id}`}
+          </CardDescription>
+          <CopyButton text={project._id} />
         </div>
         <CardAction>
           <DashboardProjectCardActions id={project._id} />

@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { Suspense } from 'react'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
 import DashboardView from '@/components/dashboard/DashboardView'
+import Loading from '@/components/Organisms/Loading'
 import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 
 export default function Dashboard() {
@@ -27,7 +28,7 @@ export default function Dashboard() {
         )}
         breadcrumbs={breadcrumbs}
       />
-      <Suspense fallback={<div>loading</div>}>
+      <Suspense fallback={<Loading />}>
         <DashboardView />
       </Suspense>
     </div>
