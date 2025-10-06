@@ -1,5 +1,5 @@
 import type { Id } from '@/convex/_generated/dataModel'
-import { Cog, Divide, Plus } from 'lucide-react'
+import { Cog, Plus } from 'lucide-react'
 import { Suspense } from 'react'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
 import Loading from '@/components/Organisms/Loading'
@@ -8,7 +8,6 @@ import ProjectSettings from '@/components/project/ProjectSettings'
 import RequestCreateEditDialog from '@/components/Request/RequestCreateEditDialog'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
-import { Spinner } from '@/components/ui/spinner'
 
 interface Props {
   params: Promise<{

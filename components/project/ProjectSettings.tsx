@@ -2,7 +2,6 @@
 import type { PropsWithChildren } from 'react'
 import type { Id } from '@/convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
-import { hex } from 'zod'
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,7 @@ import { api } from '@/convex/_generated/api'
 
 import CopyButton from '../Organisms/CopyButton'
 import { Badge } from '../ui/badge'
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from '../ui/input-group'
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '../ui/input-group'
 
 interface ProjectSettingsProps extends PropsWithChildren {
   projectID: Id<'projects'>

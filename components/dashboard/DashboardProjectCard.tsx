@@ -1,10 +1,7 @@
 import type { Doc } from '@/convex/_generated/dataModel'
-import { Copy } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
 import { sluggedText } from '@/lib/slug'
 import CopyButton from '../Organisms/CopyButton'
-import { Button } from '../ui/button'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import DashboardProjectCardActions from './DashboardProjectCardActions'
 
