@@ -1,0 +1,49 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+- `app/` holds the Next.js App Router entry (`layout.tsx`, `page.tsx`), feature routes under `dashboard/`, shared `providers/`, `stores/`, `effects/`, and styles in `style/main.css`.
+- `components/` contains UI primitives (`ui/`) plus feature views for dashboard, project, request, and status flows, and shared organisms (sidebar, theme tabs, loading, copy button).
+- use as much of the shadcn and Radix design system as possible, and prefer Tailwind over custom styles.
+- `convex/` houses backend logic and schema (`schema.ts`, `projects.ts`, `requests.ts`, `requestStatuses.ts`, `users.ts`, `http.ts`, `auth.config.ts`), with generated clients in `convex/_generated`.
+- `hooks/` stores reusable client hooks; `lib/` stores utilities; `env.ts` and `env.server.ts` provide typed env access; `middleware.ts` wires Clerk auth.
+- prefer modular and single concern components over large and complex ones.
+
+## Build, Test, and Development Commands
+
+- `bun dev` — run the dev server on port 3001 (clears the port first) using Turbopack.
+- `bun build` — production build; run before deployment.
+- `bun start` — serve the built app.
+- `bun lint` / `bun lint:strict` — oxlint (first variant auto-fixes trivial issues; keep the strict run clean).
+- `bun typecheck` — `tsc --noEmit` to catch type drift.
+- `bun clean` or `bun clean-project` — drop `node_modules` for a fresh install.
+
+## Coding Style & Naming Conventions
+
+- TypeScript, ESM, React 19, Next 15 (App Router). Prefer functional components and hooks.
+- Components live in PascalCase files (`ComponentName.tsx`); hooks are `useSomething.ts`; helper modules use camelCase when not components.
+- Tailwind v4 tokens live in `app/style/main.css`; lean on Radix/shadcn primitives in `components/ui` instead of bespoke styles (when in need ask to add a component from shadcn).
+- Keep imports absolute where configured in `tsconfig.json`; avoid new default exports for shared utilities unless already used.
+
+## Testing Guidelines
+
+- No automated runner is wired yet; current gate is `bun lint` + `bun typecheck` + `bun build`.
+- If you add tests, co-locate them with features (e.g., `components/Request/__tests__/RequestCard.test.tsx`) and prefer Vitest/Playwright for unit/e2e.
+- Name tests after behaviors, keep fixtures small, and use types for mocks.
+
+## Commit & Pull Request Guidelines
+
+- Follow the existing short prefix style (`feat: ...`, `fix: ...`); keep subjects imperative and under ~70 chars.
+- PRs should summarize user-facing changes, link issues, and include before/after notes or screenshots for UI work.
+- Confirm `bun lint`, `bun typecheck`, and `bun build` pass before requesting review.
+
+## Security & Configuration Tips
+
+- Required env vars: client (`NEXT_PUBLIC_CONVEX_URL`, `NEXT_PUBLIC_CLERK_FRONTEND_API_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`) and server (`CONVEX_DEPLOYMENT`, `CLERK_JWT_ISSUER_DOMAIN`, `CLERK_SECRET_KEY`). Store in `.env.local`; never commit.
+- Place secrets and admin logic in Convex functions, not client components; ensure routes respect Clerk middleware and Convex auth config when adding endpoints.
+
+## Design Guidelines
+
+- Prefer Radix/shadcn primitives over bespoke styles.
+- Prefer Tailwind over custom styles.
+- use Tailwind Colors: neutral is 'neutral' and accent is 'orange'.
