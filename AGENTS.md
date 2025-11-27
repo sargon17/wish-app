@@ -24,6 +24,8 @@
 - Components live in PascalCase files (`ComponentName.tsx`); hooks are `useSomething.ts`; helper modules use camelCase when not components.
 - Tailwind v4 tokens live in `app/style/main.css`; lean on Radix/shadcn primitives in `components/ui` instead of bespoke styles (when in need ask to add a component from shadcn).
 - Keep imports absolute where configured in `tsconfig.json`; avoid new default exports for shared utilities unless already used.
+- Always handle errors with `try/catch` and `throw new Error()` (or `new Error(message)`).
+- to show errors or success messages to the user use Sonner (https://ui.shadcn.com/docs/components/sonner).
 
 ## Testing Guidelines
 
@@ -47,3 +49,9 @@
 - Prefer Radix/shadcn primitives over bespoke styles.
 - Prefer Tailwind over custom styles.
 - use Tailwind Colors: neutral is 'neutral' and accent is 'orange'.
+
+## Very Important Notes
+
+- whenever you find a wrong spelled 'whish' or 'whishlist' in the code, please change it to 'wish' and 'wishlist' respectively.
+- do not use the word 'whish' in the code.
+- always validate the code before committing.
