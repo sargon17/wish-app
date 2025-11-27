@@ -2,7 +2,7 @@
   "compilerOptions": {
     "incremental": true,
     "target": "es2022",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "lib": [
       "dom",
       "dom.iterable",
@@ -12,9 +12,15 @@
     "module": "esnext",
     "moduleResolution": "node",
     "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["./components/*"],
-      "@effects/*": ["./app/effects/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "./components/*"
+      ],
+      "@effects/*": [
+        "./app/effects/*"
+      ]
     },
     "resolveJsonModule": true,
     "allowJs": true,
@@ -35,7 +41,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
