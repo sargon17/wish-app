@@ -1,0 +1,68 @@
+import { v } from 'convex/values'
+
+import { mutation } from './_generated/server'
+
+export const join = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const normalizedEmail = args.email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      throw new Error('Email is required')
+    }
+
+    const now = Date.now()
+    const existing = await ctx.db
+      .query('waitlist')
+      .withIndex('by_email', q => q.eq('email', normalizedEmail))
+      .unique()
+
+    if (existing) {
+      if (existing.email !== normalizedEmail) {
+        await ctx.db.patch(existing._id, { email: normalizedEmail })
+      }
+      return existing._id
+    }
+
+    return await ctx.db.insert('waitlist', {
+      email: normalizedEmail,
+      appliedAt: now,
+    })
+  },
+})
+
+export const markInvited = mutation({
+  args: { email: v.string(), invitedAt: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+
+    if (identity === null) {
+      throw new Error('Not authenticated')
+    }
+
+    const normalizedEmail = args.email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      throw new Error('Email is required')
+    }
+
+    const timestamp = args.invitedAt ?? Date.now()
+    const existing = await ctx.db
+      .query('waitlist')
+      .withIndex('by_email', q => q.eq('email', normalizedEmail))
+      .unique()
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        email: normalizedEmail,
+        invitedAt: timestamp,
+        appliedAt: existing.appliedAt ?? timestamp,
+      })
+      return existing._id
+    }
+
+    return await ctx.db.insert('waitlist', {
+      email: normalizedEmail,
+      appliedAt: timestamp,
+      invitedAt: timestamp,
+    })
+  },
+})

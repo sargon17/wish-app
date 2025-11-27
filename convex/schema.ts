@@ -32,6 +32,12 @@ export default defineSchema({
     color: v.optional(v.string()),
   }).index('by_project', ['project']),
 
+  waitlist: defineTable({
+    email: v.string(),
+    appliedAt: v.number(),
+    invitedAt: v.optional(v.number()),
+  }).index('by_email', ['email']),
+
   // TODO: request upvotes system
   // TODO: requests chat system
 
