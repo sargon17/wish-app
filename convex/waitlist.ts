@@ -1,94 +1,93 @@
-import { v } from 'convex/values'
+import { v } from "convex/values";
 
-import { mutation, query } from './_generated/server'
+import { mutation, query } from "./_generated/server";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
     try {
-      const identity = await ctx.auth.getUserIdentity()
+      const identity = await ctx.auth.getUserIdentity();
 
       if (identity === null) {
-        throw new Error('Not authenticated')
+        throw new Error("Not authenticated");
       }
 
-      const entries = await ctx.db.query('waitlist').collect()
+      const entries = await ctx.db.query("waitlist").collect();
 
       return entries
-        .map(entry => ({
+        .map((entry) => ({
           ...entry,
           appliedAt: entry.appliedAt ?? 0,
         }))
-        .sort((a, b) => b.appliedAt - a.appliedAt)
-    }
-    catch (error) {
-      console.error(error)
-      throw new Error('Failed to load waitlist')
+        .sort((a, b) => b.appliedAt - a.appliedAt);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to load waitlist");
     }
   },
-})
+});
 
 export const join = mutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {
-    const normalizedEmail = args.email.trim().toLowerCase()
+    const normalizedEmail = args.email.trim().toLowerCase();
     if (!normalizedEmail) {
-      throw new Error('Email is required')
+      throw new Error("Email is required");
     }
 
-    const now = Date.now()
+    const now = Date.now();
     const existing = await ctx.db
-      .query('waitlist')
-      .withIndex('by_email', q => q.eq('email', normalizedEmail))
-      .unique()
+      .query("waitlist")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .unique();
 
     if (existing) {
       if (existing.email !== normalizedEmail) {
-        await ctx.db.patch(existing._id, { email: normalizedEmail })
+        await ctx.db.patch(existing._id, { email: normalizedEmail });
       }
-      return existing._id
+      return existing._id;
     }
 
-    return await ctx.db.insert('waitlist', {
+    return await ctx.db.insert("waitlist", {
       email: normalizedEmail,
       appliedAt: now,
-    })
+    });
   },
-})
+});
 
 export const markInvited = mutation({
   args: { email: v.string(), invitedAt: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
+    const identity = await ctx.auth.getUserIdentity();
 
     if (identity === null) {
-      throw new Error('Not authenticated')
+      throw new Error("Not authenticated");
     }
 
-    const normalizedEmail = args.email.trim().toLowerCase()
+    const normalizedEmail = args.email.trim().toLowerCase();
     if (!normalizedEmail) {
-      throw new Error('Email is required')
+      throw new Error("Email is required");
     }
 
-    const timestamp = args.invitedAt ?? Date.now()
+    const timestamp = args.invitedAt ?? Date.now();
     const existing = await ctx.db
-      .query('waitlist')
-      .withIndex('by_email', q => q.eq('email', normalizedEmail))
-      .unique()
+      .query("waitlist")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .unique();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
         email: normalizedEmail,
         invitedAt: timestamp,
         appliedAt: existing.appliedAt ?? timestamp,
-      })
-      return existing._id
+      });
+      return existing._id;
     }
 
-    return await ctx.db.insert('waitlist', {
+    return await ctx.db.insert("waitlist", {
       email: normalizedEmail,
       appliedAt: timestamp,
       invitedAt: timestamp,
-    })
+    });
   },
-})
+});

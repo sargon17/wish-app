@@ -138,7 +138,7 @@ export function WaitlistTable() {
   const isLoading = waitlist === undefined;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 sidebar-offset-pl">
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Total" value={stats.total} description="All emails captured so far" />
         <StatCard label="Invited" value={stats.invited} description="Already contacted" />

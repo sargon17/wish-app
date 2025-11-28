@@ -57,8 +57,8 @@
   --secondary-foreground: oklch(0.37 0.01 286);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.7 0.19 48);
-  --accent-foreground: oklch(0.27 0.08 36);
+  --accent: var(--color-orange-100);
+  --accent-foreground: var(--color-orange-500);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
@@ -81,20 +81,20 @@
 }
 
 .dark {
-  --background: var(--color-neutral-950);
+  --background: var(--color-neutral-900);
   --foreground: oklch(0.985 0 0);
   --card: var(--color-neutral-900);
   --card-foreground: var(--color-neutral-100);
-  --popover: oklch(0.21 0.006 285.885);
+  --popover: var(--color-neutral-900);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.92 0.004 286.32);
   --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
+  --secondary: var(--color-neutral-800);
   --secondary-foreground: oklch(0.87 0.01 286);
-  --muted: oklch(0.274 0.006 286.033);
+  --muted: var(--color-neutral-700);
   --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.7 0.19 48);
-  --accent-foreground: oklch(0.98 0.02 74);
+  --accent: var(--color-neutral-800);
+  --accent-foreground: var(--color-orange-500);
   --destructive: oklch(0.704 0.191 22.216);
   --border: var(--color-neutral-800);
   --input: oklch(1 0 0 / 15%);
@@ -119,6 +119,17 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  *::selection {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    caret-color: var(--accent-foreground);
   }
 
   body {

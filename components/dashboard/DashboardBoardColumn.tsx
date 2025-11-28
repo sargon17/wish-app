@@ -83,7 +83,7 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
 
         {isDraggingOver && (
           <div
-            className="absolute inset-0 z-10 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/30"
+            className="absolute inset-0 z-10 rounded-3xl border border-dashed flex items-center justify-center text-xs text-muted-foreground border-accent-foreground bg-foreground/1 m-1"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
