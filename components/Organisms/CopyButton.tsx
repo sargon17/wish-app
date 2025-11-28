@@ -2,14 +2,21 @@ import type { ComponentProps, PropsWithChildren } from 'react'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { copyToClipboard } from '@/lib/text'
+import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
 import { InputGroupButton } from '../ui/input-group'
 
 interface CopyButtonProps extends PropsWithChildren {
   text: string
   variant?: 'default' | 'input-button'
+  className?: string
 }
-export default function CopyButton({ children, text, variant = 'default' }: CopyButtonProps) {
+export default function CopyButton({
+  children,
+  text,
+  variant = 'default',
+  className,
+}: CopyButtonProps) {
   interface HandleCopyClickProps extends Pick<Parameters<typeof copyToClipboard>[0], 'text'> { }
   function handleCopyClick({ text }: HandleCopyClickProps) {
     copyToClipboard({
@@ -26,7 +33,12 @@ export default function CopyButton({ children, text, variant = 'default' }: Copy
   }
 
   return (
-    <Wrapper variant="ghost" className="relative z-1" size={sizeMap[variant] as any} onClick={() => handleCopyClick({ text })}>
+    <Wrapper
+      variant="ghost"
+      className={cn("relative z-1", className)}
+      size={sizeMap[variant] as any}
+      onClick={() => handleCopyClick({ text })}
+    >
       {children?.toString
         ? (
             <div>

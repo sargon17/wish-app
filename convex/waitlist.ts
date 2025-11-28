@@ -91,3 +91,30 @@ export const markInvited = mutation({
     });
   },
 });
+
+export const setStatus = mutation({
+  args: {
+    id: v.id("waitlist"),
+    status: v.union(v.literal("pending"), v.literal("invited")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (identity === null) {
+      throw new Error("Not authenticated");
+    }
+
+    const entry = await ctx.db.get(args.id);
+
+    if (!entry) {
+      throw new Error("Waitlist entry not found");
+    }
+
+    await ctx.db.patch(args.id, {
+      invitedAt: args.status === "invited" ? Date.now() : undefined,
+      appliedAt: entry.appliedAt ?? Date.now(),
+    });
+
+    return args.id;
+  },
+});
