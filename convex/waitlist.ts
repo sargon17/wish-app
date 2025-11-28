@@ -1,6 +1,32 @@
 import { v } from 'convex/values'
 
-import { mutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
+
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const identity = await ctx.auth.getUserIdentity()
+
+      if (identity === null) {
+        throw new Error('Not authenticated')
+      }
+
+      const entries = await ctx.db.query('waitlist').collect()
+
+      return entries
+        .map(entry => ({
+          ...entry,
+          appliedAt: entry.appliedAt ?? 0,
+        }))
+        .sort((a, b) => b.appliedAt - a.appliedAt)
+    }
+    catch (error) {
+      console.error(error)
+      throw new Error('Failed to load waitlist')
+    }
+  },
+})
 
 export const join = mutation({
   args: { email: v.string() },

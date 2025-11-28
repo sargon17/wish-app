@@ -1,8 +1,8 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { valibotResolver } from '@hookform/resolvers/valibot'
+import { useForm } from 'react-hook-form';
+import type { FieldErrors } from 'react-hook-form';
 import { toast } from 'sonner'
 
 import { api } from '@/convex/_generated/api'
@@ -11,16 +11,21 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useMutation } from 'convex/react'
+import * as v from "valibot"
 
-const waitlistSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, 'Email is required')
-    .pipe(z.email('Enter a valid email')),
+// const waitlistSchema = z.object({
+//   email: z
+//     .string()
+//     .trim()
+//     .min(3, 'Email is required')
+//     .pipe(z.email('Enter a valid email')),
+// })
+//
+const waitlistSchema = v.object({
+  email: v.pipe(v.string(), v.email("Use a valid email address"), v.minLength(3, 'Email is required')),
 })
 
-type WaitlistFormValues = z.infer<typeof waitlistSchema>
+type WaitlistFormValues = v.InferInput<typeof waitlistSchema>
 
 interface WaitlistJoinProps extends React.ComponentProps<'div'> {
   buttonLabel?: string
@@ -42,13 +47,15 @@ export function WaitlistJoin({
   const joinWaitlist = useMutation(api.waitlist.join)
 
   const form = useForm<WaitlistFormValues>({
-    resolver: zodResolver(waitlistSchema),
+    resolver: valibotResolver(waitlistSchema),
     defaultValues: { email: '' },
-    mode: 'onChange',
+    mode: 'onTouched',
   })
 
-  const handleSubmit = async (values: WaitlistFormValues) => {
+  const emailValue = form.watch('email')
+  const isButtonDisabled = form.formState.isSubmitting || !emailValue.trim()
 
+  const handleSubmit = async (values: WaitlistFormValues) => {
     try {
       await joinWaitlist({ email: values.email })
       toast.success(successMessage)
@@ -58,40 +65,53 @@ export function WaitlistJoin({
     catch (error) {
       console.error(error)
       const fallbackMessage = 'Unable to join the waitlist right now. Please try again.'
-      const message = error instanceof Error && error.message ? error.message : fallbackMessage
+      const messageFromValidation = error instanceof v.ValiError ? error.issues[0]?.message : null
+      const messageFromError = error instanceof Error && error.message ? error.message : null
+      const message = messageFromValidation || messageFromError || fallbackMessage
 
       toast.error(message)
+      form.setError('email', { type: 'manual', message })
     }
+  }
+
+  const handleInvalid = (errors: FieldErrors<WaitlistFormValues>) => {
+    const firstError = Object.values(errors)[0]
+    const message = typeof firstError?.message === 'string'
+      ? firstError.message
+      : 'Please check the form and try again.'
+
+    toast.error(message)
   }
 
   return (
     <div className={cn('flex w-full flex-col items-center', className)} {...props}>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleSubmit)}
-          className="flex w-full flex-col gap-3 sm:flex-row sm:items-center"
+          onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
+          className="flex w-full flex-col gap-3 sm:flex-row sm:items-baseline"
         >
           <FormField
             control={form.control}
             name="email"
-            render={({ field }) => (
-              <FormItem className="w-full sm:flex-1">
+            render={({ field }) => {
+              return (
+              <FormItem className="w-full sm:flex-1 text-left">
                 <FormControl>
                   <Input
-                    type="email"
                     placeholder={placeholder}
                     className="h-12 rounded-lg bg-white/80 text-base shadow-xs backdrop-blur"
                     {...field}
                   />
-                </FormControl>
+                </FormControl >
                 <FormMessage />
               </FormItem>
-            )}
+            )
+            }}
           />
           <Button
             type="submit"
             className="h-12 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90"
-            disabled={form.formState.isSubmitting || !form.formState.isValid}
+            disabled={isButtonDisabled}
           >
             {form.formState.isSubmitting ? 'Joining...' : buttonLabel}
           </Button>

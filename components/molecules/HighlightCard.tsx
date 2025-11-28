@@ -9,7 +9,7 @@ const cardVariants = cva(
   {
     variants: {
       tone: {
-        soft: 'border-neutral-200 bg-white/70',
+        soft: 'border-card bg-background/30 backdrop-blur-3xl shadow-sm',
         muted: 'border-neutral-200/70 bg-neutral-50',
         accent: 'border-accent/30 bg-accent/5',
       },
@@ -57,7 +57,7 @@ export function HighlightCard({
         <Icon className="size-5" aria-hidden />
       </div>
       <div className="space-y-1">
-        <p className="text-base font-semibold text-neutral-900">{title}</p>
+        <p className="text-base font-semibold text-foreground">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
     </div>

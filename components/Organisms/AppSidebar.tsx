@@ -1,8 +1,8 @@
-import { LayoutDashboard } from 'lucide-react'
+import { Home, LayoutDashboard, Mail } from "lucide-react";
 
-import Link from 'next/link'
+import Link from "next/link";
 
-import React from 'react'
+import React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,14 +13,24 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
+} from "@/components/ui/sidebar";
 
 // Menu items.
 const items = [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
+    title: "Home",
+    url: "/",
+    icon: Home,
+  },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Waitlist",
+    url: "/dashboard/waitlist",
+    icon: Mail,
   },
   // {
   //   title: 'Inbox',
@@ -42,21 +52,21 @@ const items = [
   //   url: '#',
   //   icon: Settings,
   // },
-]
+];
 
 interface Props {
-  footer?: React.ReactNode
+  footer?: React.ReactNode;
 }
 
 export function AppSidebar({ footer }: Props) {
   return (
-    <Sidebar variant="floating">
+    <Sidebar variant="floating" className="z-100">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Wish App</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map(item => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
@@ -70,9 +80,7 @@ export function AppSidebar({ footer }: Props) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        {footer}
-      </SidebarFooter>
+      <SidebarFooter>{footer}</SidebarFooter>
     </Sidebar>
-  )
+  );
 }

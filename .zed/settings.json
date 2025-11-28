@@ -1,0 +1,52 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+  "project_name": "Wish App",
+  "lsp": {
+    "oxc": {
+      "initialization_options": {
+        "options": {
+          "run": "onType",
+          "configPath": ".oxlintrc.json",
+          "tsConfigPath": "tsconfig.json",
+          "unusedDisableDirectives": "allow",
+          "typeAware": false,
+          "flags": {},
+          "fixKind": "safe_fix_or_suggestion",
+          "fmt.experimental": true,
+          "fmt.configPath": ".oxfmtrc.json"
+        }
+      }
+    }
+  },
+  "languages": {
+    "TypeScript": {
+      "language_servers": [
+        "oxc",
+        "tsgo",
+        // "typescript-language-server",
+        "!vtsls",
+        "..."
+      ],
+      "formatter": "language_server",
+      "code_actions_on_format": {
+        "source.fixAll.oxc": true
+      }
+    },
+    "TSX": {
+      "language_servers": [
+        "oxc",
+        "tsgo",
+        "typescript-language-server",
+        "!vtsls",
+        "..."
+      ],
+      "formatter": "language_server",
+      "code_actions_on_format": {
+        "source.fixAll.oxc": true
+      }
+    }
+  }
+}
