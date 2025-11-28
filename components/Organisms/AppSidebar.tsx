@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Mail } from "lucide-react";
+import { BarChart3, Home, LayoutDashboard, Mail } from "lucide-react";
 
 import Link from "next/link";
 
@@ -26,6 +26,11 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Stats",
+    url: "/dashboard/stats",
+    icon: BarChart3,
   },
   {
     title: "Waitlist",

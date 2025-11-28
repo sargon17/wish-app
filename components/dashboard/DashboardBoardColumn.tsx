@@ -14,9 +14,16 @@ interface Props {
   requests?: Doc<"requests">[];
   projectId: Id<"projects">;
   statusId: Id<"requestStatuses">;
+  color?: string;
 }
 
-export default function DashboardBoardColumn({ title, requests, projectId, statusId }: Props) {
+export default function DashboardBoardColumn({
+  title,
+  requests,
+  projectId,
+  statusId,
+  color,
+}: Props) {
   const updateStatus = useMutation(api.requests.updateStatus);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragDepth = useRef(0);
@@ -64,7 +71,10 @@ export default function DashboardBoardColumn({ title, requests, projectId, statu
       onDropCapture={handleDrop}
     >
       <div className="flex justify-between items-center font-semibold p-3">
-        {title}
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-xs" style={{ backgroundColor: color }} />
+          {title}
+        </div>
         <CreateRequestDialog project={projectId} status={statusId}>
           <Button size="icon" variant="ghost">
             +

@@ -67,8 +67,20 @@ export function ColorPicker({
   className,
   ...props
 }: ColorPickerProps) {
-  const selectedColor = Color(value)
-  const defaultColor = Color(defaultValue)
+  const safeParseColor = useCallback(
+    (input?: Parameters<typeof Color>[0]) => {
+      try {
+        return Color(input ?? defaultValue)
+      }
+      catch {
+        return Color(defaultValue)
+      }
+    },
+    [defaultValue],
+  )
+
+  const selectedColor = safeParseColor(value)
+  const defaultColor = safeParseColor(defaultValue)
 
   const [hue, setHue] = useState(
     selectedColor.hue() || defaultColor.hue() || 0,
@@ -86,13 +98,17 @@ export function ColorPicker({
 
   // Update color when controlled value changes
   useEffect(() => {
-    if (value) {
+    if (!value) return
+    try {
       const color = Color.rgb(value).rgb().object()
 
       setHue(color.r)
       setSaturation(color.g)
       setLightness(color.b)
       setAlpha(color.a)
+    }
+    catch {
+      // ignore invalid controlled values and keep current state
     }
   }, [value])
 

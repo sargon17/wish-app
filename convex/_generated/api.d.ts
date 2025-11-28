@@ -19,6 +19,7 @@ import type * as requestStatuses from "../requestStatuses.js";
 import type * as requests from "../requests.js";
 import type * as services_queries_projects_getProjectById from "../services/queries/projects/getProjectById.js";
 import type * as services_queries_status_getStatusById from "../services/queries/status/getStatusById.js";
+import type * as stats from "../stats.js";
 import type * as users from "../users.js";
 import type * as waitlist from "../waitlist.js";
 
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   requests: typeof requests;
   "services/queries/projects/getProjectById": typeof services_queries_projects_getProjectById;
   "services/queries/status/getStatusById": typeof services_queries_status_getStatusById;
+  stats: typeof stats;
   users: typeof users;
   waitlist: typeof waitlist;
 }>;

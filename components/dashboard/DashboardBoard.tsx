@@ -48,6 +48,7 @@ export default function DashboardBoard({
           requests={sortedRequests[status._id.toString()]}
           projectId={project._id}
           statusId={status._id}
+          color={status.color}
         />
       ))}
     </div>
