@@ -65,7 +65,7 @@ interface Props {
 
 export function AppSidebar({ footer }: Props) {
   return (
-    <Sidebar variant="floating" className="z-100">
+    <Sidebar variant="floating" className="z-20">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Wish App</SidebarGroupLabel>
