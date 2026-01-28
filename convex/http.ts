@@ -40,6 +40,11 @@ const UpvoteValidator = type({
   clientId: "string",
 });
 
+const CommentValidator = type({
+  clientId: "string",
+  body: "string > 0",
+});
+
 app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator), async (c) => {
   const id = c.req.param("id");
   const body = await c.req.valid("json");
@@ -77,6 +82,47 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
 
   return c.json({}, 200);
 });
+
+app.get("/api/project/:id/request/:reqID/comments", async (c) => {
+  const reqId = c.req.param("reqID");
+
+  try {
+    if (!reqId) throw new Error("invalid request id");
+
+    const comments = await c.env.runQuery(api.requestComments.listByRequest, {
+      requestId: reqId as Id<"requests">,
+    });
+
+    return c.json({ comments }, 200);
+  } catch {
+    return c.json({}, 400);
+  }
+});
+
+app.post(
+  "/api/project/:id/request/:reqID/comment",
+  arktypeValidator("json", CommentValidator),
+  async (c) => {
+    const reqId = c.req.param("reqID");
+    const projectId = c.req.param("id");
+    const body = await c.req.valid("json");
+
+    try {
+      if (!reqId || !projectId) throw new Error("invalid request id");
+
+      await c.env.runMutation(api.requestComments.create, {
+        requestId: reqId as Id<"requests">,
+        projectId: projectId as Id<"projects">,
+        clientId: body.clientId,
+        body: body.body,
+      });
+    } catch {
+      return c.json({}, 400);
+    }
+
+    return c.json({}, 200);
+  },
+);
 
 app.post(
   "/api/project/:id/request/:reqID/upvote",

@@ -33,6 +33,19 @@ export default defineSchema({
     .index("by_request_user", ["requestId", "userId"])
     .index("by_request_client", ["requestId", "clientId"]),
 
+  requestComments: defineTable({
+    requestId: v.id("requests"),
+    projectId: v.id("projects"),
+    authorType: v.union(v.literal("developer"), v.literal("client")),
+    authorUserId: v.optional(v.id("users")),
+    authorClientId: v.optional(v.string()),
+    body: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_request", ["requestId"])
+    .index("by_project", ["projectId"])
+    .index("by_request_created", ["requestId", "createdAt"]),
+
   requestStatuses: defineTable({
     name: v.string(),
     displayName: v.string(),

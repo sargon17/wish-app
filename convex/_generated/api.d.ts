@@ -10,6 +10,7 @@
 
 import type * as http from "../http.js";
 import type * as projects from "../projects.js";
+import type * as requestComments from "../requestComments.js";
 import type * as requestStatuses from "../requestStatuses.js";
 import type * as requestUpvotes from "../requestUpvotes.js";
 import type * as requests from "../requests.js";
@@ -28,6 +29,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   http: typeof http;
   projects: typeof projects;
+  requestComments: typeof requestComments;
   requestStatuses: typeof requestStatuses;
   requestUpvotes: typeof requestUpvotes;
   requests: typeof requests;
