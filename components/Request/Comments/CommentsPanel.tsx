@@ -21,6 +21,7 @@ import CommentsList from "./CommentsList";
 
 export default function CommentsPanel({ request }: { request: Doc<"requests"> }) {
   const createComment = useMutation(api.requestComments.create);
+  const removeComment = useMutation(api.requestComments.remove);
   const comments = useQuery(api.requestComments.listByRequest, {
     requestId: request._id,
   });
@@ -58,6 +59,15 @@ export default function CommentsPanel({ request }: { request: Doc<"requests"> })
     }
   };
 
+  const handleDelete = async (id: Doc<"requestComments">["_id"]) => {
+    try {
+      await removeComment({ id });
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to delete comment right now.");
+    }
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between">
@@ -72,7 +82,7 @@ export default function CommentsPanel({ request }: { request: Doc<"requests"> })
 
       <Separator className="my-3" />
 
-      <CommentsList comments={comments} request={request} />
+      <CommentsList comments={comments} request={request} onDelete={handleDelete} />
 
       <Separator className="my-3" />
 

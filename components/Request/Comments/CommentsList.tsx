@@ -16,9 +16,11 @@ function getAuthorKey(comment: Doc<"requestComments">) {
 export default function CommentsList({
   comments,
   request,
+  onDelete,
 }: {
   comments?: Doc<"requestComments">[];
   request: Doc<"requests">;
+  onDelete: (id: Doc<"requestComments">["_id"]) => Promise<void>;
 }) {
   if (!comments || comments.length === 0) {
     return (
@@ -47,6 +49,7 @@ export default function CommentsList({
               authorClientId={group[0].authorClientId}
               requestClientId={request.clientId}
               comments={group}
+              onDelete={onDelete}
             />
           </div>
         ))}

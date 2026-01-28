@@ -83,3 +83,25 @@ export const create = mutation({
     }
   },
 });
+
+export const remove = mutation({
+  args: { id: v.id("requestComments") },
+  handler: async (ctx, args) => {
+    try {
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) {
+        throw new Error("Not authenticated");
+      }
+
+      const comment = await ctx.db.get(args.id);
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+
+      await ctx.db.delete(args.id);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to delete comment");
+    }
+  },
+});
