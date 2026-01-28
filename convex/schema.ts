@@ -18,7 +18,20 @@ export default defineSchema({
     clientId: v.string(),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
+    upvoteCount: v.optional(v.number()),
   }).index("by_project", ["project"]),
+
+  requestUpvotes: defineTable({
+    requestId: v.id("requests"),
+    projectId: v.id("projects"),
+    userId: v.optional(v.id("users")),
+    clientId: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_request", ["requestId"])
+    .index("by_project", ["projectId"])
+    .index("by_request_user", ["requestId", "userId"])
+    .index("by_request_client", ["requestId", "clientId"]),
 
   requestStatuses: defineTable({
     name: v.string(),
@@ -35,6 +48,5 @@ export default defineSchema({
     invitedAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
-  // TODO: request upvotes system
   // TODO: requests chat system
 });

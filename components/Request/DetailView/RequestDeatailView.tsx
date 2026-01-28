@@ -2,6 +2,7 @@ import { User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
+import RequestUpvoteButton from "@/components/Request/RequestUpvoteButton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,9 +18,11 @@ import { useRequestStatus } from "@/hooks/useRequestStatus";
 interface Props {
   children: ReactNode;
   request: Doc<"requests">;
+  isUpvoted: boolean;
+  upvoteCount: number;
 }
 
-export default function RequestDetailView({ children, request }: Props) {
+export default function RequestDetailView({ children, request, isUpvoted, upvoteCount }: Props) {
   const requestStatus = useRequestStatus({ request });
 
   const handleSave = () => {
@@ -35,10 +38,17 @@ export default function RequestDetailView({ children, request }: Props) {
       <DialogTrigger asChild className="cursor-pointer">
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] md:max-w-3xl">
+      <DialogContent className="sm:max-w-106.25 md:max-w-3xl">
         <DialogHeader>
           <div className="flex items-center gap-4 ">
             <DialogTitle className="capitalize">{request.text}</DialogTitle>
+            <RequestUpvoteButton
+              requestId={request._id}
+              projectId={request.project}
+              upvoteCount={upvoteCount}
+              isUpvoted={isUpvoted}
+              size="default"
+            />
             {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
           </div>
           <div>

@@ -6,14 +6,18 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "../ui/card
 
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import RequestCardActions from "./RequestCardActions";
+import RequestUpvoteButton from "./RequestUpvoteButton";
 
 interface Props {
   request: Doc<"requests">;
+  isUpvoted: boolean;
 }
 
-export default function RequestCard({ request }: Props) {
+export default function RequestCard({ request, isUpvoted }: Props) {
+  const upvoteCount = request.upvoteCount ?? 0;
+
   return (
-    <RequestDetailView request={request}>
+    <RequestDetailView request={request} isUpvoted={isUpvoted} upvoteCount={upvoteCount}>
       <Card
         draggable
         onDragStart={(e) => {
@@ -32,8 +36,14 @@ export default function RequestCard({ request }: Props) {
       >
         <CardHeader>
           <CardTitle className=" capitalize">{request.text}</CardTitle>
-          <CardAction onClick={(e) => e.stopPropagation()}>
+          <CardAction className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <RequestCardActions request={request} />
+            <RequestUpvoteButton
+              requestId={request._id}
+              projectId={request.project}
+              upvoteCount={upvoteCount}
+              isUpvoted={isUpvoted}
+            />
           </CardAction>
         </CardHeader>
         {request.description && (

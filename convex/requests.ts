@@ -57,7 +57,7 @@ export const create = mutation({
     //   throw new Error('Not authenticated')
     // }
 
-    await ctx.db.insert("requests", { ...args });
+    await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
   },
 });
 
@@ -98,12 +98,23 @@ export const updateStatus = mutation({
 export const deleteRequest = mutation({
   args: { id: v.id("requests") },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
+    try {
+      // const identity = await ctx.auth.getUserIdentity()
 
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+      // if (identity === null) {
+      //   throw new Error('Not authenticated')
+      // }
 
-    await ctx.db.delete(args.id);
+      const upvotes = await ctx.db
+        .query("requestUpvotes")
+        .withIndex("by_request", (q) => q.eq("requestId", args.id))
+        .collect();
+
+      await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
+      await ctx.db.delete(args.id);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to delete request");
+    }
   },
 });

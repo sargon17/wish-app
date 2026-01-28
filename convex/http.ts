@@ -36,6 +36,10 @@ const RequestValidator = type({
   clientId: "string",
 });
 
+const UpvoteValidator = type({
+  clientId: "string",
+});
+
 app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator), async (c) => {
   const id = c.req.param("id");
   const body = await c.req.valid("json");
@@ -73,5 +77,29 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
 
   return c.json({}, 200);
 });
+
+app.post(
+  "/api/project/:id/request/:reqID/upvote",
+  arktypeValidator("json", UpvoteValidator),
+  async (c) => {
+    const reqId = c.req.param("reqID");
+    const projectId = c.req.param("id");
+    const body = await c.req.valid("json");
+
+    try {
+      if (!reqId || !projectId) throw new Error("invalid request id");
+
+      await c.env.runMutation(api.requestUpvotes.toggle, {
+        requestId: reqId as Id<"requests">,
+        projectId: projectId as Id<"projects">,
+        clientId: body.clientId,
+      });
+    } catch {
+      return c.json({}, 400);
+    }
+
+    return c.json({}, 200);
+  },
+);
 
 export default new HttpRouterWithHono(app);

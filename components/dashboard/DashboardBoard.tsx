@@ -1,8 +1,9 @@
 "use client";
 import type { Preloaded } from "convex/react";
-import { usePreloadedQuery } from "convex/react";
+import { usePreloadedQuery, useQuery } from "convex/react";
+import { useMemo } from "react";
 
-import type { api } from "@/convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 
 import DashboardBoardColumn from "./DashboardBoardColumn";
 
@@ -19,6 +20,12 @@ export default function DashboardBoard({
   const project = usePreloadedQuery(preloadedProject);
   const statuses = usePreloadedQuery(preloadedStatuses);
   const requests = usePreloadedQuery(preloadedRequests);
+  const viewerUpvotes = useQuery(
+    api.requestUpvotes.getViewerUpvotesByProject,
+    project ? { projectId: project._id } : "skip",
+  );
+
+  const upvotedSet = useMemo(() => new Set(viewerUpvotes ?? []), [viewerUpvotes]);
 
   if (!project) return;
 
@@ -50,6 +57,7 @@ export default function DashboardBoard({
           projectId={project._id}
           statusId={status._id}
           color={status.color}
+          upvotedSet={upvotedSet}
         />
       ))}
     </div>

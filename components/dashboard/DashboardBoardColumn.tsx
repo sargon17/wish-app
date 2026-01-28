@@ -17,6 +17,7 @@ interface Props {
   projectId: Id<"projects">;
   statusId: Id<"requestStatuses">;
   color?: string;
+  upvotedSet: Set<Id<"requests">>;
 }
 
 export default function DashboardBoardColumn({
@@ -25,6 +26,7 @@ export default function DashboardBoardColumn({
   projectId,
   statusId,
   color,
+  upvotedSet,
 }: Props) {
   const updateStatus = useMutation(api.requests.updateStatus);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -88,7 +90,11 @@ export default function DashboardBoardColumn({
         {requests && (
           <div className="flex flex-col gap-2 p-3">
             {requests.map((request) => (
-              <RequestCard request={request} key={request._id} />
+              <RequestCard
+                request={request}
+                key={request._id}
+                isUpvoted={upvotedSet.has(request._id)}
+              />
             ))}
           </div>
         )}

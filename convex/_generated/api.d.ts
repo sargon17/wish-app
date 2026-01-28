@@ -11,6 +11,7 @@
 import type * as http from "../http.js";
 import type * as projects from "../projects.js";
 import type * as requestStatuses from "../requestStatuses.js";
+import type * as requestUpvotes from "../requestUpvotes.js";
 import type * as requests from "../requests.js";
 import type * as services_queries_projects_getProjectById from "../services/queries/projects/getProjectById.js";
 import type * as services_queries_status_getStatusById from "../services/queries/status/getStatusById.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   projects: typeof projects;
   requestStatuses: typeof requestStatuses;
+  requestUpvotes: typeof requestUpvotes;
   requests: typeof requests;
   "services/queries/projects/getProjectById": typeof services_queries_projects_getProjectById;
   "services/queries/status/getStatusById": typeof services_queries_status_getStatusById;

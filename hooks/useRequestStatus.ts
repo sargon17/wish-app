@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
@@ -37,6 +37,14 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
   const [hasChanged, setHasChanged] = useState(false);
 
   const editRequest = useMutation(api.requests.edit);
+
+  useEffect(() => {
+    if (!originalStatus) return;
+    if (!status || status._id !== originalStatus._id) {
+      setStatus(originalStatus);
+      setHasChanged(false);
+    }
+  }, [originalStatus?._id]);
 
   const checkIfChanged = (status: Doc<"requestStatuses">) => {
     if (status?._id !== originalStatus?._id) {
