@@ -90,11 +90,7 @@ export default function DashboardBoardColumn({
         {requests && (
           <div className="flex flex-col gap-2 p-3">
             {requests.map((request) => (
-              <RequestCard
-                request={request}
-                key={request._id}
-                isUpvoted={upvotedSet.has(request._id)}
-              />
+              <RequestCard request={request} key={request._id} upvotedSet={upvotedSet} />
             ))}
           </div>
         )}

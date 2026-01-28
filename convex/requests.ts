@@ -20,6 +20,34 @@ export const getByProject = query({
   },
 });
 
+export const getByClientId = query({
+  args: {
+    projectId: v.id("projects"),
+    clientId: v.string(),
+    excludeId: v.id("requests"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const requests = await ctx.db
+        .query("requests")
+        .withIndex("by_project", (q) => q.eq("project", args.projectId))
+        .filter((q) => q.eq(q.field("clientId"), args.clientId))
+        .collect();
+
+      const filtered = requests
+        .filter((request) => request._id !== args.excludeId)
+        .sort((a, b) => b._creationTime - a._creationTime);
+
+      const limit = args.limit ?? 5;
+      return filtered.slice(0, limit);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to load related requests");
+    }
+  },
+});
+
 // export const createProject = mutation({
 //   args: { title: v.string() },
 //   handler: async (ctx, args) => {

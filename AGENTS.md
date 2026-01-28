@@ -51,6 +51,7 @@
 - Prefer Radix/shadcn primitives over bespoke styles.
 - Prefer Tailwind over custom styles.
 - use Tailwind Colors: neutral is 'neutral' and accent is 'orange'.
+- Always use the `frontend-design` skill when writing or editing UI code.
 
 ## Very Important Notes
 

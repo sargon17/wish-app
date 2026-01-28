@@ -10,14 +10,18 @@ import RequestUpvoteButton from "./RequestUpvoteButton";
 
 interface Props {
   request: Doc<"requests">;
-  isUpvoted: boolean;
+  upvotedSet: Set<Doc<"requests">["_id"]>;
 }
 
-export default function RequestCard({ request, isUpvoted }: Props) {
+export default function RequestCard({ request, upvotedSet }: Props) {
   const upvoteCount = request.upvoteCount ?? 0;
+  const isUpvoted = upvotedSet.has(request._id);
 
   return (
-    <RequestDetailView request={request} isUpvoted={isUpvoted} upvoteCount={upvoteCount}>
+    <RequestDetailView
+      request={request}
+      upvotedSet={upvotedSet}
+    >
       <Card
         draggable
         onDragStart={(e) => {
