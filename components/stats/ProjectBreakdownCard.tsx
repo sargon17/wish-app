@@ -1,15 +1,12 @@
-import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import type { ChartConfig } from "@/components/ui/chart";
+import { api } from "@/convex/_generated/api";
+
 type ProjectBreakdownItem =
-  typeof api.stats.requestOverview._returnType["projectBreakdown"][number];
+  (typeof api.stats.requestOverview._returnType)["projectBreakdown"][number];
 
 type ProjectBreakdownCardProps = {
   projects: ProjectBreakdownItem[];
@@ -79,6 +76,9 @@ export function ProjectBreakdownCard({ projects, total, className }: ProjectBrea
 }
 
 function toKey(name: string, index: number) {
-  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   return base || `project-${index}`;
 }

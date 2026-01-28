@@ -1,10 +1,10 @@
 "use client";
-import type { PropsWithChildren } from "react";
-import type { Id } from "@/convex/_generated/dataModel";
 import Color from "color";
 import { useMutation, useQuery } from "convex/react";
+import type { PropsWithChildren } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import {
   ColorPickerOutput,
   ColorPickerSelection,
 } from "@/components/ui/shadcn-io/color-picker";
-
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 import CopyButton from "../Organisms/CopyButton";
 import StatusCreationView from "../Status/StatusCreationView";

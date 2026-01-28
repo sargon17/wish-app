@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ChartConfig } from "@/components/ui/chart";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Select,
   SelectContent,
@@ -12,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/convex/_generated/api";
 
-type WeeklyTrendPoint = typeof api.stats.requestOverview._returnType["weeklyTrend"][number];
+type WeeklyTrendPoint = (typeof api.stats.requestOverview._returnType)["weeklyTrend"][number];
 
 type RequestsTrendCardProps = {
   data: WeeklyTrendPoint[];

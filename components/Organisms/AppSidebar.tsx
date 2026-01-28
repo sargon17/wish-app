@@ -1,8 +1,7 @@
 import { BarChart3, Home, LayoutDashboard, Mail } from "lucide-react";
-
 import Link from "next/link";
-
 import React from "react";
+
 import {
   Sidebar,
   SidebarContent,

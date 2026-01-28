@@ -1,3 +1,3 @@
 export function sluggedText(text: string) {
-  return text.replaceAll(' ', '_')
+  return text.replaceAll(" ", "_");
 }

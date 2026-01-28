@@ -1,7 +1,10 @@
 "use client";
 import { useQuery } from "convex/react";
+
 import { api } from "@/convex/_generated/api";
+
 import { ScrollArea } from "../ui/scroll-area";
+
 import DashboardProjectCard from "./DashboardProjectCard";
 
 export default function DashboardView() {

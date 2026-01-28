@@ -1,18 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowUpDown } from "lucide-react";
-import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { ChevronDown, ChevronLeft, ChevronRight, Check, ArrowUpDown } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -22,29 +32,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Doc } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { StatCard } from "components/molecules/StatCard";
-import CopyButton from "../Organisms/CopyButton";
-import { ChevronDown, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Doc } from "@/convex/_generated/dataModel";
+import { StatCard } from "@components/molecules/StatCard";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+
+import CopyButton from "../Organisms/CopyButton";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 
 type WaitlistEntry = Doc<"waitlist">;
 type WaitlistId = WaitlistEntry["_id"];
@@ -194,7 +196,10 @@ export function WaitlistTable() {
                   className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   disabled={disabled}
                 >
-                  <StatusBadge invitedAt={entry.invitedAt} className="cursor-pointer transition-colors">
+                  <StatusBadge
+                    invitedAt={entry.invitedAt}
+                    className="cursor-pointer transition-colors"
+                  >
                     <span className="flex items-center gap-1">
                       {value === "invited" ? "Invited" : "Pending"}
                       <ChevronDown className="size-3 opacity-70" />

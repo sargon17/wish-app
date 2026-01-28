@@ -1,21 +1,21 @@
-import { preloadQuery } from 'convex/nextjs'
-import { redirect } from 'next/navigation'
-import DashboardBoard from '@/components/dashboard/DashboardBoard'
-import { api } from '@/convex/_generated/api'
-import { getAuthToken } from '@/lib/auth'
+import { preloadQuery } from "convex/nextjs";
+import { redirect } from "next/navigation";
+
+import DashboardBoard from "@/components/dashboard/DashboardBoard";
+import { api } from "@/convex/_generated/api";
+import { getAuthToken } from "@/lib/auth";
 
 interface Props {
-  id: string
+  id: string;
 }
 
 export default async function ProjectPage({ id }: Props) {
-  const token = await getAuthToken()
-  if (!token)
-    redirect('/')
+  const token = await getAuthToken();
+  if (!token) redirect("/");
 
-  const preloadedProject = await preloadQuery(api.projects.getProjectById, { id }, { token })
-  const preloadedStatuses = await preloadQuery(api.requestStatuses.getByProject, { id }, { token })
-  const preloadedRequests = await preloadQuery(api.requests.getByProject, { id }, { token })
+  const preloadedProject = await preloadQuery(api.projects.getProjectById, { id }, { token });
+  const preloadedStatuses = await preloadQuery(api.requestStatuses.getByProject, { id }, { token });
+  const preloadedRequests = await preloadQuery(api.requests.getByProject, { id }, { token });
 
   return (
     <DashboardBoard
@@ -23,5 +23,5 @@ export default async function ProjectPage({ id }: Props) {
       preloadedStatuses={preloadedStatuses}
       preloadedRequests={preloadedRequests}
     />
-  )
+  );
 }

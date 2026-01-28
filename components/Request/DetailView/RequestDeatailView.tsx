@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
-import type { Doc } from '@/convex/_generated/dataModel'
-import { User } from 'lucide-react'
-import StatusForwardBadge from '@/components/Status/StatusForwardBadge'
-import { Button } from '@/components/ui/button'
+import { User } from "lucide-react";
+import type { ReactNode } from "react";
+
+import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,24 +10,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { useRequestStatus } from '@/hooks/useRequestStatus'
+} from "@/components/ui/dialog";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { useRequestStatus } from "@/hooks/useRequestStatus";
 
 interface Props {
-  children: ReactNode
-  request: Doc<'requests'>
+  children: ReactNode;
+  request: Doc<"requests">;
 }
 
 export default function RequestDetailView({ children, request }: Props) {
-  const requestStatus = useRequestStatus({ request })
+  const requestStatus = useRequestStatus({ request });
 
   const handleSave = () => {
-    requestStatus.methods.save()
-  }
+    requestStatus.methods.save();
+  };
 
   // const isToSave = isStatusChanged
 
-  const hasChanges = requestStatus.state.hasChanged
+  const hasChanges = requestStatus.state.hasChanged;
 
   return (
     <Dialog>
@@ -37,12 +38,8 @@ export default function RequestDetailView({ children, request }: Props) {
       <DialogContent className="sm:max-w-[425px] md:max-w-3xl">
         <DialogHeader>
           <div className="flex items-center gap-4 ">
-            <DialogTitle className="capitalize">
-              {request.text}
-            </DialogTitle>
-            {requestStatus.state.current && (
-              <StatusForwardBadge status={requestStatus} />
-            )}
+            <DialogTitle className="capitalize">{request.text}</DialogTitle>
+            {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
           </div>
           <div>
             <div className="*:flex *:gap-2 *:items-center flex gap-2 text-foreground/50 text-sm mb-8">
@@ -50,35 +47,20 @@ export default function RequestDetailView({ children, request }: Props) {
                 <User size={16} />
                 {request.clientId}
               </div>
-              <div className="text-foreground/20">
-                /
-              </div>
+              <div className="text-foreground/20">/</div>
               <div>
                 <p>ID:</p>
                 {request._id}
               </div>
             </div>
             <div>
-              <p className="text-secondary-foreground text-sm">
-                {request.description}
-              </p>
+              <p className="text-secondary-foreground text-sm">{request.description}</p>
             </div>
           </div>
         </DialogHeader>
 
-        <DialogFooter>
-          {
-            hasChanges
-            && (
-              <Button onClick={handleSave}>
-                Save
-              </Button>
-            )
-          }
-
-        </DialogFooter>
-
+        <DialogFooter>{hasChanges && <Button onClick={handleSave}>Save</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

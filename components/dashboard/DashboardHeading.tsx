@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,6 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
+
 import { SidebarTrigger } from "../ui/sidebar";
 
 interface Props {

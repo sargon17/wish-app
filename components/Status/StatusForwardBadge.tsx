@@ -1,34 +1,38 @@
-import type { Id } from '@/convex/_generated/dataModel'
-import type { UseRequestStatusReturn } from '@/hooks/useRequestStatus'
-import { ChevronRight } from 'lucide-react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { ChevronRight } from "lucide-react";
 
-interface StatusForwardBadgeProps { status: UseRequestStatusReturn }
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { Id } from "@/convex/_generated/dataModel";
+import type { UseRequestStatusReturn } from "@/hooks/useRequestStatus";
+
+interface StatusForwardBadgeProps {
+  status: UseRequestStatusReturn;
+}
 
 export default function StatusForwardBadge({ status }: StatusForwardBadgeProps) {
-  if (!status.state.current)
-    return
+  if (!status.state.current) return;
 
   return (
     <div className="flex text-xs items-center gap-2 group text-secondary-foreground/50 hover:text-secondary-foreground transition-colors cursor-pointer">
       <DropdownMenu>
-
-        <DropdownMenuTrigger>
-          {status.state.current.displayName}
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger>{status.state.current.displayName}</DropdownMenuTrigger>
 
         <DropdownMenuContent>
           <DropdownMenuLabel>Change status to</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup
             value={status.state.current._id}
-            onValueChange={val => status.methods.setById(val as Id<'requestStatuses'>)}
+            onValueChange={(val) => status.methods.setById(val as Id<"requestStatuses">)}
           >
-            {status.state.statuses?.map(stat => (
-              <DropdownMenuRadioItem
-                key={stat._id}
-                value={stat._id}
-              >
+            {status.state.statuses?.map((stat) => (
+              <DropdownMenuRadioItem key={stat._id} value={stat._id}>
                 {stat.displayName}
               </DropdownMenuRadioItem>
             ))}
@@ -43,5 +47,5 @@ export default function StatusForwardBadge({ status }: StatusForwardBadgeProps) 
         <ChevronRight size={16} />
       </button>
     </div>
-  )
+  );
 }

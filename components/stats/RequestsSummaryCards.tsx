@@ -1,5 +1,8 @@
 import { api } from "@/convex/_generated/api";
-import { StatCard } from "components/molecules/StatCard";
+
+
+
+import { StatCard } from "@components/molecules/StatCard";
 
 type RequestOverview = typeof api.stats.requestOverview._returnType;
 
@@ -18,11 +21,7 @@ export function RequestsSummaryCards({ stats }: SummaryProps) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <StatCard
-        label="Total requests"
-        value={stats.totalRequests}
-        description={deltaLabel}
-      />
+      <StatCard label="Total requests" value={stats.totalRequests} description={deltaLabel} />
       <StatCard
         label="Active projects"
         value={stats.projectBreakdown.length}

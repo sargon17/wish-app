@@ -1,6 +1,6 @@
-import { v } from 'convex/values'
+import { v } from "convex/values";
 
-import { mutation, query } from './_generated/server'
+import { mutation, query } from "./_generated/server";
 
 export const getByProject = query({
   args: { id: v.string() },
@@ -12,15 +12,13 @@ export const getByProject = query({
     // }
 
     const requests = await ctx.db
-      .query('requests')
-      .filter(q =>
-        q.eq(q.field('project'), args.id),
-      )
-      .collect()
+      .query("requests")
+      .filter((q) => q.eq(q.field("project"), args.id))
+      .collect();
 
-    return requests
+    return requests;
   },
-})
+});
 
 // export const createProject = mutation({
 //   args: { title: v.string() },
@@ -49,8 +47,8 @@ export const create = mutation({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
-    status: v.id('requestStatuses'),
-    project: v.id('projects'),
+    status: v.id("requestStatuses"),
+    project: v.id("projects"),
   },
   handler: async (ctx, args) => {
     // const identity = await ctx.auth.getUserIdentity()
@@ -59,46 +57,46 @@ export const create = mutation({
     //   throw new Error('Not authenticated')
     // }
 
-    await ctx.db.insert('requests', { ...args })
+    await ctx.db.insert("requests", { ...args });
   },
-})
+});
 
 export const edit = mutation({
   args: {
-    id: v.id('requests'),
+    id: v.id("requests"),
     text: v.string(),
     description: v.optional(v.string()),
-    status: v.id('requestStatuses'),
+    status: v.id("requestStatuses"),
   },
   handler: async (ctx, args) => {
-    const { id, ...fields } = args
-    const identity = await ctx.auth.getUserIdentity()
+    const { id, ...fields } = args;
+    const identity = await ctx.auth.getUserIdentity();
 
     if (identity === null) {
-      throw new Error('Not authenticated')
+      throw new Error("Not authenticated");
     }
 
-    await ctx.db.patch(id, { ...fields })
+    await ctx.db.patch(id, { ...fields });
   },
-})
+});
 
 export const updateStatus = mutation({
   args: {
-    id: v.id('requests'),
-    status: v.id('requestStatuses'),
+    id: v.id("requests"),
+    status: v.id("requestStatuses"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity()
+    const identity = await ctx.auth.getUserIdentity();
     if (identity === null) {
-      throw new Error('Not authenticated')
+      throw new Error("Not authenticated");
     }
 
-    await ctx.db.patch(args.id, { status: args.status })
+    await ctx.db.patch(args.id, { status: args.status });
   },
-})
+});
 
 export const deleteRequest = mutation({
-  args: { id: v.id('requests') },
+  args: { id: v.id("requests") },
   handler: async (ctx, args) => {
     // const identity = await ctx.auth.getUserIdentity()
 
@@ -106,6 +104,6 @@ export const deleteRequest = mutation({
     //   throw new Error('Not authenticated')
     // }
 
-    await ctx.db.delete(args.id)
+    await ctx.db.delete(args.id);
   },
-})
+});

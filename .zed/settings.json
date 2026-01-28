@@ -5,21 +5,26 @@
 {
   "project_name": "Wish App",
   "lsp": {
-    "oxc": {
+    "oxlint": {
       "initialization_options": {
-        "options": {
-          "run": "onType",
+        "settings": {
           "configPath": ".oxlintrc.json",
-          "tsConfigPath": "tsconfig.json",
-          "unusedDisableDirectives": "allow",
-          "typeAware": false,
-          "flags": {},
-          "fixKind": "safe_fix_or_suggestion",
-          "fmt.experimental": true,
-          "fmt.configPath": ".oxfmtrc.json"
-        }
-      }
-    }
+          "run": "onType",
+          "disableNestedConfig": false,
+          "fixKind": "safe_fix",
+          "typeAware": true,
+          "unusedDisableDirectives": "deny",
+        },
+      },
+    },
+    "oxfmt": {
+      "initialization_options": {
+        "settings": {
+          "configPath": ".oxfmtrc.json",
+          "run": "onSave",
+        },
+      },
+    },
   },
   "languages": {
     "TypeScript": {
@@ -28,12 +33,13 @@
         "tsgo",
         // "typescript-language-server",
         "!vtsls",
-        "..."
+        "...",
+        "!eslint",
       ],
       "formatter": "language_server",
       "code_actions_on_format": {
-        "source.fixAll.oxc": true
-      }
+        "source.fixAll.oxc": true,
+      },
     },
     "TSX": {
       "language_servers": [
@@ -41,12 +47,13 @@
         "tsgo",
         "typescript-language-server",
         "!vtsls",
-        "..."
+        "...",
+        "!eslint",
       ],
       "formatter": "language_server",
       "code_actions_on_format": {
-        "source.fixAll.oxc": true
-      }
-    }
-  }
+        "source.fixAll.oxc": true,
+      },
+    },
+  },
 }

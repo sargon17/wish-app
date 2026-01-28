@@ -1,23 +1,23 @@
-'use client'
-import { Laptop2, Moon, Sun } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+"use client";
+import { Laptop2, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
-type Theme = 'light' | 'dark' | 'system'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type Theme = "light" | "dark" | "system";
 
 export default function ThemeTabs() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  if (!mounted)
-    return null
+  if (!mounted) return null;
 
-  const value: Theme = (theme as Theme) ?? 'system'
+  const value: Theme = (theme as Theme) ?? "system";
 
   return (
-    <Tabs value={value} onValueChange={v => setTheme(v as Theme)}>
+    <Tabs value={value} onValueChange={(v) => setTheme(v as Theme)}>
       <TabsList>
         <TabsTrigger value="light" aria-label="Use light theme">
           <Sun />
@@ -30,5 +30,5 @@ export default function ThemeTabs() {
         </TabsTrigger>
       </TabsList>
     </Tabs>
-  )
+  );
 }

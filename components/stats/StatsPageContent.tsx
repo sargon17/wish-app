@@ -2,11 +2,12 @@
 import { useQuery } from "convex/react";
 
 import { api } from "@/convex/_generated/api";
+
+import { ProjectBreakdownCard } from "./ProjectBreakdownCard";
 import { RequestsSummaryCards } from "./RequestsSummaryCards";
 import { RequestsTrendCard } from "./RequestsTrendCard";
-import { StatusBreakdownCard } from "./StatusBreakdownCard";
-import { ProjectBreakdownCard } from "./ProjectBreakdownCard";
 import { StatsLoading } from "./StatsLoading";
+import { StatusBreakdownCard } from "./StatusBreakdownCard";
 
 export function StatsPageContent() {
   const stats = useQuery(api.stats.requestOverview);

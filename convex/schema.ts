@@ -1,44 +1,40 @@
-import { defineSchema, defineTable } from 'convex/server'
-import { v } from 'convex/values'
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   users: defineTable({
     name: v.string(),
     tokenIdentifier: v.string(),
-  }).index('by_token', ['tokenIdentifier']),
+  }).index("by_token", ["tokenIdentifier"]),
 
   projects: defineTable({
     title: v.string(),
-    user: v.id('users'),
+    user: v.id("users"),
   }),
 
   requests: defineTable({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
-    status: v.id('requestStatuses'),
-    project: v.id('projects'),
-  }).index('by_project', ['project']),
+    status: v.id("requestStatuses"),
+    project: v.id("projects"),
+  }).index("by_project", ["project"]),
 
   requestStatuses: defineTable({
     name: v.string(),
     displayName: v.string(),
     description: v.optional(v.string()),
-    project: v.optional(v.id('projects')),
-    type: v.union(
-      v.literal('custom'),
-      v.literal('default'),
-    ),
+    project: v.optional(v.id("projects")),
+    type: v.union(v.literal("custom"), v.literal("default")),
     color: v.optional(v.string()),
-  }).index('by_project', ['project']),
+  }).index("by_project", ["project"]),
 
   waitlist: defineTable({
     email: v.string(),
     appliedAt: v.number(),
     invitedAt: v.optional(v.number()),
-  }).index('by_email', ['email']),
+  }).index("by_email", ["email"]),
 
   // TODO: request upvotes system
   // TODO: requests chat system
-
-})
+});

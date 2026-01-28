@@ -1,12 +1,10 @@
 "use client";
 
+import { useMutation } from "convex/react";
 import { useCallback, useMemo, useState } from "react";
 import type { PropsWithChildren } from "react";
-import { useMutation } from "convex/react";
 import { toast } from "sonner";
 
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +20,9 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@/components/ui/input-group";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 type StatusCreationViewProps = PropsWithChildren<{
@@ -103,7 +104,10 @@ export default function StatusCreationView({
 
             <Popover>
               <PopoverTrigger>
-                <div className="w-4 h-4" style={{ backgroundColor: newStatusColor }}></div>
+                <div
+                  className="w-4 h-4 rounded-md"
+                  style={{ backgroundColor: newStatusColor }}
+                ></div>
               </PopoverTrigger>
               <PopoverContent>
                 <InputGroupInput

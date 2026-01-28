@@ -1,8 +1,9 @@
-import { UserButton } from "@clerk/nextjs";
 import { cookies } from "next/headers";
+
 import { AppSidebar } from "@/components/Organisms/AppSidebar";
 import ThemeTabs from "@/components/Organisms/ThemeTabs";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { UserButton } from "@clerk/nextjs";
 
 import { StatusesStoreProvider } from "../providers/StatusesStoreProvider";
 

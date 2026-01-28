@@ -1,23 +1,23 @@
 interface TrimToProps {
-  text: string
-  to?: number
+  text: string;
+  to?: number;
 }
 
 export function trimTo({ text, to = 100 }: TrimToProps) {
-  if (text.length < to)
-    return text
+  if (text.length < to) return text;
 
-  return `${text.slice(0, to)}...`
+  return `${text.slice(0, to)}...`;
 }
 
 interface CopyToClipboardProps {
-  text: string
-  onSuccess?: () => void
-  onFail?: () => void
+  text: string;
+  onSuccess?: () => void;
+  onFail?: () => void;
 }
 
 export function copyToClipboard({ text, onSuccess, onFail }: CopyToClipboardProps) {
-  navigator.clipboard.writeText(text)
+  navigator.clipboard
+    .writeText(text)
     .then(() => onSuccess && onSuccess())
-    .catch(() => onFail && onFail())
+    .catch(() => onFail && onFail());
 }

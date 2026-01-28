@@ -1,6 +1,6 @@
-import type { Id } from "@/convex/_generated/dataModel";
 import { Cog, Plus } from "lucide-react";
 import { Suspense } from "react";
+
 import DashboardHeading from "@/components/dashboard/DashboardHeading";
 import Loading from "@/components/Organisms/Loading";
 import ProjectPage from "@/components/project/ProjectPage";
@@ -8,6 +8,7 @@ import ProjectSettings from "@/components/project/ProjectSettings";
 import RequestCreateEditDialog from "@/components/Request/RequestCreateEditDialog";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface Props {
   params: Promise<{

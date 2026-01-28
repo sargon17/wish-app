@@ -1,15 +1,15 @@
 "use client";
 
-import { SignInButton, UserButton } from "@clerk/nextjs";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Sparkles, ShieldCheck, Clock3 } from "lucide-react";
 import Link from "next/link";
 
-import { WaitlistJoin } from "@/components/Organisms/WaitlistJoin";
-import { HighlightCard } from "@/components/molecules/HighlightCard";
-import { Button } from "@/components/ui/button";
-import { useStoreUserEffect } from "@effects/useStoreUserEffect";
 import { Chip } from "@/components/atoms/chip";
+import { HighlightCard } from "@/components/molecules/HighlightCard";
+import { WaitlistJoin } from "@/components/Organisms/WaitlistJoin";
+import { Button } from "@/components/ui/button";
+import { SignInButton, UserButton } from "@clerk/nextjs";
+import { useStoreUserEffect } from "@effects/useStoreUserEffect";
 
 const highlights = [
   {

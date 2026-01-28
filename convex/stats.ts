@@ -1,5 +1,5 @@
-import { query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { query } from "./_generated/server";
 
 export const requestOverview = query({
   args: {},
@@ -160,10 +160,7 @@ function buildWeeklyTrend(
     .map((_, index) => startOfWeekUTC(now - index * weekMillis))
     .reverse();
 
-  const counts = new Map<
-    number,
-    { weekStart: number; label: string; count: number }
-  >(
+  const counts = new Map<number, { weekStart: number; label: string; count: number }>(
     bucketStarts.map((weekStart) => [
       weekStart,
       { weekStart, label: formatWeekLabel(weekStart), count: 0 },
