@@ -23,14 +23,21 @@ wish‑app is a Next.js app that creates a feature‑request layer between users
 
 ## Mermaid — system view
 ```mermaid
-flowchart LR
-  User --> Next[Next.js App Router]
-  Next --> UI[Components]
-  UI --> Hooks[Hooks]
-  Hooks --> Stores[Client Stores]
-  Next --> Clerk[Clerk Auth]
-  Next --> Convex[Convex API]
-  Convex --> DB[(Convex DB)]
+sequenceDiagram
+  participant User
+  participant UI
+  participant Store
+  participant Convex
+  participant DB
+
+  User->>UI: create request
+  UI->>Store: update local state
+  UI->>Convex: create request
+  Convex->>DB: insert
+  DB-->>Convex: ok
+  Convex-->>UI: result
+  UI->>Store: reconcile
+
 ```
 
 ## Mermaid — request lifecycle
