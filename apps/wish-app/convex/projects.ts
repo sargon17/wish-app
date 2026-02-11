@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 
-import type { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
 function createProjectApiKey() {
@@ -23,14 +22,21 @@ function createProjectApiKey() {
 // })
 
 export const getProjectById = query({
-  args: { id: v.string() },
+  args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const project = await ctx.db.get(args.id as Id<"projects">);
+    const project = await ctx.db.get(args.id);
     if (!project) {
       return null;
     }
-    // Read access is intentionally broader; write operations enforce ownership.
-    return project;
+    const { apiKey, ...publicProject } = project;
+    return publicProject;
+  },
+});
+
+export const getProjectByIdInternal = internalQuery({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
   },
 });
 

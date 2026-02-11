@@ -1,8 +1,31 @@
 import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+
+async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
+  const request = await ctx.db.get(id);
+  if (!request) {
+    throw new Error("Request not found");
+  }
+
+  const upvotes = await ctx.db
+    .query("requestUpvotes")
+    .withIndex("by_request", (q) => q.eq("requestId", id))
+    .collect();
+  const comments = await ctx.db
+    .query("requestComments")
+    .withIndex("by_request", (q) => q.eq("requestId", id))
+    .collect();
+
+  await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
+  await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
+  await ctx.db.delete(id);
+
+  return request;
+}
 
 export const getByProject = query({
   args: { id: v.string() },
@@ -131,23 +154,21 @@ export const deleteRequest = mutation({
     try {
       const user = await getCurrentUser(ctx);
       const request = await ctx.db.get(args.id);
-      if (!request) {
-        throw new Error("Request not found");
-      }
+      if (!request) throw new Error("Request not found");
       await assertProjectOwner(ctx, request.project, user._id);
+      await deleteRequestCascade(ctx, args.id);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to delete request");
+    }
+  },
+});
 
-      const upvotes = await ctx.db
-        .query("requestUpvotes")
-        .withIndex("by_request", (q) => q.eq("requestId", args.id))
-        .collect();
-      const comments = await ctx.db
-        .query("requestComments")
-        .withIndex("by_request", (q) => q.eq("requestId", args.id))
-        .collect();
-
-      await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
-      await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
-      await ctx.db.delete(args.id);
+export const deleteRequestByApiKeyInternal = internalMutation({
+  args: { id: v.id("requests") },
+  handler: async (ctx, args) => {
+    try {
+      await deleteRequestCascade(ctx, args.id);
     } catch (error) {
       console.error(error);
       throw new Error("Failed to delete request");

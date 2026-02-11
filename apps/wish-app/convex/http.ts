@@ -5,7 +5,7 @@ import { Hono } from "hono";
 
 import { arktypeValidator } from "@hono/arktype-validator";
 
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 
@@ -38,7 +38,13 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Missing API key" }, 401) };
   }
 
-  const project = await c.env.runQuery(api.projects.getProjectById, { id: projectId });
+  if (!projectId.startsWith("projects:")) {
+    return { response: c.json({ error: "Project not found" }, 404) };
+  }
+
+  const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
+    id: projectId as Id<"projects">,
+  });
   if (!project) {
     return { response: c.json({ error: "Project not found" }, 404) };
   }
@@ -135,7 +141,9 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
 
     if (!reqId) throw new Error("invalid request id");
 
-    await c.env.runMutation(api.requests.deleteRequest, { id: reqId as Id<"requests"> });
+    await c.env.runMutation(internal.requests.deleteRequestByApiKeyInternal, {
+      id: reqId as Id<"requests">,
+    });
   } catch {
     return c.json({}, 400);
   }
