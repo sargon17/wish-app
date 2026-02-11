@@ -42,18 +42,11 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Project not found" }, 404) };
   }
 
-  let project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
+  const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
   if (!project) {
     return { response: c.json({ error: "Project not found" }, 404) };
-  }
-
-  if (!project.apiKey) {
-    const ensuredApiKey = await c.env.runMutation(internal.projects.ensureProjectApiKeyInternal, {
-      id: project._id,
-    });
-    project = { ...project, apiKey: ensuredApiKey ?? undefined };
   }
 
   if (!project.apiKey || project.apiKey !== apiKey) {
@@ -227,9 +220,13 @@ app.post(
       }
 
       if (!reqId || !projectId) throw new Error("invalid request id");
+      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+      if ("response" in requestAuthorization) {
+        return requestAuthorization.response;
+      }
 
       await c.env.runMutation(api.requestComments.create, {
-        requestId: reqId as Id<"requests">,
+        requestId: requestAuthorization.requestId,
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
         body: body.body,
@@ -257,9 +254,13 @@ app.post(
       }
 
       if (!reqId || !projectId) throw new Error("invalid request id");
+      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+      if ("response" in requestAuthorization) {
+        return requestAuthorization.response;
+      }
 
       await c.env.runMutation(api.requestUpvotes.toggle, {
-        requestId: reqId as Id<"requests">,
+        requestId: requestAuthorization.requestId,
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
       });

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
-import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
 function createProjectApiKey() {
@@ -156,23 +156,5 @@ export const backfillMissingApiKeys = mutation({
       console.error(error);
       throw new Error("Failed to backfill missing project API keys");
     }
-  },
-});
-
-export const ensureProjectApiKeyInternal = internalMutation({
-  args: { id: v.id("projects") },
-  handler: async (ctx, args) => {
-    const project = await ctx.db.get(args.id);
-    if (!project) {
-      return null;
-    }
-
-    if (project.apiKey) {
-      return project.apiKey;
-    }
-
-    const apiKey = createProjectApiKey();
-    await ctx.db.patch(args.id, { apiKey });
-    return apiKey;
   },
 });
