@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUserOrNull } from "./lib/authorization";
 
 export const toggle = mutation({
   args: {
@@ -24,15 +25,11 @@ export const toggle = mutation({
       let userId: Id<"users"> | undefined;
 
       if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
+        const user = await getCurrentUserOrNull(ctx);
         if (!user) {
-          throw new Error("Unauthenticated call to mutation");
+          throw new Error("Unauthenticated call");
         }
-
+        await assertProjectOwner(ctx, args.projectId, user._id);
         userId = user._id;
       }
 
@@ -93,15 +90,11 @@ export const getViewerUpvotesByProject = query({
       let userId: Id<"users"> | undefined;
 
       if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
+        const user = await getCurrentUserOrNull(ctx);
         if (!user) {
-          throw new Error("Unauthenticated call to query");
+          throw new Error("Unauthenticated call");
         }
-
+        await assertProjectOwner(ctx, args.projectId, user._id);
         userId = user._id;
       }
 

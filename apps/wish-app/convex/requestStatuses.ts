@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
 export const getById = query({
@@ -13,11 +15,11 @@ export const getById = query({
 export const getByProject = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
-
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+    const user = await getCurrentUserOrNull(ctx);
+    const projectId = args.id as Id<"projects">;
+    if (user) {
+      await assertProjectOwner(ctx, projectId, user._id);
+    }
 
     return await ctx.db
       .query("requestStatuses")
@@ -35,6 +37,9 @@ export const create = mutation({
     color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.project, user._id);
+
     const existingStatus = await ctx.db
       .query("requestStatuses")
       .withIndex("by_project", (q) => q.eq("project", args.project))
@@ -58,6 +63,7 @@ export const updateColor = mutation({
     color: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
 
     if (!status) {
@@ -67,6 +73,10 @@ export const updateColor = mutation({
     if (status.type === "default") {
       throw new Error("Default statuses cannot be updated");
     }
+    if (!status.project) {
+      throw new Error("Status is not linked to a project");
+    }
+    await assertProjectOwner(ctx, status.project, user._id);
 
     await ctx.db.patch(args.id, { color: args.color });
   },

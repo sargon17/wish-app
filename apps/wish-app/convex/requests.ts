@@ -1,15 +1,17 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
 export const getByProject = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
-
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+    const user = await getCurrentUserOrNull(ctx);
+    const projectId = args.id as Id<"projects">;
+    if (user) {
+      await assertProjectOwner(ctx, projectId, user._id);
+    }
 
     const requests = await ctx.db
       .query("requests")
@@ -29,6 +31,9 @@ export const getByClientId = query({
   },
   handler: async (ctx, args) => {
     try {
+      const user = await getCurrentUser(ctx);
+      await assertProjectOwner(ctx, args.projectId, user._id);
+
       const requests = await ctx.db
         .query("requests")
         .withIndex("by_project", (q) => q.eq("project", args.projectId))
@@ -79,11 +84,10 @@ export const create = mutation({
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
-
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+    const user = await getCurrentUserOrNull(ctx);
+    if (user) {
+      await assertProjectOwner(ctx, args.project, user._id);
+    }
 
     await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
   },
@@ -98,11 +102,12 @@ export const edit = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...fields } = args;
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (identity === null) {
-      throw new Error("Not authenticated");
+    const user = await getCurrentUser(ctx);
+    const request = await ctx.db.get(id);
+    if (!request) {
+      throw new Error("Request not found");
     }
+    await assertProjectOwner(ctx, request.project, user._id);
 
     await ctx.db.patch(id, { ...fields });
   },
@@ -114,10 +119,12 @@ export const updateStatus = mutation({
     status: v.id("requestStatuses"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
+    const user = await getCurrentUser(ctx);
+    const request = await ctx.db.get(args.id);
+    if (!request) {
+      throw new Error("Request not found");
     }
+    await assertProjectOwner(ctx, request.project, user._id);
 
     await ctx.db.patch(args.id, { status: args.status });
   },
@@ -127,18 +134,24 @@ export const deleteRequest = mutation({
   args: { id: v.id("requests") },
   handler: async (ctx, args) => {
     try {
-      // const identity = await ctx.auth.getUserIdentity()
-
-      // if (identity === null) {
-      //   throw new Error('Not authenticated')
-      // }
+      const user = await getCurrentUser(ctx);
+      const request = await ctx.db.get(args.id);
+      if (!request) {
+        throw new Error("Request not found");
+      }
+      await assertProjectOwner(ctx, request.project, user._id);
 
       const upvotes = await ctx.db
         .query("requestUpvotes")
         .withIndex("by_request", (q) => q.eq("requestId", args.id))
         .collect();
+      const comments = await ctx.db
+        .query("requestComments")
+        .withIndex("by_request", (q) => q.eq("requestId", args.id))
+        .collect();
 
       await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
+      await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
       await ctx.db.delete(args.id);
     } catch (error) {
       console.error(error);

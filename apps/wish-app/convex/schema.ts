@@ -10,7 +10,7 @@ export default defineSchema({
   projects: defineTable({
     title: v.string(),
     user: v.id("users"),
-  }),
+  }).index("by_user", ["user"]),
 
   requests: defineTable({
     text: v.string(),
