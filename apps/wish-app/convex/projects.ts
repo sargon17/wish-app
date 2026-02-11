@@ -71,3 +71,51 @@ export const deleteProject = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+export const rotateApiKey = mutation({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    try {
+      const user = await getCurrentUser(ctx);
+      await assertProjectOwner(ctx, args.id, user._id);
+
+      const apiKey = createProjectApiKey();
+      await ctx.db.patch(args.id, { apiKey });
+
+      return { apiKey };
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to rotate project API key");
+    }
+  },
+});
+
+export const backfillMissingApiKeys = mutation({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      const user = await getCurrentUser(ctx);
+      const projects = await ctx.db
+        .query("projects")
+        .withIndex("by_user", (q) => q.eq("user", user._id))
+        .collect();
+
+      const missing = projects.filter((project) => !project.apiKey);
+
+      await Promise.all(
+        missing.map((project) =>
+          ctx.db.patch(project._id, {
+            apiKey: createProjectApiKey(),
+          }),
+        ),
+      );
+
+      return {
+        updated: missing.length,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to backfill missing project API keys");
+    }
+  },
+});
