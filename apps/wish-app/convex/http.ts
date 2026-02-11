@@ -1,8 +1,6 @@
 import { type } from "arktype";
-// Import the runtime JS entry so TypeScript uses the .d.ts, not the library's .ts source.
-// This avoids lib.dom conflicts (e.g. duplicate FetchEvent) during `next build` typechecking.
-import type { HonoWithConvex } from "convex-helpers/server/hono.js";
-import { HttpRouterWithHono } from "convex-helpers/server/hono.js";
+import type { HonoWithConvex } from "convex-helpers/server/hono";
+import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
 
 import { arktypeValidator } from "@hono/arktype-validator";
