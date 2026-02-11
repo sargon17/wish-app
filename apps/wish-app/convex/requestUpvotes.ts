@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { assertProjectOwner, getCurrentUserOrNull } from "./lib/authorization";
+import { getCurrentUserOrNull } from "./lib/authorization";
 
 export const toggle = mutation({
   args: {
@@ -21,15 +21,10 @@ export const toggle = mutation({
         throw new Error("Request does not belong to project");
       }
 
-      const identity = await ctx.auth.getUserIdentity();
+      const user = await getCurrentUserOrNull(ctx);
       let userId: Id<"users"> | undefined;
 
-      if (identity) {
-        const user = await getCurrentUserOrNull(ctx);
-        if (!user) {
-          throw new Error("Unauthenticated call");
-        }
-        await assertProjectOwner(ctx, args.projectId, user._id);
+      if (user) {
         userId = user._id;
       }
 
@@ -86,15 +81,10 @@ export const getViewerUpvotesByProject = query({
   },
   handler: async (ctx, args) => {
     try {
-      const identity = await ctx.auth.getUserIdentity();
+      const user = await getCurrentUserOrNull(ctx);
       let userId: Id<"users"> | undefined;
 
-      if (identity) {
-        const user = await getCurrentUserOrNull(ctx);
-        if (!user) {
-          throw new Error("Unauthenticated call");
-        }
-        await assertProjectOwner(ctx, args.projectId, user._id);
+      if (user) {
         userId = user._id;
       }
 

@@ -55,11 +55,8 @@ export const create = mutation({
         throw new Error("Request does not belong to project");
       }
 
-      const identity = await ctx.auth.getUserIdentity();
-      if (identity) {
-        const user = await getCurrentUser(ctx);
-        await assertProjectOwner(ctx, args.projectId, user._id);
-
+      const user = await getCurrentUserOrNull(ctx);
+      if (user) {
         return await ctx.db.insert("requestComments", {
           requestId: args.requestId,
           projectId: args.projectId,

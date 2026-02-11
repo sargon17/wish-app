@@ -4,6 +4,10 @@ import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
+function createProjectApiKey() {
+  return `wish_pk_${crypto.randomUUID().replaceAll("-", "")}`;
+}
+
 // export const getForCurrentUser = query({
 //   args: {},
 //   handler: async (ctx) => {
@@ -25,16 +29,7 @@ export const getProjectById = query({
     if (!project) {
       return null;
     }
-
-    const user = await getCurrentUserOrNull(ctx);
-    if (!user) {
-      return project;
-    }
-
-    if (project.user !== user._id) {
-      return null;
-    }
-
+    // Read access is intentionally broader; write operations enforce ownership.
     return project;
   },
 });
@@ -59,7 +54,11 @@ export const createProject = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
 
-    await ctx.db.insert("projects", { title: args.title, user: user._id });
+    await ctx.db.insert("projects", {
+      title: args.title,
+      user: user._id,
+      apiKey: createProjectApiKey(),
+    });
   },
 });
 

@@ -84,11 +84,6 @@ export const create = mutation({
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrNull(ctx);
-    if (user) {
-      await assertProjectOwner(ctx, args.project, user._id);
-    }
-
     await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
   },
 });

@@ -1,6 +1,15 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+const isProjectApiRoute = createRouteMatcher(["/api/project/(.*)"]);
+
+export default clerkMiddleware(async (auth, req) => {
+  // Project API routes are protected by project-level API keys in Convex HTTP handlers.
+  if (isProjectApiRoute(req)) {
+    return;
+  }
+
+  await auth.protect();
+});
 
 export const config = {
   matcher: [

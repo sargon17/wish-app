@@ -11,10 +11,59 @@ import type { ActionCtx } from "./_generated/server";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
 
+function getApiKeyFromRequest(c: any) {
+  const headerKey = c.req.header("x-api-key");
+  if (headerKey) {
+    return headerKey.trim();
+  }
+
+  const authorization = c.req.header("authorization");
+  if (!authorization) {
+    return "";
+  }
+
+  if (authorization.toLowerCase().startsWith("bearer ")) {
+    return authorization.slice(7).trim();
+  }
+
+  return authorization.trim();
+}
+
+async function authorizeProjectRequest(
+  c: any,
+  projectId: string,
+): Promise<{ project: Doc<"projects"> } | { response: Response }> {
+  const apiKey = getApiKeyFromRequest(c);
+  if (!apiKey) {
+    return { response: c.json({ error: "Missing API key" }, 401) };
+  }
+
+  const project = await c.env.runQuery(api.projects.getProjectById, { id: projectId });
+  if (!project) {
+    return { response: c.json({ error: "Project not found" }, 404) };
+  }
+
+  if (!project.apiKey || project.apiKey !== apiKey) {
+    return { response: c.json({ error: "Invalid API key" }, 401) };
+  }
+
+  return { project };
+}
+
+function toPublicProject(project: Doc<"projects">) {
+  const { apiKey, ...safeProject } = project;
+  return safeProject;
+}
+
 app.get("/api/project/:id/requests/", async (c) => {
   const id = c.req.param("id");
 
-  const project = await c.env.runQuery(api.projects.getProjectById, { id });
+  const authorization = await authorizeProjectRequest(c, id);
+  if ("response" in authorization) {
+    return authorization.response;
+  }
+
+  const project = authorization.project;
   const requests = await c.env.runQuery(api.requests.getByProject, { id });
   const requestStatuses = await c.env.runQuery(api.requestStatuses.getByProject, { id });
 
@@ -24,7 +73,7 @@ app.get("/api/project/:id/requests/", async (c) => {
   });
 
   return c.json({
-    project,
+    project: toPublicProject(project),
     requests: mappedRequests,
   });
 });
@@ -50,7 +99,12 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
   const body = await c.req.valid("json");
 
   try {
-    const project = await c.env.runQuery(api.projects.getProjectById, { id });
+    const authorization = await authorizeProjectRequest(c, id);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
+
+    const project = authorization.project;
     const status = (await c.env.runQuery(api.requestStatuses.getByProject, { id })).find(
       (v) => v.name === "open",
     );
@@ -71,8 +125,14 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
 
 app.delete("/api/project/:id/request/:reqID", async (c) => {
   const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
 
   try {
+    const authorization = await authorizeProjectRequest(c, projectId);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
+
     if (!reqId) throw new Error("invalid request id");
 
     await c.env.runMutation(api.requests.deleteRequest, { id: reqId as Id<"requests"> });
@@ -85,8 +145,14 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
 
 app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
 
   try {
+    const authorization = await authorizeProjectRequest(c, projectId);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
+
     if (!reqId) throw new Error("invalid request id");
 
     const comments = await c.env.runQuery(api.requestComments.listByRequest, {
@@ -108,6 +174,11 @@ app.post(
     const body = await c.req.valid("json");
 
     try {
+      const authorization = await authorizeProjectRequest(c, projectId);
+      if ("response" in authorization) {
+        return authorization.response;
+      }
+
       if (!reqId || !projectId) throw new Error("invalid request id");
 
       await c.env.runMutation(api.requestComments.create, {
@@ -133,6 +204,11 @@ app.post(
     const body = await c.req.valid("json");
 
     try {
+      const authorization = await authorizeProjectRequest(c, projectId);
+      if ("response" in authorization) {
+        return authorization.response;
+      }
+
       if (!reqId || !projectId) throw new Error("invalid request id");
 
       await c.env.runMutation(api.requestUpvotes.toggle, {
