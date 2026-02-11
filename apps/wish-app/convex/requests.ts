@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
@@ -73,6 +73,13 @@ export const getByClientId = query({
       console.error(error);
       throw new Error("Failed to load related requests");
     }
+  },
+});
+
+export const getRequestByIdInternal = internalQuery({
+  args: { id: v.id("requests") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
   },
 });
 
@@ -165,9 +172,17 @@ export const deleteRequest = mutation({
 });
 
 export const deleteRequestByApiKeyInternal = internalMutation({
-  args: { id: v.id("requests") },
+  args: { id: v.id("requests"), projectId: v.id("projects") },
   handler: async (ctx, args) => {
     try {
+      const request = await ctx.db.get(args.id);
+      if (!request) {
+        throw new Error("Request not found");
+      }
+      if (request.project !== args.projectId) {
+        throw new Error("Request does not belong to project");
+      }
+
       await deleteRequestCascade(ctx, args.id);
     } catch (error) {
       console.error(error);

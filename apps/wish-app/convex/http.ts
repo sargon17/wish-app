@@ -42,11 +42,18 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Project not found" }, 404) };
   }
 
-  const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
+  let project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
   if (!project) {
     return { response: c.json({ error: "Project not found" }, 404) };
+  }
+
+  if (!project.apiKey) {
+    const ensuredApiKey = await c.env.runMutation(internal.projects.ensureProjectApiKeyInternal, {
+      id: project._id,
+    });
+    project = { ...project, apiKey: ensuredApiKey ?? undefined };
   }
 
   if (!project.apiKey || project.apiKey !== apiKey) {
@@ -54,6 +61,29 @@ async function authorizeProjectRequest(
   }
 
   return { project };
+}
+
+async function assertRequestBelongsToProject(
+  c: any,
+  requestId: string,
+  projectId: string,
+): Promise<{ response: Response } | { requestId: Id<"requests"> }> {
+  if (!requestId.startsWith("requests:")) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  const request = await c.env.runQuery(internal.requests.getRequestByIdInternal, {
+    id: requestId as Id<"requests">,
+  });
+  if (!request) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  if (request.project !== (projectId as Id<"projects">)) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  return { requestId: request._id };
 }
 
 function toPublicProject(project: Doc<"projects">) {
@@ -140,9 +170,14 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
     }
 
     if (!reqId) throw new Error("invalid request id");
+    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+    if ("response" in requestAuthorization) {
+      return requestAuthorization.response;
+    }
 
     await c.env.runMutation(internal.requests.deleteRequestByApiKeyInternal, {
-      id: reqId as Id<"requests">,
+      id: requestAuthorization.requestId,
+      projectId: projectId as Id<"projects">,
     });
   } catch {
     return c.json({}, 400);
@@ -162,9 +197,13 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
     }
 
     if (!reqId) throw new Error("invalid request id");
+    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+    if ("response" in requestAuthorization) {
+      return requestAuthorization.response;
+    }
 
     const comments = await c.env.runQuery(api.requestComments.listByRequest, {
-      requestId: reqId as Id<"requests">,
+      requestId: requestAuthorization.requestId,
     });
 
     return c.json({ comments }, 200);

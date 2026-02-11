@@ -1,10 +1,16 @@
 import { v } from "convex/values";
 
-import { internalQuery, mutation, query } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
 
 function createProjectApiKey() {
   return `wish_pk_${crypto.randomUUID().replaceAll("-", "")}`;
+}
+
+function toPublicProject(project: Doc<"projects">) {
+  const { apiKey, ...publicProject } = project;
+  return publicProject;
 }
 
 // export const getForCurrentUser = query({
@@ -28,8 +34,13 @@ export const getProjectById = query({
     if (!project) {
       return null;
     }
-    const { apiKey, ...publicProject } = project;
-    return publicProject;
+
+    const user = await getCurrentUserOrNull(ctx);
+    if (user && project.user === user._id) {
+      return project;
+    }
+
+    return toPublicProject(project);
   },
 });
 
@@ -73,6 +84,28 @@ export const deleteProject = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.id, user._id);
+
+    const requests = await ctx.db
+      .query("requests")
+      .withIndex("by_project", (q) => q.eq("project", args.id))
+      .collect();
+    const statuses = await ctx.db
+      .query("requestStatuses")
+      .withIndex("by_project", (q) => q.eq("project", args.id))
+      .collect();
+    const upvotes = await ctx.db
+      .query("requestUpvotes")
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .collect();
+    const comments = await ctx.db
+      .query("requestComments")
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .collect();
+
+    await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
+    await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
+    await Promise.all(requests.map((request) => ctx.db.delete(request._id)));
+    await Promise.all(statuses.map((status) => ctx.db.delete(status._id)));
 
     await ctx.db.delete(args.id);
   },
@@ -123,5 +156,23 @@ export const backfillMissingApiKeys = mutation({
       console.error(error);
       throw new Error("Failed to backfill missing project API keys");
     }
+  },
+});
+
+export const ensureProjectApiKeyInternal = internalMutation({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    const project = await ctx.db.get(args.id);
+    if (!project) {
+      return null;
+    }
+
+    if (project.apiKey) {
+      return project.apiKey;
+    }
+
+    const apiKey = createProjectApiKey();
+    await ctx.db.patch(args.id, { apiKey });
+    return apiKey;
   },
 });
