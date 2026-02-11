@@ -8,6 +8,7 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
+import { toPublicProject } from "./lib/projectPublic";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
 
@@ -82,11 +83,6 @@ async function assertRequestBelongsToProject(
   }
 
   return { requestId: request._id };
-}
-
-function toPublicProject(project: Doc<"projects">) {
-  const { apiKeyHash, ...safeProject } = project;
-  return safeProject;
 }
 
 app.get("/api/project/:id/requests/", async (c) => {

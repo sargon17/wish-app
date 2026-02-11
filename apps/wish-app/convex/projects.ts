@@ -1,14 +1,10 @@
 import { v } from "convex/values";
 
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { generateProjectApiKey, hashProjectApiKey, verifyProjectApiKeyHash } from "./lib/apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
-
-function toPublicProject(project: Doc<"projects">) {
-  const { apiKeyHash, ...publicProject } = project;
-  return publicProject;
-}
+import { toPublicProject } from "./lib/projectPublic";
 
 // export const getForCurrentUser = query({
 //   args: {},
