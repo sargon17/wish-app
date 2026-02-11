@@ -1,9 +1,19 @@
 import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
-import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+import type { QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getStatusById } from "./services/queries/status/getStatusById";
+
+async function listStatusesByProjectId(ctx: QueryCtx, projectId: Id<"projects">) {
+  return await ctx.db
+    .query("requestStatuses")
+    .filter((q) =>
+      q.or(q.eq(q.field("project"), projectId), q.eq(q.field("type"), "default")),
+    )
+    .collect();
+}
 
 export const getById = query({
   args: { id: v.string() },
@@ -13,18 +23,19 @@ export const getById = query({
 });
 
 export const getByProject = query({
-  args: { id: v.string() },
+  args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrNull(ctx);
-    const projectId = args.id as Id<"projects">;
-    if (user) {
-      await assertProjectOwner(ctx, projectId, user._id);
-    }
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.id, user._id);
 
-    return await ctx.db
-      .query("requestStatuses")
-      .filter((q) => q.or(q.eq(q.field("project"), args.id), q.eq(q.field("type"), "default")))
-      .collect();
+    return await listStatusesByProjectId(ctx, args.id);
+  },
+});
+
+export const getByProjectInternal = internalQuery({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await listStatusesByProjectId(ctx, args.id);
   },
 });
 

@@ -20,8 +20,16 @@ export default async function ProjectPage({ id }: Props) {
     { id: projectId },
     { token },
   );
-  const preloadedStatuses = await preloadQuery(api.requestStatuses.getByProject, { id }, { token });
-  const preloadedRequests = await preloadQuery(api.requests.getByProject, { id }, { token });
+  const preloadedStatuses = await preloadQuery(
+    api.requestStatuses.getByProject,
+    { id: projectId },
+    { token },
+  );
+  const preloadedRequests = await preloadQuery(
+    api.requests.getByProject,
+    { id: projectId },
+    { token },
+  );
 
   return (
     <DashboardBoard

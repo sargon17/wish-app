@@ -1,7 +1,16 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+
+async function listCommentsByRequestId(ctx: QueryCtx, requestId: Id<"requests">) {
+  return await ctx.db
+    .query("requestComments")
+    .withIndex("by_request_created", (q) => q.eq("requestId", requestId))
+    .collect();
+}
 
 export const listByRequest = query({
   args: { requestId: v.id("requests") },
@@ -12,19 +21,21 @@ export const listByRequest = query({
         throw new Error("Request not found");
       }
 
-      const user = await getCurrentUserOrNull(ctx);
-      if (user) {
-        await assertProjectOwner(ctx, request.project, user._id);
-      }
+      const user = await getCurrentUser(ctx);
+      await assertProjectOwner(ctx, request.project, user._id);
 
-      return await ctx.db
-        .query("requestComments")
-        .withIndex("by_request_created", (q) => q.eq("requestId", args.requestId))
-        .collect();
+      return await listCommentsByRequestId(ctx, args.requestId);
     } catch (error) {
       console.error(error);
       throw new Error("Failed to load comments");
     }
+  },
+});
+
+export const listByRequestInternal = internalQuery({
+  args: { requestId: v.id("requests") },
+  handler: async (ctx, args) => {
+    return await listCommentsByRequestId(ctx, args.requestId);
   },
 });
 

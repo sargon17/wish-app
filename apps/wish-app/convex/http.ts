@@ -49,7 +49,12 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Project not found" }, 404) };
   }
 
-  if (!project.apiKey || project.apiKey !== apiKey) {
+  const isApiKeyValid = await c.env.runQuery(internal.projects.verifyProjectApiKeyHashInternal, {
+    apiKeyHash: project.apiKeyHash,
+    apiKey,
+  });
+
+  if (!isApiKeyValid) {
     return { response: c.json({ error: "Invalid API key" }, 401) };
   }
 
@@ -80,7 +85,7 @@ async function assertRequestBelongsToProject(
 }
 
 function toPublicProject(project: Doc<"projects">) {
-  const { apiKey, ...safeProject } = project;
+  const { apiKeyHash, ...safeProject } = project;
   return safeProject;
 }
 
@@ -93,8 +98,11 @@ app.get("/api/project/:id/requests/", async (c) => {
   }
 
   const project = authorization.project;
-  const requests = await c.env.runQuery(api.requests.getByProject, { id });
-  const requestStatuses = await c.env.runQuery(api.requestStatuses.getByProject, { id });
+  const projectId = id as Id<"projects">;
+  const requests = await c.env.runQuery(internal.requests.getByProjectInternal, { id: projectId });
+  const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
+    id: projectId,
+  });
 
   const mappedRequests = requests.map((request) => {
     const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
@@ -134,7 +142,11 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
     }
 
     const project = authorization.project;
-    const status = (await c.env.runQuery(api.requestStatuses.getByProject, { id })).find(
+    const status = (
+      await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
+        id: id as Id<"projects">,
+      })
+    ).find(
       (v) => v.name === "open",
     );
 
@@ -195,7 +207,7 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
       return requestAuthorization.response;
     }
 
-    const comments = await c.env.runQuery(api.requestComments.listByRequest, {
+    const comments = await c.env.runQuery(internal.requestComments.listByRequestInternal, {
       requestId: requestAuthorization.requestId,
     });
 

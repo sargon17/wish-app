@@ -1,15 +1,12 @@
 import { v } from "convex/values";
 
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
-import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
-
-function createProjectApiKey() {
-  return `wish_pk_${crypto.randomUUID().replaceAll("-", "")}`;
-}
+import { generateProjectApiKey, hashProjectApiKey, verifyProjectApiKeyHash } from "./lib/apiKeys";
+import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 
 function toPublicProject(project: Doc<"projects">) {
-  const { apiKey, ...publicProject } = project;
+  const { apiKeyHash, ...publicProject } = project;
   return publicProject;
 }
 
@@ -30,16 +27,8 @@ function toPublicProject(project: Doc<"projects">) {
 export const getProjectById = query({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const project = await ctx.db.get(args.id);
-    if (!project) {
-      return null;
-    }
-
-    const user = await getCurrentUserOrNull(ctx);
-    if (user && project.user === user._id) {
-      return project;
-    }
-
+    const user = await getCurrentUser(ctx);
+    const project = await assertProjectOwner(ctx, args.id, user._id);
     return toPublicProject(project);
   },
 });
@@ -51,18 +40,28 @@ export const getProjectByIdInternal = internalQuery({
   },
 });
 
+export const verifyProjectApiKeyHashInternal = internalQuery({
+  args: { apiKeyHash: v.optional(v.string()), apiKey: v.string() },
+  handler: async (_ctx, args) => {
+    if (!args.apiKeyHash) {
+      return false;
+    }
+
+    return await verifyProjectApiKeyHash(args.apiKeyHash, args.apiKey);
+  },
+});
+
 export const getProjectsForUser = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUserOrNull(ctx);
-    if (!user) {
-      return [];
-    }
+    const user = await getCurrentUser(ctx);
 
-    return await ctx.db
+    const projects = await ctx.db
       .query("projects")
       .withIndex("by_user", (q) => q.eq("user", user._id))
       .collect();
+
+    return projects.map((project) => toPublicProject(project));
   },
 });
 
@@ -70,12 +69,16 @@ export const createProject = mutation({
   args: { title: v.string() },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
+    const apiKey = generateProjectApiKey();
+    const apiKeyHash = await hashProjectApiKey(apiKey);
 
-    await ctx.db.insert("projects", {
+    const projectId = await ctx.db.insert("projects", {
       title: args.title,
       user: user._id,
-      apiKey: createProjectApiKey(),
+      apiKeyHash,
     });
+
+    return { projectId, apiKey };
   },
 });
 
@@ -118,8 +121,9 @@ export const rotateApiKey = mutation({
       const user = await getCurrentUser(ctx);
       await assertProjectOwner(ctx, args.id, user._id);
 
-      const apiKey = createProjectApiKey();
-      await ctx.db.patch(args.id, { apiKey });
+      const apiKey = generateProjectApiKey();
+      const apiKeyHash = await hashProjectApiKey(apiKey);
+      await ctx.db.patch(args.id, { apiKeyHash });
 
       return { apiKey };
     } catch (error) {
@@ -139,18 +143,30 @@ export const backfillMissingApiKeys = mutation({
         .withIndex("by_user", (q) => q.eq("user", user._id))
         .collect();
 
-      const missing = projects.filter((project) => !project.apiKey);
+      const missing = projects.filter((project) => !project.apiKeyHash);
+      const generatedKeys: Array<{ projectId: Id<"projects">; apiKey: string }> = [];
 
-      await Promise.all(
-        missing.map((project) =>
-          ctx.db.patch(project._id, {
-            apiKey: createProjectApiKey(),
-          }),
-        ),
-      );
+      await Promise.all(missing.map(async (project) => {
+        const legacyProject = project as Record<string, unknown>;
+        const existingPlaintextApiKey =
+          typeof legacyProject.apiKey === "string" ? legacyProject.apiKey : undefined;
+        const apiKeyToHash = existingPlaintextApiKey ?? generateProjectApiKey();
+        const hashedApiKey = await hashProjectApiKey(apiKeyToHash);
+
+        await ctx.db.replace(project._id, {
+          title: project.title,
+          user: project.user,
+          apiKeyHash: hashedApiKey,
+        });
+
+        if (!existingPlaintextApiKey) {
+          generatedKeys.push({ projectId: project._id, apiKey: apiKeyToHash });
+        }
+      }));
 
       return {
         updated: missing.length,
+        generatedKeys,
       };
     } catch (error) {
       console.error(error);

@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   const request = await ctx.db.get(id);
@@ -28,17 +28,14 @@ async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
 }
 
 export const getByProject = query({
-  args: { id: v.string() },
+  args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrNull(ctx);
-    const projectId = args.id as Id<"projects">;
-    if (user) {
-      await assertProjectOwner(ctx, projectId, user._id);
-    }
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.id, user._id);
 
     const requests = await ctx.db
       .query("requests")
-      .filter((q) => q.eq(q.field("project"), args.id))
+      .withIndex("by_project", (q) => q.eq("project", args.id))
       .collect();
 
     return requests;
@@ -80,6 +77,16 @@ export const getRequestByIdInternal = internalQuery({
   args: { id: v.id("requests") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+export const getByProjectInternal = internalQuery({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("requests")
+      .withIndex("by_project", (q) => q.eq("project", args.id))
+      .collect();
   },
 });
 
