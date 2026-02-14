@@ -1,19 +1,41 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+
+async function listCommentsByRequestId(ctx: QueryCtx, requestId: Id<"requests">) {
+  return await ctx.db
+    .query("requestComments")
+    .withIndex("by_request_created", (q) => q.eq("requestId", requestId))
+    .collect();
+}
 
 export const listByRequest = query({
   args: { requestId: v.id("requests") },
   handler: async (ctx, args) => {
     try {
-      return await ctx.db
-        .query("requestComments")
-        .withIndex("by_request_created", (q) => q.eq("requestId", args.requestId))
-        .collect();
+      const request = await ctx.db.get(args.requestId);
+      if (!request) {
+        throw new Error("Request not found");
+      }
+
+      const user = await getCurrentUser(ctx);
+      await assertProjectOwner(ctx, request.project, user._id);
+
+      return await listCommentsByRequestId(ctx, args.requestId);
     } catch (error) {
       console.error(error);
       throw new Error("Failed to load comments");
     }
+  },
+});
+
+export const listByRequestInternal = internalQuery({
+  args: { requestId: v.id("requests") },
+  handler: async (ctx, args) => {
+    return await listCommentsByRequestId(ctx, args.requestId);
   },
 });
 
@@ -44,17 +66,8 @@ export const create = mutation({
         throw new Error("Request does not belong to project");
       }
 
-      const identity = await ctx.auth.getUserIdentity();
-      if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
-        if (!user) {
-          throw new Error("Unauthenticated call to mutation");
-        }
-
+      const user = await getCurrentUserOrNull(ctx);
+      if (user) {
         return await ctx.db.insert("requestComments", {
           requestId: args.requestId,
           projectId: args.projectId,
@@ -88,15 +101,13 @@ export const remove = mutation({
   args: { id: v.id("requestComments") },
   handler: async (ctx, args) => {
     try {
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity) {
-        throw new Error("Not authenticated");
-      }
+      const user = await getCurrentUser(ctx);
 
       const comment = await ctx.db.get(args.id);
       if (!comment) {
         throw new Error("Comment not found");
       }
+      await assertProjectOwner(ctx, comment.projectId, user._id);
 
       await ctx.db.delete(args.id);
     } catch (error) {

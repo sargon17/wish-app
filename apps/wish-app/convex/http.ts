@@ -5,18 +5,100 @@ import { Hono } from "hono";
 
 import { arktypeValidator } from "@hono/arktype-validator";
 
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
+import { toPublicProject } from "./lib/projectPublic";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
+
+function getApiKeyFromRequest(c: any) {
+  const headerKey = c.req.header("x-api-key");
+  if (headerKey) {
+    return headerKey.trim();
+  }
+
+  const authorization = c.req.header("authorization");
+  if (!authorization) {
+    return "";
+  }
+
+  if (authorization.toLowerCase().startsWith("bearer ")) {
+    return authorization.slice(7).trim();
+  }
+
+  return authorization.trim();
+}
+
+async function authorizeProjectRequest(
+  c: any,
+  projectId: string,
+): Promise<{ project: Doc<"projects"> } | { response: Response }> {
+  const apiKey = getApiKeyFromRequest(c);
+  if (!apiKey) {
+    return { response: c.json({ error: "Missing API key" }, 401) };
+  }
+
+  if (!projectId.startsWith("projects:")) {
+    return { response: c.json({ error: "Project not found" }, 404) };
+  }
+
+  const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
+    id: projectId as Id<"projects">,
+  });
+  if (!project) {
+    return { response: c.json({ error: "Project not found" }, 404) };
+  }
+
+  const isApiKeyValid = await c.env.runQuery(internal.projects.verifyProjectApiKeyHashInternal, {
+    apiKeyHash: project.apiKeyHash,
+    apiKey,
+  });
+
+  if (!isApiKeyValid) {
+    return { response: c.json({ error: "Invalid API key" }, 401) };
+  }
+
+  return { project };
+}
+
+async function assertRequestBelongsToProject(
+  c: any,
+  requestId: string,
+  projectId: string,
+): Promise<{ response: Response } | { requestId: Id<"requests"> }> {
+  if (!requestId.startsWith("requests:")) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  const request = await c.env.runQuery(internal.requests.getRequestByIdInternal, {
+    id: requestId as Id<"requests">,
+  });
+  if (!request) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  if (request.project !== (projectId as Id<"projects">)) {
+    return { response: c.json({ error: "Request not found" }, 404) };
+  }
+
+  return { requestId: request._id };
+}
 
 app.get("/api/project/:id/requests/", async (c) => {
   const id = c.req.param("id");
 
-  const project = await c.env.runQuery(api.projects.getProjectById, { id });
-  const requests = await c.env.runQuery(api.requests.getByProject, { id });
-  const requestStatuses = await c.env.runQuery(api.requestStatuses.getByProject, { id });
+  const authorization = await authorizeProjectRequest(c, id);
+  if ("response" in authorization) {
+    return authorization.response;
+  }
+
+  const project = authorization.project;
+  const projectId = id as Id<"projects">;
+  const requests = await c.env.runQuery(internal.requests.getByProjectInternal, { id: projectId });
+  const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
+    id: projectId,
+  });
 
   const mappedRequests = requests.map((request) => {
     const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
@@ -24,7 +106,7 @@ app.get("/api/project/:id/requests/", async (c) => {
   });
 
   return c.json({
-    project,
+    project: toPublicProject(project),
     requests: mappedRequests,
   });
 });
@@ -68,8 +150,17 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
   const body = await c.req.valid("json");
 
   try {
-    const project = await c.env.runQuery(api.projects.getProjectById, { id });
-    const status = (await c.env.runQuery(api.requestStatuses.getByProject, { id })).find(
+    const authorization = await authorizeProjectRequest(c, id);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
+
+    const project = authorization.project;
+    const status = (
+      await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
+        id: id as Id<"projects">,
+      })
+    ).find(
       (v) => v.name === "open",
     );
 
@@ -89,11 +180,24 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
 
 app.delete("/api/project/:id/request/:reqID", async (c) => {
   const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
 
   try {
-    if (!reqId) throw new Error("invalid request id");
+    const authorization = await authorizeProjectRequest(c, projectId);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
 
-    await c.env.runMutation(api.requests.deleteRequest, { id: reqId as Id<"requests"> });
+    if (!reqId) throw new Error("invalid request id");
+    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+    if ("response" in requestAuthorization) {
+      return requestAuthorization.response;
+    }
+
+    await c.env.runMutation(internal.requests.deleteRequestByApiKeyInternal, {
+      id: requestAuthorization.requestId,
+      projectId: projectId as Id<"projects">,
+    });
   } catch {
     return c.json({}, 400);
   }
@@ -103,12 +207,22 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
 
 app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
 
   try {
-    if (!reqId) throw new Error("invalid request id");
+    const authorization = await authorizeProjectRequest(c, projectId);
+    if ("response" in authorization) {
+      return authorization.response;
+    }
 
-    const comments = await c.env.runQuery(api.requestComments.listByRequest, {
-      requestId: reqId as Id<"requests">,
+    if (!reqId) throw new Error("invalid request id");
+    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+    if ("response" in requestAuthorization) {
+      return requestAuthorization.response;
+    }
+
+    const comments = await c.env.runQuery(internal.requestComments.listByRequestInternal, {
+      requestId: requestAuthorization.requestId,
     });
 
     return c.json({ comments }, 200);
@@ -126,10 +240,19 @@ app.post(
     const body = await c.req.valid("json");
 
     try {
+      const authorization = await authorizeProjectRequest(c, projectId);
+      if ("response" in authorization) {
+        return authorization.response;
+      }
+
       if (!reqId || !projectId) throw new Error("invalid request id");
+      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+      if ("response" in requestAuthorization) {
+        return requestAuthorization.response;
+      }
 
       await c.env.runMutation(api.requestComments.create, {
-        requestId: reqId as Id<"requests">,
+        requestId: requestAuthorization.requestId,
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
         body: body.body,
@@ -151,10 +274,19 @@ app.post(
     const body = await c.req.valid("json");
 
     try {
+      const authorization = await authorizeProjectRequest(c, projectId);
+      if ("response" in authorization) {
+        return authorization.response;
+      }
+
       if (!reqId || !projectId) throw new Error("invalid request id");
+      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
+      if ("response" in requestAuthorization) {
+        return requestAuthorization.response;
+      }
 
       await c.env.runMutation(api.requestUpvotes.toggle, {
-        requestId: reqId as Id<"requests">,
+        requestId: requestAuthorization.requestId,
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
       });

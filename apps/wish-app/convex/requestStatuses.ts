@@ -1,7 +1,19 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
+import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getStatusById } from "./services/queries/status/getStatusById";
+
+async function listStatusesByProjectId(ctx: QueryCtx, projectId: Id<"projects">) {
+  return await ctx.db
+    .query("requestStatuses")
+    .filter((q) =>
+      q.or(q.eq(q.field("project"), projectId), q.eq(q.field("type"), "default")),
+    )
+    .collect();
+}
 
 export const getById = query({
   args: { id: v.string() },
@@ -11,18 +23,19 @@ export const getById = query({
 });
 
 export const getByProject = query({
-  args: { id: v.string() },
+  args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity()
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.id, user._id);
 
-    // if (identity === null) {
-    //   throw new Error('Not authenticated')
-    // }
+    return await listStatusesByProjectId(ctx, args.id);
+  },
+});
 
-    return await ctx.db
-      .query("requestStatuses")
-      .filter((q) => q.or(q.eq(q.field("project"), args.id), q.eq(q.field("type"), "default")))
-      .collect();
+export const getByProjectInternal = internalQuery({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await listStatusesByProjectId(ctx, args.id);
   },
 });
 
@@ -35,6 +48,9 @@ export const create = mutation({
     color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.project, user._id);
+
     const existingStatus = await ctx.db
       .query("requestStatuses")
       .withIndex("by_project", (q) => q.eq("project", args.project))
@@ -58,6 +74,7 @@ export const updateColor = mutation({
     color: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
 
     if (!status) {
@@ -67,6 +84,10 @@ export const updateColor = mutation({
     if (status.type === "default") {
       throw new Error("Default statuses cannot be updated");
     }
+    if (!status.project) {
+      throw new Error("Status is not linked to a project");
+    }
+    await assertProjectOwner(ctx, status.project, user._id);
 
     await ctx.db.patch(args.id, { color: args.color });
   },
