@@ -35,3 +35,5 @@ lerna-debug.log*
 
 
 .turbo
+# TypeScript incremental build cache
+*.tsbuildinfo
