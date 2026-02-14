@@ -28,7 +28,7 @@ Expose a lightweight HTTP endpoint that returns request IDs upvoted by the curre
 
 ### Behavior
 - If authenticated user exists → ignore `clientId`, return that user’s upvotes.
-- If no auth and no `clientId` → return empty array (or 400).
+- If no auth and no `clientId` → return empty array (200).
 - Reuse existing `requestUpvotes.getViewerUpvotesByProject` query.
 
 ---

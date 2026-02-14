@@ -29,6 +29,24 @@ app.get("/api/project/:id/requests/", async (c) => {
   });
 });
 
+app.get("/api/project/:id/upvotes", async (c) => {
+  const id = c.req.param("id");
+  const clientId = c.req.query("clientId");
+
+  try {
+    if (!id) throw new Error("invalid project id");
+
+    const upvotes = await c.env.runQuery(api.requestUpvotes.getViewerUpvotesByProject, {
+      projectId: id as Id<"projects">,
+      clientId: clientId || undefined,
+    });
+
+    return c.json({ upvotes }, 200);
+  } catch {
+    return c.json({}, 400);
+  }
+});
+
 const RequestValidator = type({
   text: "string > 3",
   "description?": "string | undefined",
