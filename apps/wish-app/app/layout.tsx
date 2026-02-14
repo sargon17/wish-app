@@ -1,5 +1,7 @@
 import "./style/main.css";
 
+import { GeistSans } from 'geist/font/sans';
+
 import type { Metadata } from "next";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -19,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={GeistSans.className}>
       <body>
         <ClerkProvider>
           <ThemeProvider>

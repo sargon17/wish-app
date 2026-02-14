@@ -20,6 +20,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "skipLibCheck": true,
+    "types": ["node", "react", "react-dom"],
     "plugins": [
       {
         "name": "next",

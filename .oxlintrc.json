@@ -1,11 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "node",
-    "jsdoc",
-    "import",
-    "unicorn"
-  ],
+  "plugins": ["node", "jsdoc", "import", "unicorn"],
   "categories": {
     "correctness": "off"
   },
@@ -75,10 +70,7 @@
     "array-callback-return": "error",
     "block-scoped-var": "error",
     "default-case-last": "error",
-    "eqeqeq": [
-      "error",
-      "smart"
-    ],
+    "eqeqeq": ["error", "smart"],
     "new-cap": [
       "error",
       {
@@ -94,17 +86,11 @@
     "no-case-declarations": "error",
     "no-class-assign": "error",
     "no-compare-neg-zero": "error",
-    "no-cond-assign": [
-      "error",
-      "always"
-    ],
+    "no-cond-assign": ["error", "always"],
     "no-console": [
       "error",
       {
-        "allow": [
-          "warn",
-          "error"
-        ]
+        "allow": ["warn", "error"]
       }
     ],
     "no-const-assign": "error",
@@ -218,10 +204,7 @@
     "prefer-spread": "error",
     "prefer-template": "error",
     "symbol-description": "error",
-    "unicode-bom": [
-      "error",
-      "never"
-    ],
+    "unicode-bom": ["error", "never"],
     "use-isnan": [
       "error",
       {
@@ -236,10 +219,7 @@
       }
     ],
     "vars-on-top": "error",
-    "yoda": [
-      "error",
-      "never"
-    ],
+    "yoda": ["error", "never"],
     "node/no-exports-assign": "error",
     "node/no-new-require": "error",
     "jsdoc/check-access": "warn",
@@ -252,10 +232,6 @@
     "jsdoc/require-property-description": "warn",
     "jsdoc/require-property-name": "warn",
     "jsdoc/require-returns-description": "warn",
-    "import/consistent-type-specifier-style": [
-      "error",
-      "top-level"
-    ],
     "import/first": "error",
     "import/no-duplicates": "error",
     "import/no-mutable-exports": "error",
@@ -278,10 +254,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "**/*.?([cm])ts",
-        "**/*.?([cm])tsx"
-      ],
+      "files": ["**/*.?([cm])ts", "**/*.?([cm])tsx"],
       "rules": {
         "no-class-assign": "off",
         "no-const-assign": "off",
@@ -342,10 +315,7 @@
         "@typescript-eslint/prefer-literal-enum-member": "error",
         "@typescript-eslint/prefer-namespace-keyword": "error",
         "@typescript-eslint/triple-slash-reference": "off",
-        "@typescript-eslint/consistent-type-definitions": [
-          "error",
-          "interface"
-        ],
+        "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
         "@typescript-eslint/consistent-type-imports": [
           "error",
           {
@@ -358,13 +328,8 @@
       }
     },
     {
-      "files": [
-        "**/*.?([cm])ts",
-        "**/*.?([cm])tsx"
-      ],
-      "plugins": [
-        "typescript"
-      ]
+      "files": ["**/*.?([cm])ts", "**/*.?([cm])tsx"],
+      "plugins": ["typescript"]
     },
     {
       "files": [
@@ -389,15 +354,10 @@
         "no-unused-expressions": "off",
         "@typescript-eslint/explicit-function-return-type": "off"
       },
-      "plugins": [
-        "vitest",
-        "typescript"
-      ]
+      "plugins": ["vitest", "typescript"]
     },
     {
-      "files": [
-        "**/*.md/**/*.?([cm])[jt]s?(x)"
-      ],
+      "files": ["**/*.md/**/*.?([cm])[jt]s?(x)"],
       "rules": {
         "no-alert": "off",
         "no-console": "off",
@@ -413,55 +373,36 @@
         "unicode-bom": "off",
         "no-redeclare": "off"
       },
-      "plugins": [
-        "typescript"
-      ]
+      "plugins": ["typescript"]
     },
     {
-      "files": [
-        "**/scripts/**/*.?([cm])[jt]s?(x)"
-      ],
+      "files": ["**/scripts/**/*.?([cm])[jt]s?(x)"],
       "rules": {
         "no-console": "off",
         "@typescript-eslint/explicit-function-return-type": "off"
       },
-      "plugins": [
-        "typescript"
-      ]
+      "plugins": ["typescript"]
     },
     {
-      "files": [
-        "**/cli/**/*.?([cm])[jt]s?(x)",
-        "**/cli.?([cm])[jt]s?(x)"
-      ],
+      "files": ["**/cli/**/*.?([cm])[jt]s?(x)", "**/cli.?([cm])[jt]s?(x)"],
       "rules": {
         "no-console": "off"
       }
     },
     {
-      "files": [
-        "**/*.js",
-        "**/*.cjs"
-      ],
+      "files": ["**/*.js", "**/*.cjs"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off"
       },
-      "plugins": [
-        "typescript"
-      ]
+      "plugins": ["typescript"]
     },
     {
-      "files": [
-        "**/*.config.?([cm])[jt]s?(x)",
-        "**/*.config.*.?([cm])[jt]s?(x)"
-      ],
+      "files": ["**/*.config.?([cm])[jt]s?(x)", "**/*.config.*.?([cm])[jt]s?(x)"],
       "rules": {
         "no-console": "off",
         "@typescript-eslint/explicit-function-return-type": "off"
       },
-      "plugins": [
-        "typescript"
-      ]
+      "plugins": ["typescript"]
     }
   ]
 }

@@ -1,0 +1,24 @@
+---
+title: Wish API Docs
+description: Public API reference for Wish requests, comments, and upvotes.
+---
+
+## Overview
+
+The Wish API lets you read and create user requests, add comments, and toggle upvotes for a project. It is designed for lightweight public integrations where viewers can identify themselves with a `clientId`.
+
+Quick links:
+- [Overview](/overview/)
+- [Quickstart](/quickstart/)
+- [Requests API](/reference/requests/)
+- [Comments API](/reference/comments/)
+- [Upvotes API](/reference/upvotes/)
+- [Errors & Status Codes](/reference/errors/)
+
+## Integration checklist
+
+1. Pick a stable `clientId` strategy for public users.
+2. Use the project id from your Wish dashboard.
+3. Start with `GET /api/project/:id/requests/` to list requests.
+4. Create a request, then add comments or toggle upvotes.
+5. Handle 400 responses with an empty JSON body.

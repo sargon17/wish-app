@@ -32,3 +32,8 @@ lerna-debug.log*
 .DS_Store
 
 .env.local
+
+
+.turbo
+# TypeScript incremental build cache
+*.tsbuildinfo
