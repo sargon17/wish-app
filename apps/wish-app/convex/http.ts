@@ -142,6 +142,28 @@ app.post(
   },
 );
 
+app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
+  const id = c.req.param("id");
+  const reqId = c.req.param("reqID");
+  const commentId = c.req.param("commentId");
+  const clientId = c.req.query("clientId");
+  const authHeader = c.req.header("Authorization");
+
+  try {
+    if (!id || !reqId || !commentId) throw new Error("invalid request id");
+    if (!clientId && !authHeader) throw new Error("client id or auth is required");
+
+    await c.env.runMutation(api.requestComments.deleteByClient, {
+      id: commentId as Id<"requestComments">,
+      clientId: clientId || undefined,
+    });
+  } catch {
+    return c.json({}, 400);
+  }
+
+  return c.json({}, 200);
+});
+
 app.post(
   "/api/project/:id/request/:reqID/upvote",
   arktypeValidator("json", UpvoteValidator),

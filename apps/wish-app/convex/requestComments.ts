@@ -105,3 +105,50 @@ export const remove = mutation({
     }
   },
 });
+
+export const deleteByClient = mutation({
+  args: {
+    id: v.id("requestComments"),
+    clientId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const comment = await ctx.db.get(args.id);
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+
+      const identity = await ctx.auth.getUserIdentity();
+      if (identity) {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+          .unique();
+
+        if (!user) {
+          throw new Error("Unauthenticated call to mutation");
+        }
+
+        await ctx.db.delete(args.id);
+        return;
+      }
+
+      if (!args.clientId) {
+        throw new Error("Client id is required for public comment deletion");
+      }
+
+      if (comment.authorType !== "client") {
+        throw new Error("Only client comments can be deleted publicly");
+      }
+
+      if (comment.authorClientId !== args.clientId) {
+        throw new Error("Not allowed to delete this comment");
+      }
+
+      await ctx.db.delete(args.id);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to delete comment");
+    }
+  },
+});
