@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 
@@ -117,11 +117,11 @@ export const deleteByClient = mutation({
     try {
       const comment = await ctx.db.get(args.id);
       if (!comment) {
-        throw new Error("Comment not found");
+        throw new ConvexError({ code: "NOT_FOUND", message: "Comment not found" });
       }
 
       if (comment.requestId !== args.requestId || comment.projectId !== args.projectId) {
-        throw new Error("Comment does not belong to this request");
+        throw new ConvexError({ code: "BAD_REQUEST", message: "Comment does not belong to this request" });
       }
 
       const identity = await ctx.auth.getUserIdentity();
@@ -132,13 +132,13 @@ export const deleteByClient = mutation({
           .unique();
 
         if (!user) {
-          throw new Error("Unauthenticated call to mutation");
+          throw new ConvexError({ code: "UNAUTHENTICATED", message: "Unauthenticated call to mutation" });
         }
 
         const project = await ctx.db.get(comment.projectId);
         if (!project || project.user !== user._id) {
           if (comment.authorType !== "developer" || comment.authorUserId !== user._id) {
-            throw new Error("Not allowed to delete this comment");
+            throw new ConvexError({ code: "FORBIDDEN", message: "Not allowed to delete this comment" });
           }
         }
 
@@ -147,19 +147,20 @@ export const deleteByClient = mutation({
       }
 
       if (!args.clientId) {
-        throw new Error("Client id is required for public comment deletion");
+        throw new ConvexError({ code: "BAD_REQUEST", message: "Client id is required for public comment deletion" });
       }
 
       if (comment.authorType !== "client") {
-        throw new Error("Only client comments can be deleted publicly");
+        throw new ConvexError({ code: "FORBIDDEN", message: "Only client comments can be deleted publicly" });
       }
 
       if (comment.authorClientId !== args.clientId) {
-        throw new Error("Not allowed to delete this comment");
+        throw new ConvexError({ code: "FORBIDDEN", message: "Not allowed to delete this comment" });
       }
 
       await ctx.db.delete(args.id);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete comment");
     }
