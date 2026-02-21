@@ -109,6 +109,8 @@ export const remove = mutation({
 export const deleteByClient = mutation({
   args: {
     id: v.id("requestComments"),
+    requestId: v.id("requests"),
+    projectId: v.id("projects"),
     clientId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -116,6 +118,10 @@ export const deleteByClient = mutation({
       const comment = await ctx.db.get(args.id);
       if (!comment) {
         throw new Error("Comment not found");
+      }
+
+      if (comment.requestId !== args.requestId || comment.projectId !== args.projectId) {
+        throw new Error("Comment does not belong to this request");
       }
 
       const identity = await ctx.auth.getUserIdentity();
@@ -127,6 +133,13 @@ export const deleteByClient = mutation({
 
         if (!user) {
           throw new Error("Unauthenticated call to mutation");
+        }
+
+        const project = await ctx.db.get(comment.projectId);
+        if (!project || project.user !== user._id) {
+          if (comment.authorType !== "developer" || comment.authorUserId !== user._id) {
+            throw new Error("Not allowed to delete this comment");
+          }
         }
 
         await ctx.db.delete(args.id);

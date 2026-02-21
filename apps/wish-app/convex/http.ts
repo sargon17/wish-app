@@ -155,6 +155,8 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
 
     await c.env.runMutation(api.requestComments.deleteByClient, {
       id: commentId as Id<"requestComments">,
+      requestId: reqId as Id<"requests">,
+      projectId: id as Id<"projects">,
       clientId: clientId || undefined,
     });
   } catch {
