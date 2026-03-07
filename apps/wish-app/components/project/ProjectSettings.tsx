@@ -3,8 +3,10 @@ import Color from "color";
 import { useMutation, useQuery } from "convex/react";
 import type { PropsWithChildren } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { KeyRound, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +40,12 @@ interface ProjectSettingsProps extends PropsWithChildren {
 export default function ProjectSettings({ children, projectID }: ProjectSettingsProps) {
   const project = useQuery(api.projects.getProjectById, { id: projectID });
   const requestStatuses = useQuery(api.requestStatuses.getByProject, { id: projectID });
+  const rotateApiKey = useMutation(api.projects.rotateApiKey);
   const updateStatusColor = useMutation(api.requestStatuses.updateColor);
 
   const [savingColorFor, setSavingColorFor] = useState<Id<"requestStatuses"> | null>(null);
+  const [isRotatingApiKey, setIsRotatingApiKey] = useState(false);
+  const [generatedApiKey, setGeneratedApiKey] = useState("");
 
   const colorSaveTimeout = useRef<Record<string, NodeJS.Timeout>>({});
   const pendingColorValue = useRef<Record<string, string>>({});
@@ -106,6 +111,20 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
     [scheduleColorSave],
   );
 
+  async function handleRotateApiKey() {
+    try {
+      setIsRotatingApiKey(true);
+      const result = await rotateApiKey({ id: projectID });
+      setGeneratedApiKey(result.apiKey);
+      toast.success("API key regenerated");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not regenerate API key");
+    } finally {
+      setIsRotatingApiKey(false);
+    }
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -122,6 +141,43 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
             <CopyButton text={project?._id ?? ""} variant="input-button" />
           </InputGroupAddon>
         </InputGroup>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3>API key</h3>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleRotateApiKey}
+              disabled={isRotatingApiKey}
+            >
+              <RefreshCcw className={isRotatingApiKey ? "animate-spin" : ""} />
+              Regenerate
+            </Button>
+          </div>
+          <Alert>
+            <KeyRound className="size-4" />
+            <AlertTitle>One-time visibility</AlertTitle>
+            <AlertDescription>
+              The raw key is never stored. Regenerating replaces the previous key immediately.
+            </AlertDescription>
+          </Alert>
+          <InputGroup>
+            <InputGroupAddon>
+              <InputGroupText>API key</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              value={generatedApiKey || "Regenerate to reveal a new API key"}
+              readOnly
+            />
+            <InputGroupAddon align="inline-end">
+              <CopyButton
+                text={generatedApiKey}
+                variant="input-button"
+                className={!generatedApiKey ? "pointer-events-none opacity-40" : undefined}
+              />
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3>Statuses</h3>
           <StatusCreationView projectId={projectID} defaultColor={fallbackColor}>

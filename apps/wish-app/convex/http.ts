@@ -39,10 +39,6 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Missing API key" }, 401) };
   }
 
-  if (!projectId.startsWith("projects:")) {
-    return { response: c.json({ error: "Project not found" }, 404) };
-  }
-
   const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
@@ -67,10 +63,6 @@ async function assertRequestBelongsToProject(
   requestId: string,
   projectId: string,
 ): Promise<{ response: Response } | { requestId: Id<"requests"> }> {
-  if (!requestId.startsWith("requests:")) {
-    return { response: c.json({ error: "Request not found" }, 404) };
-  }
-
   const request = await c.env.runQuery(internal.requests.getRequestByIdInternal, {
     id: requestId as Id<"requests">,
   });
@@ -271,7 +263,9 @@ app.post(
   async (c) => {
     const reqId = c.req.param("reqID");
     const projectId = c.req.param("id");
-    const body = await c.req.valid("json");
+    const body = c.req.valid("json");
+
+
 
     try {
       const authorization = await authorizeProjectRequest(c, projectId);
