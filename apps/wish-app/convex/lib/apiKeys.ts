@@ -1,5 +1,6 @@
 const API_KEY_HASH_VERSION = "v1";
 const API_KEY_PREFIX = "wish_pk_";
+const API_KEY_VISIBLE_PREFIX_LENGTH = 16;
 const textEncoder = new TextEncoder();
 
 function bytesToHex(bytes: Uint8Array) {
@@ -45,6 +46,14 @@ export function generateProjectApiKey() {
   return `${API_KEY_PREFIX}${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
+export function getProjectApiKeyPrefix(apiKey: string) {
+  return apiKey.slice(0, API_KEY_VISIBLE_PREFIX_LENGTH);
+}
+
+export function getProjectApiKeyPreview(apiKeyOrPrefix: string) {
+  return `${getProjectApiKeyPrefix(apiKeyOrPrefix)}...`;
+}
+
 export async function hashProjectApiKey(apiKey: string) {
   const salt = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
   const digest = await sha256Bytes(`${salt}:${apiKey}`);
@@ -67,4 +76,30 @@ export async function verifyProjectApiKeyHash(storedApiKeyHash: string, candidat
     storedDigestBytes.length > 0 &&
     digestMatch
   );
+}
+
+export function normalizeApiKeyScopes(scopes: Array<"read" | "write" | "admin">) {
+  const dedupedScopes = new Set(scopes);
+
+  if (dedupedScopes.has("admin")) {
+    dedupedScopes.add("write");
+    dedupedScopes.add("read");
+  }
+
+  if (dedupedScopes.has("write")) {
+    dedupedScopes.add("read");
+  }
+
+  return Array.from(dedupedScopes).sort((left, right) => {
+    const order = { read: 1, write: 2, admin: 3 };
+    return order[left] - order[right];
+  });
+}
+
+export function hasApiKeyScope(
+  scopes: Array<"read" | "write" | "admin">,
+  requiredScope: "read" | "write" | "admin",
+) {
+  const normalizedScopes = normalizeApiKeyScopes(scopes);
+  return normalizedScopes.includes(requiredScope);
 }

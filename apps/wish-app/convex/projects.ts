@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
-import { generateProjectApiKey, hashProjectApiKey, verifyProjectApiKeyHash } from "./lib/apiKeys";
+import { createApiKeyRecord } from "./apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { toPublicProject } from "./lib/projectPublic";
 
@@ -36,17 +36,6 @@ export const getProjectByIdInternal = internalQuery({
   },
 });
 
-export const verifyProjectApiKeyHashInternal = internalQuery({
-  args: { apiKeyHash: v.optional(v.string()), apiKey: v.string() },
-  handler: async (_ctx, args) => {
-    if (!args.apiKeyHash) {
-      return false;
-    }
-
-    return await verifyProjectApiKeyHash(args.apiKeyHash, args.apiKey);
-  },
-});
-
 export const getProjectsForUser = query({
   args: {},
   handler: async (ctx) => {
@@ -65,13 +54,17 @@ export const createProject = mutation({
   args: { title: v.string() },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const apiKey = generateProjectApiKey();
-    const apiKeyHash = await hashProjectApiKey(apiKey);
 
     const projectId = await ctx.db.insert("projects", {
       title: args.title,
       user: user._id,
-      apiKeyHash,
+    });
+
+    const { apiKey } = await createApiKeyRecord(ctx, {
+      projectId,
+      createdBy: user._id,
+      name: "Default key",
+      scopes: ["admin"],
     });
 
     return { projectId, apiKey };
@@ -100,11 +93,16 @@ export const deleteProject = mutation({
       .query("requestComments")
       .withIndex("by_project", (q) => q.eq("projectId", args.id))
       .collect();
+    const apiKeys = await ctx.db
+      .query("apiKeys")
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .collect();
 
     await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
     await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
     await Promise.all(requests.map((request) => ctx.db.delete(request._id)));
     await Promise.all(statuses.map((status) => ctx.db.delete(status._id)));
+    await Promise.all(apiKeys.map((apiKey) => ctx.db.delete(apiKey._id)));
 
     await ctx.db.delete(args.id);
   },
@@ -117,9 +115,24 @@ export const rotateApiKey = mutation({
       const user = await getCurrentUser(ctx);
       await assertProjectOwner(ctx, args.id, user._id);
 
-      const apiKey = generateProjectApiKey();
-      const apiKeyHash = await hashProjectApiKey(apiKey);
-      await ctx.db.patch(args.id, { apiKeyHash });
+      const activeApiKeys = await ctx.db
+        .query("apiKeys")
+        .withIndex("by_project_status", (q) => q.eq("projectId", args.id).eq("status", "active"))
+        .collect();
+
+      await Promise.all(activeApiKeys.map((apiKeyDoc) =>
+        ctx.db.patch(apiKeyDoc._id, {
+          status: "revoked",
+          revokedAt: Date.now(),
+        })
+      ));
+
+      const { apiKey } = await createApiKeyRecord(ctx, {
+        projectId: args.id,
+        createdBy: user._id,
+        name: "Rotated key",
+        scopes: ["admin"],
+      });
 
       return { apiKey };
     } catch (error) {
@@ -139,25 +152,29 @@ export const backfillMissingApiKeys = mutation({
         .withIndex("by_user", (q) => q.eq("user", user._id))
         .collect();
 
-      const missing = projects.filter((project) => !project.apiKeyHash);
+      const missing = projects.filter((project) => !!project.apiKeyHash);
       const generatedKeys: Array<{ projectId: Id<"projects">; apiKey: string }> = [];
 
       await Promise.all(missing.map(async (project) => {
-        const legacyProject = project as Record<string, unknown>;
-        const existingPlaintextApiKey =
-          typeof legacyProject.apiKey === "string" ? legacyProject.apiKey : undefined;
-        const apiKeyToHash = existingPlaintextApiKey ?? generateProjectApiKey();
-        const hashedApiKey = await hashProjectApiKey(apiKeyToHash);
+        const existingApiKeys = await ctx.db
+          .query("apiKeys")
+          .withIndex("by_project", (q) => q.eq("projectId", project._id))
+          .collect();
 
-        await ctx.db.replace(project._id, {
-          title: project.title,
-          user: project.user,
-          apiKeyHash: hashedApiKey,
-        });
-
-        if (!existingPlaintextApiKey) {
-          generatedKeys.push({ projectId: project._id, apiKey: apiKeyToHash });
+        if (existingApiKeys.length > 0) {
+          return;
         }
+
+        await ctx.db.insert("apiKeys", {
+          projectId: project._id,
+          name: "Legacy key",
+          keyPrefix: "wish_pk_legacy",
+          keyHash: project.apiKeyHash!,
+          scopes: ["read", "write", "admin"],
+          status: "active",
+          createdAt: Date.now(),
+          createdBy: project.user,
+        });
       }));
 
       return {

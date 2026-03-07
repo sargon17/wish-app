@@ -8,11 +8,13 @@
  * @module
  */
 
+import type * as apiKeys from "../apiKeys.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_projectPublic from "../lib/projectPublic.js";
 import type * as projects from "../projects.js";
+import type * as rateLimits from "../rateLimits.js";
 import type * as requestComments from "../requestComments.js";
 import type * as requestStatuses from "../requestStatuses.js";
 import type * as requestUpvotes from "../requestUpvotes.js";
@@ -30,11 +32,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  apiKeys: typeof apiKeys;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
   "lib/projectPublic": typeof lib_projectPublic;
   projects: typeof projects;
+  rateLimits: typeof rateLimits;
   requestComments: typeof requestComments;
   requestStatuses: typeof requestStatuses;
   requestUpvotes: typeof requestUpvotes;

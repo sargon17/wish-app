@@ -8,9 +8,12 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
+import { getProjectApiKeyPrefix, hasApiKeyScope, verifyProjectApiKeyHash } from "./lib/apiKeys";
 import { toPublicProject } from "./lib/projectPublic";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
+const API_KEY_RATE_LIMIT = { limit: 120, windowMs: 60_000 };
+const IP_RATE_LIMIT = { limit: 240, windowMs: 60_000 };
 
 function getApiKeyFromRequest(c: any) {
   const headerKey = c.req.header("x-api-key");
@@ -33,29 +36,125 @@ function getApiKeyFromRequest(c: any) {
 async function authorizeProjectRequest(
   c: any,
   projectId: string,
-): Promise<{ project: Doc<"projects"> } | { response: Response }> {
+  requiredScope: "read" | "write" | "admin",
+): Promise<{ project: Doc<"projects">; apiKey: Doc<"apiKeys"> } | { response: Response }> {
   const apiKey = getApiKeyFromRequest(c);
   if (!apiKey) {
-    return { response: c.json({ error: "Missing API key" }, 401) };
+    return { response: c.json({ error: "Missing API key", code: "missing_api_key" }, 401) };
+  }
+
+  if (!projectId.startsWith("projects:")) {
+    return { response: c.json({ error: "Project not found", code: "project_not_found" }, 404) };
   }
 
   const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
   if (!project) {
-    return { response: c.json({ error: "Project not found" }, 404) };
+    return { response: c.json({ error: "Project not found", code: "project_not_found" }, 404) };
   }
 
-  const isApiKeyValid = await c.env.runQuery(internal.projects.verifyProjectApiKeyHashInternal, {
-    apiKeyHash: project.apiKeyHash,
-    apiKey,
+  await c.env.runMutation(internal.apiKeys.migrateLegacyForProjectInternal, {
+    projectId: project._id,
   });
 
-  if (!isApiKeyValid) {
-    return { response: c.json({ error: "Invalid API key" }, 401) };
+  const clientIp = getClientIpAddress(c);
+  const ipRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
+    bucket: `ip:${clientIp}`,
+    limit: IP_RATE_LIMIT.limit,
+    windowMs: IP_RATE_LIMIT.windowMs,
+  });
+
+  if (!ipRateLimit.allowed) {
+    return {
+      response: c.json(
+        {
+          error: "Too many requests",
+          code: "rate_limited",
+          retryAfterMs: ipRateLimit.retryAfterMs,
+        },
+        429,
+      ),
+    };
   }
 
-  return { project };
+  const keyPrefix = getProjectApiKeyPrefix(apiKey);
+  const prefixMatches = await c.env.runQuery(internal.apiKeys.getActiveKeysByPrefixInternal, {
+    projectId: project._id,
+    keyPrefix,
+  });
+  const legacyMatches =
+    prefixMatches.length > 0
+      ? []
+      : await c.env.runQuery(internal.apiKeys.getLegacyPlaceholderKeysInternal, {
+          projectId: project._id,
+        });
+
+  const candidateApiKeys = [...prefixMatches, ...legacyMatches];
+  let matchedApiKey: Doc<"apiKeys"> | null = null;
+
+  for (const candidate of candidateApiKeys) {
+    const isValid = await verifyProjectApiKeyHash(candidate.keyHash, apiKey);
+    if (!isValid) {
+      continue;
+    }
+
+    matchedApiKey = candidate;
+    break;
+  }
+
+  if (!matchedApiKey) {
+    return { response: c.json({ error: "Invalid API key", code: "invalid_api_key" }, 401) };
+  }
+
+  const keyRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
+    bucket: `key:${matchedApiKey._id}`,
+    limit: API_KEY_RATE_LIMIT.limit,
+    windowMs: API_KEY_RATE_LIMIT.windowMs,
+  });
+
+  if (!keyRateLimit.allowed) {
+    return {
+      response: c.json(
+        {
+          error: "Too many requests",
+          code: "rate_limited",
+          retryAfterMs: keyRateLimit.retryAfterMs,
+        },
+        429,
+      ),
+    };
+  }
+
+  if (!hasApiKeyScope(matchedApiKey.scopes, requiredScope)) {
+    return {
+      response: c.json({ error: "Insufficient API key scope", code: "insufficient_scope" }, 403),
+    };
+  }
+
+  await c.env.runMutation(internal.apiKeys.markUsedInternal, {
+    apiKeyId: matchedApiKey._id,
+    keyPrefix,
+  });
+
+  return { project, apiKey: matchedApiKey };
+}
+
+function getClientIpAddress(c: any) {
+  const forwardedFor = c.req.header("x-forwarded-for");
+  if (forwardedFor) {
+    const [firstIp] = forwardedFor.split(",");
+    if (firstIp?.trim()) {
+      return firstIp.trim();
+    }
+  }
+
+  const realIp = c.req.header("x-real-ip");
+  if (realIp?.trim()) {
+    return realIp.trim();
+  }
+
+  return "unknown";
 }
 
 async function assertRequestBelongsToProject(
@@ -80,7 +179,7 @@ async function assertRequestBelongsToProject(
 app.get("/api/project/:id/requests/", async (c) => {
   const id = c.req.param("id");
 
-  const authorization = await authorizeProjectRequest(c, id);
+  const authorization = await authorizeProjectRequest(c, id, "read");
   if ("response" in authorization) {
     return authorization.response;
   }
@@ -142,7 +241,7 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
   const body = await c.req.valid("json");
 
   try {
-    const authorization = await authorizeProjectRequest(c, id);
+    const authorization = await authorizeProjectRequest(c, id, "write");
     if ("response" in authorization) {
       return authorization.response;
     }
@@ -175,7 +274,7 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
   const projectId = c.req.param("id");
 
   try {
-    const authorization = await authorizeProjectRequest(c, projectId);
+    const authorization = await authorizeProjectRequest(c, projectId, "admin");
     if ("response" in authorization) {
       return authorization.response;
     }
@@ -202,7 +301,7 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   const projectId = c.req.param("id");
 
   try {
-    const authorization = await authorizeProjectRequest(c, projectId);
+    const authorization = await authorizeProjectRequest(c, projectId, "read");
     if ("response" in authorization) {
       return authorization.response;
     }
@@ -232,7 +331,7 @@ app.post(
     const body = await c.req.valid("json");
 
     try {
-      const authorization = await authorizeProjectRequest(c, projectId);
+      const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }
@@ -265,10 +364,8 @@ app.post(
     const projectId = c.req.param("id");
     const body = c.req.valid("json");
 
-
-
     try {
-      const authorization = await authorizeProjectRequest(c, projectId);
+      const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }

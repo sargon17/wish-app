@@ -13,6 +13,28 @@ export default defineSchema({
     apiKeyHash: v.optional(v.string()),
   }).index("by_user", ["user"]),
 
+  apiKeys: defineTable({
+    projectId: v.id("projects"),
+    name: v.string(),
+    keyPrefix: v.string(),
+    keyHash: v.string(),
+    scopes: v.array(v.union(v.literal("read"), v.literal("write"), v.literal("admin"))),
+    status: v.union(v.literal("active"), v.literal("revoked")),
+    createdAt: v.number(),
+    createdBy: v.id("users"),
+    lastUsedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_status", ["projectId", "status"])
+    .index("by_prefix_status", ["keyPrefix", "status"]),
+
+  apiRateLimits: defineTable({
+    bucket: v.string(),
+    windowStartedAt: v.number(),
+    count: v.number(),
+  }).index("by_bucket", ["bucket"]),
+
   requests: defineTable({
     text: v.string(),
     description: v.optional(v.string()),
