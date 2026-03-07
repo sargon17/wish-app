@@ -43,10 +43,6 @@ async function authorizeProjectRequest(
     return { response: c.json({ error: "Missing API key", code: "missing_api_key" }, 401) };
   }
 
-  if (!projectId.startsWith("projects:")) {
-    return { response: c.json({ error: "Project not found", code: "project_not_found" }, 404) };
-  }
-
   const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
