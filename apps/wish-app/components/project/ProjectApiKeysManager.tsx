@@ -42,19 +42,9 @@ import {
 } from "@/components/ui/table";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { formatDate } from "@/lib/time";
 
 const API_KEY_SCOPES = ["read", "write", "admin"] as const;
-
-function formatDate(value?: number) {
-  if (!value) {
-    return "Never";
-  }
-
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
 
 function ApiKeyCreateDialog({
   projectId,
@@ -298,7 +288,7 @@ export default function ProjectApiKeysManager({
             No API keys yet.
           </div>
         ) : (
-          <Table className="min-w-[980px]">
+          <Table className="min-w-245">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
@@ -315,7 +305,7 @@ export default function ProjectApiKeysManager({
                 <TableRow key={apiKey._id}>
                   <TableCell className="font-medium">{apiKey.name}</TableCell>
                   <TableCell>{apiKey.preview}</TableCell>
-                  <TableCell className="max-w-[220px] whitespace-normal">
+                  <TableCell className="max-w-55 whitespace-normal">
                     <div className="flex flex-wrap gap-1">
                       {apiKey.scopes.map((scope) => (
                         <Badge key={scope} variant="secondary" className="capitalize">

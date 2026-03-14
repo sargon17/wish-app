@@ -7,9 +7,6 @@
     "functions": ["clsx", "cn"],
     "preserveWhitespace": true
   },
-  "experimentalSortPackageJson": {
-    "sortScripts": true
-  },
   "bracketSpacing": true,
   "experimentalSortImports": {
     "groups": [

@@ -12,7 +12,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 
 interface Props {
   params: Promise<{
-    projectId: string;
+    projectId: Id<"projects">;
     projectTitle: string;
   }>;
 }
@@ -33,6 +33,7 @@ export default async function Page({ params }: Props) {
     },
   ];
 
+
   return (
     <>
       <div className="h-[calc(100dvh-8px)] flex flex-col overflow-hidden">
@@ -41,14 +42,14 @@ export default async function Page({ params }: Props) {
             title={cleanTitle}
             actions={
               <ButtonGroup>
-                <RequestCreateEditDialog project={projectId as Id<"projects">}>
+                <RequestCreateEditDialog project={projectId}>
                   <Button className="shrink-0" variant="outline">
                     <Plus />
                     New Request
                   </Button>
                 </RequestCreateEditDialog>
 
-                <ProjectSettings projectID={projectId as Id<"projects">}>
+                <ProjectSettings projectID={projectId} >
                   <Button variant="outline" className="group/button">
                     <Cog className="group-hover/button:rotate-45 transition-all" />
                   </Button>

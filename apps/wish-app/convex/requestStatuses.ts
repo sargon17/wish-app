@@ -77,6 +77,9 @@ export const updateColor = mutation({
     const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
 
+    console.log(args.color);
+
+
     if (!status) {
       throw new Error("Status not found");
     }
@@ -89,6 +92,11 @@ export const updateColor = mutation({
     }
     await assertProjectOwner(ctx, status.project, user._id);
 
-    await ctx.db.patch(args.id, { color: args.color });
+    try {
+      await ctx.db.patch(args.id, { color: args.color });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   },
 });
