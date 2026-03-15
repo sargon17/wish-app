@@ -77,9 +77,6 @@ export const updateColor = mutation({
     const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
 
-    console.log(args.color);
-
-
     if (!status) {
       throw new Error("Status not found");
     }
