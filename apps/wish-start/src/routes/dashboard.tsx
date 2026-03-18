@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useQuery } from 'convex/react'
 
+import DashboardView from '@/components/dashboard/DashboardView'
 import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 import { Button } from '@/components/ui/button'
 import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
@@ -43,26 +44,13 @@ function Dashboard() {
       ) : null}
 
       {isAuthenticated && !isLoading ? (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects?.length ? (
-            projects.map((project) => (
-              <article
-                key={project._id}
-                className="rounded-2xl border border-border/80 bg-background/70 p-4 shadow-xs"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Project
-                </p>
-                <h2 className="mt-2 text-lg font-semibold text-foreground">{project.title}</h2>
-                <p className="mt-3 text-xs text-muted-foreground">id: {project._id}</p>
-              </article>
-            ))
-          ) : (
-            <article className="rounded-2xl border border-dashed border-border/80 bg-background/70 p-6 text-muted-foreground">
-              No projects yet.
-            </article>
-          )}
-        </section>
+        projects?.length ? (
+          <DashboardView projects={projects.map((project) => ({ _id: String(project._id), title: project.title }))} />
+        ) : (
+          <article className="rounded-2xl border border-dashed border-border/80 bg-background/70 p-6 text-muted-foreground">
+            No projects yet.
+          </article>
+        )
       ) : null}
     </main>
   )
