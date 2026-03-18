@@ -12,11 +12,23 @@ Pick a stable identifier for public viewers. Common options:
 
 You will send this `clientId` in create request, comment, and upvote calls.
 
+## Set your API credentials
+
+Store the project id and API key in environment variables:
+
+```bash
+export WISH_PROJECT_ID="projects:abc123"
+export WISH_API_KEY="wish_pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Protected endpoints require the API key on every request.
+
 ## Fetch requests for a project
 
 ```bash
 curl -s \
-  "https://<your-wish-app-host>/api/project/<projectId>/requests/"
+  "https://<your-wish-app-host>/api/project/$WISH_PROJECT_ID/requests/" \
+  -H "x-api-key: $WISH_API_KEY"
 ```
 
 Response example:
@@ -54,12 +66,13 @@ Response example:
 
 ```bash
 curl -s -X POST \
-  "https://<your-wish-app-host>/api/project/<projectId>/request/" \
+  "https://<your-wish-app-host>/api/project/$WISH_PROJECT_ID/request/" \
+  -H "x-api-key: $WISH_API_KEY" \
   -H "content-type: application/json" \
   -d '{
     "text": "Add CSV export",
     "description": "Allow CSV + JSON",
-    "project": "<projectId>",
+    "project": "'"$WISH_PROJECT_ID"'",
     "clientId": "client-42"
   }'
 ```
@@ -73,7 +86,8 @@ Success response:
 
 ```bash
 curl -s -X POST \
-  "https://<your-wish-app-host>/api/project/<projectId>/request/<requestId>/comment" \
+  "https://<your-wish-app-host>/api/project/$WISH_PROJECT_ID/request/<requestId>/comment" \
+  -H "x-api-key: $WISH_API_KEY" \
   -H "content-type: application/json" \
   -d '{
     "clientId": "client-42",
@@ -90,7 +104,8 @@ Success response:
 
 ```bash
 curl -s -X POST \
-  "https://<your-wish-app-host>/api/project/<projectId>/request/<requestId>/upvote" \
+  "https://<your-wish-app-host>/api/project/$WISH_PROJECT_ID/request/<requestId>/upvote" \
+  -H "x-api-key: $WISH_API_KEY" \
   -H "content-type: application/json" \
   -d '{
     "clientId": "client-42"
@@ -100,4 +115,21 @@ curl -s -X POST \
 Success response:
 ```json
 {}
+```
+
+## Handle auth and rate limits
+
+Protected requests can fail with:
+- `401` for missing or invalid API keys
+- `403` for keys without enough scope
+- `429` for rate limiting
+
+Example rate-limit response:
+
+```json
+{
+  "error": "Too many requests",
+  "code": "rate_limited",
+  "retryAfterMs": 14321
+}
 ```

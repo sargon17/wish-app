@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserOrNull } from "./lib/authorization";
 
 export const toggle = mutation({
   args: {
@@ -20,19 +21,10 @@ export const toggle = mutation({
         throw new Error("Request does not belong to project");
       }
 
-      const identity = await ctx.auth.getUserIdentity();
+      const user = await getCurrentUserOrNull(ctx);
       let userId: Id<"users"> | undefined;
 
-      if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
-        if (!user) {
-          throw new Error("Unauthenticated call to mutation");
-        }
-
+      if (user) {
         userId = user._id;
       }
 
@@ -89,19 +81,10 @@ export const getViewerUpvotesByProject = query({
   },
   handler: async (ctx, args) => {
     try {
-      const identity = await ctx.auth.getUserIdentity();
+      const user = await getCurrentUserOrNull(ctx);
       let userId: Id<"users"> | undefined;
 
-      if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
-        if (!user) {
-          throw new Error("Unauthenticated call to query");
-        }
-
+      if (user) {
         userId = user._id;
       }
 

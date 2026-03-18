@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import DashboardBoard from "@/components/dashboard/DashboardBoard";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { getAuthToken } from "@/lib/auth";
 
 interface Props {
@@ -13,9 +14,22 @@ export default async function ProjectPage({ id }: Props) {
   const token = await getAuthToken();
   if (!token) redirect("/");
 
-  const preloadedProject = await preloadQuery(api.projects.getProjectById, { id }, { token });
-  const preloadedStatuses = await preloadQuery(api.requestStatuses.getByProject, { id }, { token });
-  const preloadedRequests = await preloadQuery(api.requests.getByProject, { id }, { token });
+  const projectId = id as Id<"projects">;
+  const preloadedProject = await preloadQuery(
+    api.projects.getProjectById,
+    { id: projectId },
+    { token },
+  );
+  const preloadedStatuses = await preloadQuery(
+    api.requestStatuses.getByProject,
+    { id: projectId },
+    { token },
+  );
+  const preloadedRequests = await preloadQuery(
+    api.requests.getByProject,
+    { id: projectId },
+    { token },
+  );
 
   return (
     <DashboardBoard

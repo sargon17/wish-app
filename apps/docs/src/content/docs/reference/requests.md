@@ -7,6 +7,9 @@ description: List, create, and delete requests.
 
 `GET /api/project/:id/requests/`
 
+Auth:
+- Requires an API key with `read` scope.
+
 Returns the project and its requests. Each request includes a `computedStatus` object derived from the request's `status` id.
 
 Response example:
@@ -46,6 +49,9 @@ Response example:
 
 `POST /api/project/:id/request/`
 
+Auth:
+- Requires an API key with `write` scope.
+
 Request body:
 ```json
 {
@@ -64,10 +70,16 @@ Notes:
 Response:
 - `200` with `{}` on success.
 - `400` with `{}` on validation or project/status errors.
+- `401` with `{ "error": "...", "code": "missing_api_key" | "invalid_api_key" }` when the key is missing or invalid.
+- `403` with `{ "error": "Insufficient API key scope", "code": "insufficient_scope" }` when the key lacks `write`.
+- `429` with `{ "error": "Too many requests", "code": "rate_limited", "retryAfterMs": number }` when throttled.
 
 ## Delete request
 
 `DELETE /api/project/:id/request/:reqID`
+
+Auth:
+- Requires an API key with `admin` scope.
 
 Notes:
 - Deletes the request and any related upvotes.
@@ -75,6 +87,7 @@ Notes:
 Response:
 - `200` with `{}` on success.
 - `400` with `{}` on errors or invalid ids.
+- `401`, `403`, and `429` use the same auth error shapes as other protected endpoints.
 
 ## Request object shape
 

@@ -7,6 +7,9 @@ description: List and create comments on a request.
 
 `GET /api/project/:id/request/:reqID/comments`
 
+Auth:
+- Requires an API key with `read` scope.
+
 Response example:
 ```json
 {
@@ -29,6 +32,9 @@ Response example:
 
 `POST /api/project/:id/request/:reqID/comment`
 
+Auth:
+- Requires an API key with `write` scope.
+
 Request body:
 ```json
 {
@@ -46,6 +52,7 @@ Notes:
 Response:
 - `200` with `{}` on success.
 - `400` with `{}` on validation, missing ids, or auth errors.
+- `401`, `403`, and `429` can also be returned by the API key layer before comment creation runs.
 
 ## Comment object shape
 

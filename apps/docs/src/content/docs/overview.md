@@ -10,6 +10,7 @@ The Wish API exposes project requests and the public interactions around them:
 - Create new requests for a project.
 - List and create comments on a request.
 - Toggle upvotes on a request.
+- Manage access to those protected endpoints with project API keys.
 
 ## Base URL
 
@@ -21,9 +22,17 @@ All endpoints are rooted under `/api`.
 
 ## Authentication and identity model
 
-The public API uses a lightweight identity model:
+The API uses two identity layers:
+- Protected endpoints require a project API key.
+- Public viewer identity is carried by a stable `clientId` where needed.
+
+API key transport:
+- `x-api-key: <apiKey>`
+- `authorization: Bearer <apiKey>`
+
+Viewer identity:
 - For public viewers, supply a stable `clientId` in request bodies to identify the viewer across sessions.
-- If the caller is authenticated (Clerk + Convex identity), the API will use the authenticated user instead of `clientId` for comments and upvotes.
+- If the caller is authenticated (Clerk + Convex identity), comment and upvote mutations will use the authenticated user instead of `clientId`.
 
 ## Key resource IDs
 
@@ -32,6 +41,7 @@ The public API uses a lightweight identity model:
 
 ## Response conventions
 
-- Successful mutating endpoints return HTTP 200 with an empty JSON body (`{}`).
-- Failed requests return HTTP 400 with an empty JSON body (`{}`).
+- Successful mutating endpoints return HTTP `200` with an empty JSON body (`{}`).
+- Protected endpoints may return `401`, `403`, or `429` with an error payload.
+- Some validation and lookup failures still return `400` with an empty JSON body (`{}`).
 - List endpoints return JSON objects with arrays of items.
