@@ -1,6 +1,5 @@
+import { useEffect, useState, type ComponentType } from 'react'
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
 import AppProviders from '../providers/AppProviders'
 
 import appCss from '../styles.css?url'
@@ -41,20 +40,66 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
         <AppProviders>
           {children}
-          <TanStackDevtools
-            config={{
-              position: 'bottom-right',
-            }}
-            plugins={[
-              {
-                name: 'Tanstack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-            ]}
-          />
+          <AppDevtools />
         </AppProviders>
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function AppDevtools() {
+  const [Devtools, setDevtools] = useState<ComponentType<{
+    config: {
+      position: 'bottom-right'
+    }
+    plugins: Array<{
+      name: string
+      render: React.ReactNode
+    }>
+  }> | null>(null)
+  const [RouterDevtoolsPanel, setRouterDevtoolsPanel] =
+    useState<ComponentType | null>(null)
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+
+    let active = true
+
+    Promise.all([
+      import('@tanstack/react-devtools'),
+      import('@tanstack/react-router-devtools'),
+    ])
+      .then(([devtoolsModule, routerDevtoolsModule]) => {
+        if (!active) return
+
+        setDevtools(() => devtoolsModule.TanStackDevtools)
+        setRouterDevtoolsPanel(() => routerDevtoolsModule.TanStackRouterDevtoolsPanel)
+      })
+      .catch(() => {
+        // Devtools are optional and should never block rendering.
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  if (!import.meta.env.DEV || !Devtools || !RouterDevtoolsPanel) {
+    return null
+  }
+
+  return (
+    <Devtools
+      config={{
+        position: 'bottom-right',
+      }}
+      plugins={[
+        {
+          name: 'Tanstack Router',
+          render: <RouterDevtoolsPanel />,
+        },
+      ]}
+    />
   )
 }
