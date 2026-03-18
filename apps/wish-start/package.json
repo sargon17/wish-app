@@ -17,7 +17,7 @@
     "clean": "bun clean-project",
     "clean-project": "rm -rf node_modules",
     "kill-port": "lsof -ti :3002 | xargs kill -9",
-    "check-types": "tsgo --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.59.6",
