@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardWaitlistRouteImport } from './routes/dashboard.waitlist'
+import { Route as DashboardStatsRouteImport } from './routes/dashboard.stats'
 import { Route as DashboardProjectProjectIdSlugRouteImport } from './routes/dashboard.project.$projectId.$slug'
 
 const DashboardRoute = DashboardRouteImport.update({
@@ -29,6 +31,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardWaitlistRoute = DashboardWaitlistRouteImport.update({
+  id: '/waitlist',
+  path: '/waitlist',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardStatsRoute = DashboardStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardProjectProjectIdSlugRoute =
   DashboardProjectProjectIdSlugRouteImport.update({
     id: '/project/$projectId/$slug',
@@ -40,12 +52,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/stats': typeof DashboardStatsRoute
+  '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/stats': typeof DashboardStatsRoute
+  '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRoutesById {
@@ -53,6 +69,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/stats': typeof DashboardStatsRoute
+  '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRouteTypes {
@@ -61,14 +79,24 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/dashboard/stats'
+    | '/dashboard/waitlist'
     | '/dashboard/project/$projectId/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/dashboard' | '/dashboard/project/$projectId/$slug'
+  to:
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/dashboard/stats'
+    | '/dashboard/waitlist'
+    | '/dashboard/project/$projectId/$slug'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/dashboard'
+    | '/dashboard/stats'
+    | '/dashboard/waitlist'
     | '/dashboard/project/$projectId/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -101,6 +129,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/waitlist': {
+      id: '/dashboard/waitlist'
+      path: '/waitlist'
+      fullPath: '/dashboard/waitlist'
+      preLoaderRoute: typeof DashboardWaitlistRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/stats': {
+      id: '/dashboard/stats'
+      path: '/stats'
+      fullPath: '/dashboard/stats'
+      preLoaderRoute: typeof DashboardStatsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/project/$projectId/$slug': {
       id: '/dashboard/project/$projectId/$slug'
       path: '/project/$projectId/$slug'
@@ -112,10 +154,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardRouteChildren {
+  DashboardStatsRoute: typeof DashboardStatsRoute
+  DashboardWaitlistRoute: typeof DashboardWaitlistRoute
   DashboardProjectProjectIdSlugRoute: typeof DashboardProjectProjectIdSlugRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardStatsRoute: DashboardStatsRoute,
+  DashboardWaitlistRoute: DashboardWaitlistRoute,
   DashboardProjectProjectIdSlugRoute: DashboardProjectProjectIdSlugRoute,
 }
 

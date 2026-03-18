@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { BarChart3, Plus, Users } from 'lucide-react'
 import { useQuery } from 'convex/react'
 
 import DashboardView from '@/components/dashboard/DashboardView'
@@ -23,12 +23,26 @@ function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
         </div>
 
-        <CreateProjectDialog>
-          <Button variant="ghost" className="gap-2" disabled={!isAuthenticated}>
-            <Plus className="h-4 w-4" />
-            New Project
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/dashboard/stats" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Stats
+            </Link>
           </Button>
-        </CreateProjectDialog>
+          <Button variant="outline" asChild>
+            <Link to="/dashboard/waitlist" className="gap-2">
+              <Users className="h-4 w-4" />
+              Waitlist
+            </Link>
+          </Button>
+          <CreateProjectDialog>
+            <Button variant="ghost" className="gap-2" disabled={!isAuthenticated}>
+              <Plus className="h-4 w-4" />
+              New Project
+            </Button>
+          </CreateProjectDialog>
+        </div>
       </section>
 
       {!isAuthenticated && !isLoading ? (
