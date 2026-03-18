@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useQuery } from 'convex/react'
 
+import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 import { Button } from '@/components/ui/button'
 import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
 
@@ -21,10 +22,12 @@ function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
         </div>
 
-        <Button variant="ghost" className="gap-2" disabled>
-          <Plus className="h-4 w-4" />
-          New Project
-        </Button>
+        <CreateProjectDialog>
+          <Button variant="ghost" className="gap-2" disabled={!isAuthenticated}>
+            <Plus className="h-4 w-4" />
+            New Project
+          </Button>
+        </CreateProjectDialog>
       </section>
 
       {!isAuthenticated && !isLoading ? (
