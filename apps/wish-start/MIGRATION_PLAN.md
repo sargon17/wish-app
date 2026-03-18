@@ -8,10 +8,10 @@ Status: **in progress**
 - [x] Kept existing Next.js app (`apps/wish-app`) untouched for safe parallel migration
 
 ## Phase 1
-- [ ] Port base app shell/layout + theme setup
+- [x] Port base app shell/layout + theme setup
 - [ ] Port shared UI components and utility modules
-- [ ] Wire auth provider (Clerk)
-- [ ] Wire Convex client setup
+- [x] Wire auth provider (Clerk)
+- [x] Wire Convex client setup
 
 ## Phase 2
 - [ ] Port core routes/pages from Next App Router to TanStack file-based routes
