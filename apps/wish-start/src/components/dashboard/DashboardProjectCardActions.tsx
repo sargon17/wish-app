@@ -1,6 +1,7 @@
 import { useMutation } from 'convex/react'
-import { Trash2 } from 'lucide-react'
+import { Ellipsis } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import {
   Dialog,
@@ -12,10 +13,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
-import { api } from '@/convex/api'
+import { api } from '@wish/convex-backend/api'
+import type { Id } from '@wish/convex-backend/data-model'
 
-export default function DashboardProjectCardActions({ id }: { id: string }) {
+export default function DashboardProjectCardActions({ id }: { id: Id<'projects'> }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const deleteProject = useMutation(api.projects.deleteProject)
@@ -23,8 +33,13 @@ export default function DashboardProjectCardActions({ id }: { id: string }) {
   async function handleDelete() {
     setIsDeleting(true)
     try {
-      await deleteProject({ id: id as never })
+      await deleteProject({ id })
       setIsOpen(false)
+      toast.success('Project deleted')
+    } catch (error) {
+      console.error(error)
+      toast.error('Unable to delete the project')
+      throw new Error('Unable to delete the project')
     } finally {
       setIsDeleting(false)
     }
@@ -32,19 +47,36 @@ export default function DashboardProjectCardActions({ id }: { id: string }) {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="relative z-20"
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          setIsOpen(true)
-        }}
-      >
-        <Trash2 className="h-4 w-4 text-muted-foreground" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="relative z-20"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+            }}
+          >
+            <Ellipsis className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              setIsOpen(true)
+            }}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">

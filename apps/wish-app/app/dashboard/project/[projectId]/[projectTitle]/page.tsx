@@ -8,7 +8,7 @@ import ProjectSettings from "@/components/project/ProjectSettings";
 import RequestCreateEditDialog from "@/components/Request/RequestCreateEditDialog";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import type { Id } from "@/convex/_generated/dataModel";
+import type { Id } from "@wish/convex-backend/data-model";
 
 interface Props {
   params: Promise<{

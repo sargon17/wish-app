@@ -3,7 +3,7 @@ import type { Preloaded } from "convex/react";
 import { usePreloadedQuery, useQuery } from "convex/react";
 import { useMemo } from "react";
 
-import { api } from "@/convex/_generated/api";
+import { api } from "@wish/convex-backend/api";
 
 import DashboardBoardColumn from "./DashboardBoardColumn";
 

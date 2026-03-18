@@ -32,8 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@/convex/_generated/api";
-import { Doc } from "@/convex/_generated/dataModel";
+import { api } from "@wish/convex-backend/api";
 import { StatCard } from "@components/molecules/StatCard";
 import {
   flexRender,
@@ -43,6 +42,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import type { Doc } from "@wish/convex-backend/data-model";
 
 import CopyButton from "../Organisms/CopyButton";
 import { Badge } from "../ui/badge";

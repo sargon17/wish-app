@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { api } from "@/convex/_generated/api";
+import { api } from "@wish/convex-backend/api";
 import { arktypeResolver } from "@hookform/resolvers/arktype";
 
 interface Props {

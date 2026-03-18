@@ -1,7 +1,13 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { Authenticated, Unauthenticated } from 'convex/react'
 import { Clock3, ShieldCheck, Sparkles } from 'lucide-react'
 
+import { Chip } from '@/components/atoms/chip'
+import { HighlightCard } from '@/components/molecules/HighlightCard'
+import { WaitlistJoin } from '@/components/Organisms/WaitlistJoin'
 import { Button } from '@/components/ui/button'
+import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
+import { SignInButton, UserButton } from '@clerk/clerk-react'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -24,52 +30,81 @@ const highlights = [
 ]
 
 function Home() {
+  const { isAuthenticated } = useStoreUserEffect()
+
   return (
-    <main className="mx-auto max-w-6xl px-6 pb-16 pt-10">
-      <section className="relative py-10 md:py-14">
-        <div className="fixed inset-0 -z-10 gradient-homepage" />
+    <div className="min-h-[300vh] bg-background text-foreground">
+      <div className="fixed inset-0 z-0 gradient-homepage" />
 
-        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          <p className="rounded-full border border-orange-200 bg-orange-100/80 px-4 py-1 text-sm text-orange-600 dark:border-orange-400/20 dark:bg-orange-400/10 dark:text-orange-300">
-            Migration preview
-          </p>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-6xl">
-            Ship what customers ask for
-            <span className="text-accent-foreground"> without the chaos</span>
-          </h1>
-          <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
-            Wish turns scattered requests into a clear, prioritized wishlist your team can ship
-            from.
-          </p>
+      <header className="sticky top-0 z-10 border-b border-b-background/40 bg-background/20 pb-4 pt-4 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-accent/10 text-sm font-semibold text-accent-foreground">
+              Wi
+            </div>
+            <div>
+              <p className="text-base font-semibold tracking-tight">Wish</p>
+              <p className="text-sm text-muted-foreground">Wishlist, simplified.</p>
+            </div>
+          </div>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link to="/dashboard">Open dashboard preview</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="https://github.com/sargon17/wish-app/pull/9" target="_blank" rel="noreferrer">
-                View migration PR
-              </a>
-            </Button>
+          <div className="flex items-center gap-3">
+            <Authenticated>
+              <Button variant="outline" asChild>
+                <Link to="/dashboard">Go to dashboard</Link>
+              </Button>
+              <UserButton />
+            </Authenticated>
+            <Unauthenticated>
+              <SignInButton mode="modal">
+                <Button variant="ghost">Sign in</Button>
+              </SignInButton>
+            </Unauthenticated>
           </div>
         </div>
+      </header>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {highlights.map((item) => {
-            const Icon = item.icon
-            return (
-              <article
+      <main className="mx-auto max-w-6xl pb-16">
+        <section className="relative px-6 py-12 md:py-16">
+          <div className="relative mx-auto my-30 flex flex-col items-center text-center">
+            <Chip color="accent" size="md">
+              Early access open
+            </Chip>
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-7xl">
+              Ship what customers ask for{" "}
+              <span className="text-accent-foreground">without the chaos</span>
+            </h1>
+            <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
+              Wish turns scattered requests into a clear, prioritized wishlist your team can ship
+              from. Join the waitlist for early access.
+            </p>
+
+            <WaitlistJoin
+              className="mt-8 max-w-3xl"
+              buttonLabel="Get early access"
+              description="One email at launch. No spam."
+              placeholder="you@company.com"
+            />
+            {isAuthenticated ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                You&apos;re signed in. The dashboard is ready whenever you are.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="relative mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {highlights.map((item) => (
+              <HighlightCard
                 key={item.title}
-                className="rounded-2xl border border-border/80 bg-background/55 p-5 shadow-xs backdrop-blur"
-              >
-                <Icon className="h-5 w-5 text-accent-foreground" />
-                <h2 className="mt-3 text-base font-semibold text-foreground">{item.title}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-              </article>
-            )
-          })}
-        </div>
-      </section>
-    </main>
+                icon={item.icon}
+                title={item.title}
+                description={item.description}
+                tone="soft"
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }

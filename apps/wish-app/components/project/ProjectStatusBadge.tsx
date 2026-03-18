@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState, type FC } from "react";
 import Color, { type ColorLike } from "color";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
-import { api } from "@/convex/_generated/api";
-import { type Doc } from "@/convex/_generated/dataModel";
+import { api } from "@wish/convex-backend/api";
+import { type Doc } from "@wish/convex-backend/data-model";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {

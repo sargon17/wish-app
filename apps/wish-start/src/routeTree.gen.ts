@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardWaitlistRouteImport } from './routes/dashboard.waitlist'
 import { Route as DashboardStatsRouteImport } from './routes/dashboard.stats'
 import { Route as DashboardProjectProjectIdSlugRouteImport } from './routes/dashboard.project.$projectId.$slug'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardWaitlistRoute = DashboardWaitlistRouteImport.update({
   id: '/waitlist',
@@ -54,14 +60,15 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRoutesById {
@@ -71,6 +78,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRoute
 }
 export interface FileRouteTypes {
@@ -81,14 +89,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/dashboard'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/dashboard'
     | '/dashboard/project/$projectId/$slug'
   id:
     | '__root__'
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -129,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/waitlist': {
       id: '/dashboard/waitlist'
       path: '/waitlist'
@@ -156,12 +173,14 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardStatsRoute: typeof DashboardStatsRoute
   DashboardWaitlistRoute: typeof DashboardWaitlistRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardProjectProjectIdSlugRoute: typeof DashboardProjectProjectIdSlugRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardStatsRoute: DashboardStatsRoute,
   DashboardWaitlistRoute: DashboardWaitlistRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
   DashboardProjectProjectIdSlugRoute: DashboardProjectProjectIdSlugRoute,
 }
 

@@ -20,6 +20,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@wish/convex-backend": "workspace:*",
     "@clerk/clerk-react": "^5.59.6",
     "@fontsource-variable/geist": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.15",

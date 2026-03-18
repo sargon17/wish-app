@@ -1,69 +1,34 @@
+import { Authenticated, Unauthenticated } from 'convex/react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
 
-import DashboardHeader from '@/components/dashboard/DashboardHeader'
-import { Button } from '@/components/ui/button'
-
-import { api } from '@/convex/api'
+import DashboardHeading from '@/components/dashboard/DashboardHeading'
+import Loading from '@/components/Organisms/Loading'
+import { WaitlistTable } from '@/components/waitlist/WaitlistTable'
+import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
 
 export const Route = createFileRoute('/dashboard/waitlist')({ component: WaitlistPage })
 
 function WaitlistPage() {
-  const entries = useQuery(api.waitlist.list)
-  const markInvited = useMutation(api.waitlist.setStatus)
+  const { isLoading } = useStoreUserEffect()
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-16 pt-8">
-      <section className="rounded-2xl border border-border/80 bg-background/70 p-6">
-        <DashboardHeader
-          title="Waitlist"
-          breadcrumbs={[{ label: 'Home', to: '/' }, { label: 'Dashboard', to: '/dashboard' }]}
-        />
-        <p className="mt-2 text-sm text-muted-foreground">Manage invited users.</p>
-
-        {!entries ? (
-          <p className="mt-6 text-muted-foreground">Loading waitlist…</p>
-        ) : entries.length === 0 ? (
-          <p className="mt-6 text-muted-foreground">No waitlist entries yet.</p>
-        ) : (
-          <div className="mt-6 overflow-auto rounded-xl border border-border/70">
-            <table className="w-full min-w-[560px] text-left text-sm">
-              <thead className="bg-muted/40 text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Applied</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry: any) => {
-                  const status = entry.invitedAt ? 'invited' : 'pending'
-                  return (
-                    <tr key={String(entry._id)} className="border-t border-border/60">
-                      <td className="px-4 py-3">{entry.email}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(entry.appliedAt || 0).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 capitalize">{status}</td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={status === 'invited'}
-                          onClick={() => markInvited({ id: entry._id as never, status: 'invited' })}
-                        >
-                          Mark invited
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </main>
+    <div className="flex h-screen flex-col pb-2 md:px-6 md:pt-6">
+      <DashboardHeading
+        title="Waitlist"
+        actions={null}
+        breadcrumbs={[{ label: "dashboard", url: "/dashboard" }]}
+      />
+      {isLoading ? <Loading /> : null}
+      {!isLoading ? (
+        <>
+          <Unauthenticated>
+            <div className="px-2 text-sm text-muted-foreground">Sign in to manage the waitlist.</div>
+          </Unauthenticated>
+          <Authenticated>
+            <WaitlistTable />
+          </Authenticated>
+        </>
+      ) : null}
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useQuery } from "convex/react";
 
-import { api } from "@/convex/_generated/api";
+import { api } from "@wish/convex-backend/api";
 
 import { ScrollArea } from "../ui/scroll-area";
 

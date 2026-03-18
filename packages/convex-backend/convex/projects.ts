@@ -71,6 +71,29 @@ export const createProject = mutation({
   },
 });
 
+export const updateProject = mutation({
+  args: {
+    id: v.id("projects"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const project = await assertProjectOwner(ctx, args.id, user._id);
+    const title = args.title.trim();
+
+    if (title.length < 3) {
+      throw new Error("Project title must be at least 3 characters long");
+    }
+
+    await ctx.db.patch(project._id, { title });
+
+    return toPublicProject({
+      ...project,
+      title,
+    });
+  },
+});
+
 export const deleteProject = mutation({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {

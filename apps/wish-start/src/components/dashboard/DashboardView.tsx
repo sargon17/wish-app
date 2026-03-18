@@ -1,13 +1,20 @@
-import DashboardProjectCard from './DashboardProjectCard'
+import { useQuery } from "convex/react";
 
-type Project = { _id: string; title: string }
+import { api } from "@wish/convex-backend/api";
 
-export default function DashboardView({ projects }: { projects: Project[] }) {
+import { ScrollArea } from "../ui/scroll-area";
+
+import DashboardProjectCard from "./DashboardProjectCard";
+
+export default function DashboardView() {
+  const projects = useQuery(api.projects.getProjectsForUser);
+
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 max-md:px-2 p-0.25">
-      {projects.map((project) => (
-        <DashboardProjectCard project={project} key={project._id} />
-      ))}
-    </div>
-  )
+    <ScrollArea>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 max-md:px-2 p-0.25 sidebar-offset-pl">
+        {projects &&
+          projects.map((project) => <DashboardProjectCard project={project} key={project._id} />)}
+      </div>
+    </ScrollArea>
+  );
 }

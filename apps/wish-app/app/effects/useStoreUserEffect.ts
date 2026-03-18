@@ -1,8 +1,8 @@
 import { useConvexAuth, useMutation } from "convex/react";
 import { useEffect, useState } from "react";
 
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useUser } from "@clerk/clerk-react";
 
 export function useStoreUserEffect() {
