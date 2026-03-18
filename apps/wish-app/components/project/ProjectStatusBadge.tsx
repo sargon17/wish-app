@@ -33,23 +33,6 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
     setColor(initialColor);
   }, [initialColor]);
 
-  const badge = (
-    <Badge variant="secondary" className="flex items-center gap-2 pr-3">
-      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-      <span>{status.displayName}</span>
-      {isDefault && (
-        <span className="text-[10px] text-muted-foreground uppercase">Default</span>
-      )}
-    </Badge>
-  );
-
-  if (isDefault) {
-    return (
-      <li key={status._id} className="cursor-not-allowed opacity-80">
-        {badge}
-      </li>
-    );
-  }
 
   const handleChange = useCallback((value: ColorLike) => {
     const [r, g, b] = value as number[];
@@ -74,6 +57,25 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
       setIsSaving(false);
     }
   }, [color, isChanging, isSaving, status._id, updateStatusColor]);
+
+
+  const badge = (
+    <Badge variant="secondary" className="flex items-center gap-2 pr-3">
+      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+      <span>{status.displayName}</span>
+      {isDefault && (
+        <span className="text-[10px] text-muted-foreground uppercase">Default</span>
+      )}
+    </Badge>
+  );
+
+  if (isDefault) {
+    return (
+      <li key={status._id} className="cursor-not-allowed opacity-80">
+        {badge}
+      </li>
+    );
+  }
 
   return (
     <li key={status._id}>

@@ -22,7 +22,7 @@ const ProjectStatusesManager: FC<ProjectStatusesManagerProps> = ({ projectID }) 
           <Button type="button">New status</Button>
         </StatusCreationView>
       </div>
-      <ul className="gap-2 flex flex-wrap">
+      <ul className="space-y-2">
         {requestStatuses &&
           requestStatuses.map((status) => {
             return <ProjectStatusBadge key={status._id} status={status} />;

@@ -76,6 +76,7 @@ export default defineSchema({
     project: v.optional(v.id("projects")),
     type: v.union(v.literal("custom"), v.literal("default")),
     color: v.optional(v.string()),
+
   }).index("by_project", ["project"]),
 
   waitlist: defineTable({
@@ -83,6 +84,4 @@ export default defineSchema({
     appliedAt: v.number(),
     invitedAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
-
-  // TODO: requests chat system
 });

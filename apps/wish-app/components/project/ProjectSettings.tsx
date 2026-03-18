@@ -1,22 +1,14 @@
 "use client";
 import { useQuery } from "convex/react";
 import type { PropsWithChildren } from "react";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
 import CopyButton from "../Organisms/CopyButton";
 import ProjectApiKeysManager from "./ProjectApiKeysManager";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../ui/input-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import ProjectStatusesManager from "./ProjectStatusesManager";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "../ui/input-group";
+import { SettingsView, SettingsContent, SettingsTrigger } from "../settings/SettingsView";
 
 
 const SECTIONS = {
@@ -34,42 +26,30 @@ interface ProjectSettingsProps extends PropsWithChildren {
 export default function ProjectSettings({ children, projectID }: ProjectSettingsProps) {
   const project = useQuery(api.projects.getProjectById, { id: projectID });
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-[96vw] sm:w-[92vw] lg:w-295 xl:w-330 sm:max-w-none max-h-[88vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{project?.title}</DialogTitle>
-        </DialogHeader>
-        <Tabs defaultValue="general" className="gap-4">
-          <TabsList className="w-full justify-start md:w-fit">
-            {
-              SECTION_LIST.map((section) => (
-                <TabsTrigger value={section.key} key={section.key}>{section.label}</TabsTrigger>
-              ))
-            }
-          </TabsList>
+    <SettingsView navigation={SECTION_LIST}>
+      <SettingsTrigger asChild>{children}</SettingsTrigger>
 
-          <TabsContent value={SECTIONS.general.key} className="space-y-6">
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>ID</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput value={`${project?._id}`} disabled={true} />
-              <InputGroupAddon align="inline-end">
-                <CopyButton text={project?._id ?? ""} variant="input-button" />
-              </InputGroupAddon>
-            </InputGroup>
-          </TabsContent>
+      <SettingsContent value={SECTIONS.general.key}>
+        {/*TODO: remove this*/}
+        <InputGroup>
+          <InputGroupAddon>
+            <InputGroupText>ID</InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput value={`${project?._id}`} disabled={true} />
+          <InputGroupAddon align="inline-end">
+            <CopyButton text={project?._id ?? ""} variant="input-button" />
+          </InputGroupAddon>
+        </InputGroup>
+        {/*TODO: remove this*/}
+      </SettingsContent>
 
-          <TabsContent value={SECTIONS.settings.key}>
-            <ProjectStatusesManager projectID={projectID} />
-          </TabsContent>
+      <SettingsContent value={SECTIONS.settings.key}>
+        <ProjectStatusesManager projectID={projectID} />
+      </SettingsContent>
 
-          <TabsContent value={SECTIONS.api.key}>
-            <ProjectApiKeysManager projectId={projectID} />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+      <SettingsContent value={SECTIONS.api.key}>
+        <ProjectApiKeysManager projectId={projectID} />
+      </SettingsContent>
+    </SettingsView>
   );
 }
