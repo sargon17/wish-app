@@ -122,9 +122,9 @@ Exit criteria:
 - Internal flow: status changes, notifications emitted, activity logged.
 
 5. Regression gates per iteration:
-- `bun lint:strict`
-- `bun check-types`
-- `bun build`
+- `pnpm lint:strict`
+- `pnpm check-types`
+- `pnpm build`
 - Critical smoke e2e for dashboard + public board paths
 
 ## Rollout Strategy

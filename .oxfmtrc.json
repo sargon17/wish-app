@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/.output/**",
+    "**/node_modules/**",
+    "**/components/ui/**",
+    "**/_generated/*"
+  ],
   "experimentalTailwindcss": {
     "stylesheet": "./layers/ui/assets/css/main.css",
     "attributes": ["class", "className"],

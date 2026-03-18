@@ -6,15 +6,15 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "start": "vite preview",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "lint": "oxlint --fix --quiet",
-    "lint:strict": "oxlint --quiet",
-    "fmt": "oxfmt",
-    "clean": "bun clean-project",
+    "dev": "vp dev",
+    "build": "vp build",
+    "start": "vp preview",
+    "preview": "vp preview",
+    "test": "vp test run",
+    "check": "vp check",
+    "lint": "vp lint --fix",
+    "lint:strict": "vp lint",
+    "clean": "rm -rf node_modules",
     "clean-project": "rm -rf node_modules",
     "kill-port": "lsof -ti :3002 | xargs kill -9",
     "check-types": "tsc --noEmit"
@@ -60,14 +60,6 @@
     "@vitejs/plugin-react": "^5.1.4",
     "jsdom": "^28.1.0",
     "typescript": "^5.7.2",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
+    "vite": "^8.0.0"
   }
 }
