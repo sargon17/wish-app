@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { Button } from '@/components/ui/button'
 
 import { api } from '../../../wish-app/convex/_generated/api.js'
@@ -14,7 +15,10 @@ function WaitlistPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-6 pb-16 pt-8">
       <section className="rounded-2xl border border-border/80 bg-background/70 p-6">
-        <h1 className="text-2xl font-semibold text-foreground">Waitlist</h1>
+        <DashboardHeader
+          title="Waitlist"
+          breadcrumbs={[{ label: 'Home', to: '/' }, { label: 'Dashboard', to: '/dashboard' }]}
+        />
         <p className="mt-2 text-sm text-muted-foreground">Manage invited users.</p>
 
         {!entries ? (

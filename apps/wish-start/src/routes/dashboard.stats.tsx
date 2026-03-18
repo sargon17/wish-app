@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
+
 import { api } from '../../../wish-app/convex/_generated/api.js'
 
 export const Route = createFileRoute('/dashboard/stats')({ component: StatsPage })
@@ -11,7 +13,10 @@ function StatsPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-6 pb-16 pt-8">
       <section className="rounded-2xl border border-border/80 bg-background/70 p-6">
-        <h1 className="text-2xl font-semibold text-foreground">Request stats</h1>
+        <DashboardHeader
+          title="Request stats"
+          breadcrumbs={[{ label: 'Home', to: '/' }, { label: 'Dashboard', to: '/dashboard' }]}
+        />
         <p className="mt-2 text-sm text-muted-foreground">Live overview from Convex.</p>
 
         {!stats ? (
