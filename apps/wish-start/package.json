@@ -11,10 +11,11 @@
     "start": "vite preview",
     "preview": "vite preview",
     "test": "vitest run",
+    "check": "pnpm run lint && pnpm run check-types",
     "lint": "oxlint --fix --quiet",
     "lint:strict": "oxlint --quiet",
     "fmt": "oxfmt",
-    "clean": "bun clean-project",
+    "clean": "rm -rf node_modules",
     "clean-project": "rm -rf node_modules",
     "kill-port": "lsof -ti :3002 | xargs kill -9",
     "check-types": "tsc --noEmit"
@@ -59,15 +60,10 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.4",
     "jsdom": "^28.1.0",
+    "oxfmt": "^0.18.0",
+    "oxlint": "^1.55.0",
     "typescript": "^5.7.2",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   }
 }

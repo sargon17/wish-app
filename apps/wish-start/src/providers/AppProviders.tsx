@@ -14,7 +14,7 @@ import ConvexClientProvider from './ConvexClientProvider'
 import ThemeProvider from './ThemeProvider'
 
 function AuthBoundary({ children }: { children: ReactNode }) {
-  const key = env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const key = env.VITE_CLERK_PUBLISHABLE_KEY
 
   if (!key) {
     return <>{children}</>
@@ -24,7 +24,7 @@ function AuthBoundary({ children }: { children: ReactNode }) {
 }
 
 export function HeaderAuth() {
-  if (!env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  if (!env.VITE_CLERK_PUBLISHABLE_KEY) {
     return null
   }
 

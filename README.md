@@ -1,6 +1,6 @@
 # Wish App (codename)
 
-This projects aims to become a helpful tool in connecting the users to the developers, by creating a layer an feature request layer between them, so the user can express it's needs and the developer can build the software according to what the users really want from it.
+This project aims to connect users with developers by creating a feature-request layer between them, so users can express their needs and developers can build what people actually want.
 
 ## Tech Stack
 
@@ -14,11 +14,17 @@ This projects aims to become a helpful tool in connecting the users to the devel
 
 ### Frontend
 
-- Next
+- TanStack Start
 - React
-- Zustand?
+- Vite
+- Astro
 - Tailwind
-- Shadcn
+- shadcn/ui
+
+### Tooling
+
+- pnpm
+- Vite+
 
 ## TODO
 

@@ -5,11 +5,11 @@ import type { ReactNode } from 'react'
 
 import env from '@/env'
 
-if (!env.NEXT_PUBLIC_CONVEX_URL) {
+if (!env.VITE_CONVEX_URL) {
   throw new Error('Missing Convex URL. Set VITE_CONVEX_URL in apps/wish-start/.env.local')
 }
 
-const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL)
+const convex = new ConvexReactClient(env.VITE_CONVEX_URL)
 
 export default function ConvexClientProvider({ children }: { children: ReactNode }) {
   return (

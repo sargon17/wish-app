@@ -13,7 +13,8 @@
     }
   },
   "scripts": {
-    "convex:dev": "bunx convex dev",
+    "convex:dev": "pnpm exec convex dev",
+    "check": "pnpm run check-types",
     "check-types": "tsc --noEmit -p convex/tsconfig.json"
   },
   "dependencies": {
