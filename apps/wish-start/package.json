@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "bun kill-port && vite dev --port 3002",
+    "dev": "vite dev",
     "build": "vite build",
     "start": "vite preview",
     "preview": "vite preview",
@@ -20,7 +20,6 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@wish/convex-backend": "workspace:*",
     "@clerk/clerk-react": "^5.59.6",
     "@fontsource-variable/geist": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -33,11 +32,13 @@
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
+    "@wish/convex-backend": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.31.6",
     "lucide-react": "^0.577.0",
     "next-themes": "^0.4.6",
+    "nitro": "^3.0.260311-beta",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

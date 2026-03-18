@@ -1,20 +1,20 @@
 # Architecture — wish-app
 
 ## Overview
-wish‑app is a Next.js app that creates a feature‑request layer between users and developers. It uses **Convex** for backend data + functions and **Clerk** for authentication. The UI is built with React + Tailwind + shadcn and organized into component “atoms/molecules/organisms”.
+wish‑app is a TanStack Start app that creates a feature‑request layer between users and developers. It uses **Convex** for backend data + functions and **Clerk** for authentication. The UI is built with React + Tailwind + shadcn and organized into component “atoms/molecules/organisms”.
 
 ## High‑level structure
-- `app/` — Next.js app router (pages, layout, providers)
-- `components/` — UI composition (atoms/molecules/organisms + feature components)
-- `convex/` — Convex schema, functions, services
-- `lib/` — shared utilities (request status, etc.)
-- `hooks/` — custom React hooks
+- `src/routes/` — TanStack Router file-based routes
+- `src/components/` — UI composition (atoms/molecules/organisms + feature components)
+- `packages/convex-backend/convex/` — Convex schema, functions, services
+- `src/lib/` — shared utilities (request status, etc.)
+- `src/hooks/` — custom React hooks
 
 ## Runtime flow
-1. **Client routes** render from `app/` (Next App Router).
-2. UI composes components from `components/` and calls hooks.
-3. Data operations go through **Convex** functions (`convex/`), using Clerk‑based auth.
-4. Request state is held in client stores (`app/stores`) and synced with Convex.
+1. **Client routes** render from `src/routes/` (TanStack Router).
+2. UI composes components from `src/components/` and calls hooks.
+3. Data operations go through **Convex** functions, using Clerk-based auth.
+4. Request state is held in client stores and synced with Convex.
 
 ## Data & auth
 - **Auth**: Clerk (session + user identity)
@@ -59,13 +59,13 @@ sequenceDiagram
 ```
 
 ## Key modules
-- `app/dashboard` — main admin + request dashboard UI
-- `components/Request` — request cards, list items
-- `components/Status` — request status UI
-- `convex/services` — backend domain services
-- `lib/requestStatus` — status mapping + helpers
+- `src/routes/dashboard.*` — main admin + request dashboard UI
+- `src/components/Request` — request cards, list items
+- `src/components/Status` — request status UI
+- `packages/convex-backend/convex/services` — backend domain services
+- `src/lib/requestStatus` — status mapping + helpers
 
 ## Build & entrypoints
-- **App**: `app/` (Next.js App Router)
-- **Backend**: `convex/` (Convex functions + schema)
+- **App**: `apps/wish-start/src/` (TanStack Start + TanStack Router)
+- **Backend**: `packages/convex-backend/convex/` (Convex functions + schema)
 - **Styling**: Tailwind + shadcn UI components
