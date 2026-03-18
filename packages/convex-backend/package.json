@@ -1,0 +1,30 @@
+{
+  "name": "@wish/convex-backend",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api": {
+      "types": "./convex/_generated/api.d.ts",
+      "default": "./convex/_generated/api.js"
+    },
+    "./data-model": {
+      "types": "./convex/_generated/dataModel.d.ts",
+      "default": "./data-model.js"
+    }
+  },
+  "scripts": {
+    "convex:dev": "bunx convex dev",
+    "check-types": "tsc --noEmit -p convex/tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/arktype-validator": "^2.0.1",
+    "arktype": "^2.1.29",
+    "convex": "^1.31.6",
+    "convex-helpers": "^0.1.111",
+    "hono": "^4.11.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3"
+  }
+}

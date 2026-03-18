@@ -1,7 +1,7 @@
 # Wish App Monetizable V1 Gap Analysis
 
 Date: 2026-02-11  
-Scope: `apps/wish-app` product, backend, and operational readiness
+Scope: `apps/wish-start` product, backend, and operational readiness
 
 ## 1) Executive Summary
 

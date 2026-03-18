@@ -10,10 +10,6 @@
         "settings": {
           "configPath": ".oxlintrc.json",
           "run": "onType",
-          "disableNestedConfig": false,
-          "fixKind": "safe_fix",
-          "typeAware": true,
-          "unusedDisableDirectives": "deny",
         },
       },
     },
@@ -31,10 +27,10 @@
       "language_servers": [
         "oxc",
         "tsgo",
-        // "typescript-language-server",
-        "!vtsls",
-        "...",
+        "vtsls",
+        "!typescript-language-server",
         "!eslint",
+        "...",
       ],
       "formatter": "language_server",
       "code_actions_on_format": {
@@ -45,10 +41,10 @@
       "language_servers": [
         "oxc",
         "tsgo",
-        "typescript-language-server",
-        "!vtsls",
-        "...",
+        "vtsls",
+        "!typescript-language-server",
         "!eslint",
+        "...",
       ],
       "formatter": "language_server",
       "code_actions_on_format": {

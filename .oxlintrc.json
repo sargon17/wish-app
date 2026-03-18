@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["node", "jsdoc", "import", "unicorn"],
+  "plugins": ["node", "jsdoc", "import", "unicorn", "react"],
   "categories": {
     "correctness": "off"
   },
@@ -12,7 +12,6 @@
   },
   "ignorePatterns": [
     "**/out/",
-    "**/.next/",
     "**/.yarn/",
     "!.yarn/releases",
     ".vscode/*",
@@ -48,7 +47,6 @@
     "**/.history",
     "**/.vitepress/cache",
     "**/.nuxt",
-    "**/.next",
     "**/.svelte-kit",
     "**/.vercel",
     "**/.changeset",
@@ -315,7 +313,10 @@
         "@typescript-eslint/prefer-literal-enum-member": "error",
         "@typescript-eslint/prefer-namespace-keyword": "error",
         "@typescript-eslint/triple-slash-reference": "off",
-        "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+        "@typescript-eslint/consistent-type-definitions": [
+          "error",
+          "interface"
+        ],
         "@typescript-eslint/consistent-type-imports": [
           "error",
           {
@@ -397,7 +398,10 @@
       "plugins": ["typescript"]
     },
     {
-      "files": ["**/*.config.?([cm])[jt]s?(x)", "**/*.config.*.?([cm])[jt]s?(x)"],
+      "files": [
+        "**/*.config.?([cm])[jt]s?(x)",
+        "**/*.config.*.?([cm])[jt]s?(x)"
+      ],
       "rules": {
         "no-console": "off",
         "@typescript-eslint/explicit-function-return-type": "off"
