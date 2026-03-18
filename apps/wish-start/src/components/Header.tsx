@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { HeaderAuth } from '@/providers/AppProviders'
 import ThemeToggle from './ThemeToggle'
 
 export default function Header() {
@@ -32,6 +33,7 @@ export default function Header() {
               Dashboard
             </Link>
           </div>
+          <HeaderAuth />
           <ThemeToggle />
         </div>
       </nav>
