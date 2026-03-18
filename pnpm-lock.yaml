@@ -85,6 +85,9 @@ importers:
       '@wish/convex-backend':
         specifier: workspace:*
         version: link:../../packages/convex-backend
+      arktype:
+        specifier: ^2.2.0
+        version: 2.2.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
