@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
@@ -17,10 +17,12 @@ function ProjectDetails() {
   const { projectId, slug } = Route.useParams()
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const requests = useQuery(api.requests.getByProject, { id: projectId })
   const statuses = useQuery(api.requestStatuses.getByProject, { id: projectId })
   const createRequest = useMutation(api.requests.create)
+  const deleteRequest = useMutation(api.requests.deleteRequest)
 
   const defaultStatus = useMemo(() => statuses?.[0], [statuses])
 
@@ -42,6 +44,15 @@ function ProjectDetails() {
       setText('')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function removeRequest(id: string) {
+    setDeletingId(id)
+    try {
+      await deleteRequest({ id: id as never })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -76,13 +87,25 @@ function ProjectDetails() {
           ) : (
             requests.map((request) => {
               const status = statuses?.find((item) => String(item._id) === String(request.status))
+              const requestId = String(request._id)
               return (
-                <article key={String(request._id)} className="rounded-xl border border-border/70 bg-background p-4">
+                <article key={requestId} className="rounded-xl border border-border/70 bg-background p-4">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-medium text-foreground">{request.text}</h2>
-                    <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-                      {status?.displayName ?? status?.name ?? 'Unknown'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                        {status?.displayName ?? status?.name ?? 'Unknown'}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeRequest(requestId)}
+                        disabled={deletingId === requestId}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </article>
               )
