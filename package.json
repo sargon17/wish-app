@@ -7,7 +7,9 @@
     "check": "vp run -r check",
     "check-types": "vp run -r check-types",
     "convex:dev": "vp run -r convex:dev",
-    "dev": "vp run -r dev",
+    "dev": "vp run wish-start#dev",
+    "dev:all": "vp run -r dev",
+    "dev:doc": "vp run wish-app-docs#dev",
     "fmt": "vp run -r fmt",
     "format": "vp run -r fmt",
     "lint": "vp run -r lint",
@@ -21,6 +23,8 @@
     "type-fest": "^5.4.4"
   },
   "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
     "esbuild": "0.27.1"
   },
   "pnpm": {

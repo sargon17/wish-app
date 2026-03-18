@@ -23,7 +23,6 @@ This project aims to connect users with developers by creating a feature-request
 
 ### Tooling
 
-- pnpm
 - Vite+
 
 ## TODO

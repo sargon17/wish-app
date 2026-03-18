@@ -6,15 +6,15 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "start": "vite preview",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "check": "pnpm run lint && pnpm run check-types",
-    "lint": "oxlint --fix --quiet",
-    "lint:strict": "oxlint --quiet",
-    "fmt": "oxfmt",
+    "dev": "vp dev",
+    "build": "vp build",
+    "start": "vp preview",
+    "preview": "vp preview",
+    "test": "vp test run",
+    "check": "vp check",
+    "lint": "vp lint --fix",
+    "lint:strict": "vp lint",
+    "fmt": "vp fmt --write",
     "clean": "rm -rf node_modules",
     "clean-project": "rm -rf node_modules",
     "kill-port": "lsof -ti :3002 | xargs kill -9",
@@ -60,10 +60,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.4",
     "jsdom": "^28.1.0",
-    "oxfmt": "^0.18.0",
-    "oxlint": "^1.55.0",
     "typescript": "^5.7.2",
-    "vite": "^8.0.0",
-    "vitest": "^4.1.0"
+    "vite": "^8.0.0"
   }
 }
