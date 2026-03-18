@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react'
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
 
-import { api } from '../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export const Route = createFileRoute('/dashboard/stats')({ component: StatsPage })
 
@@ -30,7 +30,7 @@ function StatsPage() {
             <article className="rounded-xl border border-border/70 bg-background p-4 sm:col-span-2">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Top statuses</p>
               <ul className="mt-3 space-y-2 text-sm">
-                {stats.statusBreakdown.slice(0, 5).map((status) => (
+                {stats.statusBreakdown.slice(0, 5).map((status: any) => (
                   <li key={String(status.statusId)} className="flex items-center justify-between">
                     <span>{status.displayName ?? status.name}</span>
                     <span className="text-muted-foreground">{status.count}</span>

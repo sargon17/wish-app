@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-import { api } from '../../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 interface Props {
   children: ReactNode

@@ -2,7 +2,7 @@ import { useUser } from '@clerk/clerk-react'
 import { useConvexAuth, useMutation } from 'convex/react'
 import { useEffect, useState } from 'react'
 
-import { api } from '../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export function useStoreUserEffect() {
   const { isLoading, isAuthenticated } = useConvexAuth()

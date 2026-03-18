@@ -7,7 +7,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-import { api } from '../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export const Route = createFileRoute('/dashboard/project/$projectId/$slug')({
   component: ProjectDetails,
@@ -85,8 +85,8 @@ function ProjectDetails() {
           ) : requests.length === 0 ? (
             <p className="text-muted-foreground">No requests yet for this project.</p>
           ) : (
-            requests.map((request) => {
-              const status = statuses?.find((item) => String(item._id) === String(request.status))
+            requests.map((request: any) => {
+              const status = statuses?.find((item: any) => String(item._id) === String(request.status))
               const requestId = String(request._id)
               return (
                 <article key={requestId} className="rounded-xl border border-border/70 bg-background p-4">

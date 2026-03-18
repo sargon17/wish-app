@@ -4,7 +4,7 @@ import { useMutation, useQuery } from 'convex/react'
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { Button } from '@/components/ui/button'
 
-import { api } from '../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export const Route = createFileRoute('/dashboard/waitlist')({ component: WaitlistPage })
 
@@ -37,7 +37,7 @@ function WaitlistPage() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => {
+                {entries.map((entry: any) => {
                   const status = entry.invitedAt ? 'invited' : 'pending'
                   return (
                     <tr key={String(entry._id)} className="border-t border-border/60">

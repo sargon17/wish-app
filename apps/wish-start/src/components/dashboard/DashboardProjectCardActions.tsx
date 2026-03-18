@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-import { api } from '../../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export default function DashboardProjectCardActions({ id }: { id: string }) {
   const [isOpen, setIsOpen] = useState(false)

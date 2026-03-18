@@ -8,7 +8,7 @@ import CreateProjectDialog from '@/components/project/CreateProjectDialog'
 import { Button } from '@/components/ui/button'
 import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
 
-import { api } from '../../../wish-app/convex/_generated/api.js'
+import { api } from '@/convex/api'
 
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })
 
@@ -60,7 +60,7 @@ function Dashboard() {
       {isAuthenticated && !isLoading ? (
         projects?.length ? (
           <DashboardView
-            projects={projects.map((project) => ({
+            projects={projects.map((project: any) => ({
               _id: String(project._id),
               title: project.title,
             }))}
