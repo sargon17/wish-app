@@ -6,11 +6,11 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+    // devtools(),
 import { nitro } from 'nitro/vite';
 
 const config = defineConfig({
   plugins: [
-    devtools(),
     tailwindcss(),
     tanstackStart(),
     viteReact(),
@@ -18,10 +18,6 @@ const config = defineConfig({
   ],
   resolve: {
     tsconfigPaths: true,
-  },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
   },
 })
 
