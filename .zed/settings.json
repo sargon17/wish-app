@@ -8,7 +8,6 @@
     "oxlint": {
       "initialization_options": {
         "settings": {
-          "configPath": ".oxlintrc.json",
           "run": "onType",
         },
       },
@@ -16,7 +15,7 @@
     "oxfmt": {
       "initialization_options": {
         "settings": {
-          "configPath": ".oxfmtrc.json",
+          "configPath": "vite.config.ts",
           "run": "onSave",
         },
       },

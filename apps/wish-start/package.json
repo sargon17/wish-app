@@ -14,7 +14,6 @@
     "check": "vp check",
     "lint": "vp lint --fix",
     "lint:strict": "vp lint",
-    "fmt": "vp fmt --write",
     "clean": "rm -rf node_modules",
     "clean-project": "rm -rf node_modules",
     "kill-port": "lsof -ti :3002 | xargs kill -9",

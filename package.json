@@ -10,7 +10,6 @@
     "dev": "vp run wish-start#dev",
     "dev:all": "vp run -r dev",
     "dev:doc": "vp run wish-app-docs#dev",
-    "fmt": "vp run -r fmt",
     "format": "vp run -r fmt",
     "lint": "vp run -r lint",
     "test": "vp run -r test"
