@@ -12,7 +12,6 @@
   },
   "ignorePatterns": [
     "**/out/",
-    "**/.next/",
     "**/.yarn/",
     "!.yarn/releases",
     ".vscode/*",
@@ -48,7 +47,6 @@
     "**/.history",
     "**/.vitepress/cache",
     "**/.nuxt",
-    "**/.next",
     "**/.svelte-kit",
     "**/.vercel",
     "**/.changeset",

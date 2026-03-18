@@ -5,7 +5,7 @@ Status: **in progress**
 ## Phase 0 (this PR)
 - [x] Scaffolded a new TanStack Start app at `apps/wish-start`
 - [x] Added workspace-compatible scripts (`dev`, `build`, `lint`, `fmt`, `check-types`)
-- [x] Kept existing Next.js app (`apps/wish-app`) untouched for safe parallel migration
+- [x] Removed the legacy Next.js app after the port stabilized
 
 ## Phase 1
 - [x] Port base app shell/layout + theme setup
