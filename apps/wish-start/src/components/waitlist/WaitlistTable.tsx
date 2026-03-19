@@ -320,7 +320,7 @@ export function WaitlistTable() {
             value={statusFilter}
             onValueChange={(value) => setStatusFilter(value as "all" | "pending" | "invited")}
           >
-            <SelectTrigger className="w-[160px]" aria-label="Filter by status">
+            <SelectTrigger className="w-40" aria-label="Filter by status">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
