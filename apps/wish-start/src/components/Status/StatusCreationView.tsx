@@ -1,26 +1,27 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import type { PropsWithChildren } from "react";
+import { PaintBucket, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { slugifyStatusName } from "@/lib/requestStatus/slugifyStatusName";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
-
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 type StatusCreationViewProps = PropsWithChildren<{
   projectId: Id<"projects">;
@@ -36,95 +37,120 @@ export default function StatusCreationView({
 }: StatusCreationViewProps) {
   const createStatus = useMutation(api.requestStatuses.create);
   const [open, setOpen] = useState(false);
-  const [newStatusName, setNewStatusName] = useState("");
-  const [newStatusColor, setNewStatusColor] = useState(defaultColor);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState(defaultColor);
   const [isCreating, setIsCreating] = useState(false);
 
-  const fallbackColor = useMemo(() => defaultColor, [defaultColor]);
+  const cleanName = name.trim();
+  const slug = slugifyStatusName(cleanName);
+  const isInvalidName = cleanName.length < 2 || !slug;
 
-  const slugifyStatusName = useCallback((label: string) => {
-    return label
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }, []);
+  function resetForm() {
+    setName("");
+    setDescription("");
+    setColor(defaultColor);
+    setIsCreating(false);
+  }
 
-  const handleCreateStatus = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const displayName = newStatusName.trim();
-      const name = slugifyStatusName(displayName);
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
 
-      if (!displayName || !name) {
-        toast.error("Add a name for the new status");
-        return;
-      }
+    if (!nextOpen) {
+      resetForm();
+    }
+  }
 
-      setIsCreating(true);
-      try {
-        await createStatus({
-          name,
-          displayName,
-          project: projectId,
-          color: newStatusColor,
-        });
-        setNewStatusName("");
-        setNewStatusColor(fallbackColor);
-        setOpen(false);
-        toast.success("Status added");
-      } catch (error) {
-        console.error(error);
-        toast.error("Unable to add the status");
-      } finally {
-        setIsCreating(false);
-      }
-    },
-    [createStatus, fallbackColor, newStatusColor, newStatusName, projectId, slugifyStatusName],
-  );
+  async function handleCreateStatus(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isInvalidName) {
+      toast.error("Add a valid status name");
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      await createStatus({
+        displayName: cleanName,
+        description: description.trim() || undefined,
+        project: projectId,
+        color,
+      });
+      resetForm();
+      setOpen(false);
+      toast.success("Status added");
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to add the status");
+    } finally {
+      setIsCreating(false);
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-[80vw] max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Create a new status</DialogTitle>
+          <DialogDescription>
+            Add a custom workflow stage for this project. It will appear after the default statuses.
+          </DialogDescription>
         </DialogHeader>
-        <form className="grid gap-4" onSubmit={handleCreateStatus}>
-          <InputGroup>
-            <InputGroupInput
-              id="status-name"
-              placeholder="Backlog"
-              value={newStatusName}
-              onChange={(event) => setNewStatusName(event.target.value)}
-            />
 
-            <Popover>
-              <PopoverTrigger>
-                <div
-                  className="w-4 h-4 rounded-md"
-                  style={{ backgroundColor: newStatusColor }}
-                ></div>
-              </PopoverTrigger>
-              <PopoverContent>
-                <InputGroupInput
+        <form className="space-y-5" onSubmit={handleCreateStatus}>
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_150px]">
+            <div className="grid gap-2">
+              <Label htmlFor="status-name">Status name</Label>
+              <Input
+                id="status-name"
+                placeholder="In review"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                aria-invalid={isInvalidName && cleanName.length > 0}
+              />
+              <p className="text-xs text-muted-foreground">Used in the board, filters, and request editor.</p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="status-color">Color</Label>
+              <div className="flex items-center gap-3 rounded-md border border-input bg-background px-3 py-2">
+                <input
                   id="status-color"
                   type="color"
-                  value={newStatusColor}
-                  onChange={(event) => setNewStatusColor(event.target.value)}
-                  className="h-10 w-10 p-1"
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
+                  className="h-9 w-11 cursor-pointer rounded border-0 bg-transparent p-0"
                 />
-              </PopoverContent>
-            </Popover>
-          </InputGroup>
-          <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                <span className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+                  <PaintBucket className="size-3.5" />
+                  {color.toLowerCase()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="status-description">Description</Label>
+            <Textarea
+              id="status-description"
+              placeholder="Explain when this stage should be used."
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating || !newStatusName.trim()}>
+            <Button type="submit" disabled={isCreating || isInvalidName}>
+              <Plus className="size-4" />
               {isCreating ? "Adding..." : "Add status"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

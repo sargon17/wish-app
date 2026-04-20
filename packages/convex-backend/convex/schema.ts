@@ -42,7 +42,9 @@ export default defineSchema({
     status: v.id("requestStatuses"),
     project: v.id("projects"),
     upvoteCount: v.optional(v.number()),
-  }).index("by_project", ["project"]),
+  })
+    .index("by_project", ["project"])
+    .index("by_project_status", ["project", "status"]),
 
   requestUpvotes: defineTable({
     requestId: v.id("requests"),
@@ -76,8 +78,11 @@ export default defineSchema({
     project: v.optional(v.id("projects")),
     type: v.union(v.literal("custom"), v.literal("default")),
     color: v.optional(v.string()),
+    position: v.optional(v.number()),
 
-  }).index("by_project", ["project"]),
+  })
+    .index("by_project", ["project"])
+    .index("by_project_name", ["project", "name"]),
 
   waitlist: defineTable({
     email: v.string(),
