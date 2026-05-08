@@ -47,7 +47,9 @@ export function assertValidStatusColor(color?: string) {
   }
 }
 
-export function assertCustomStatusEditable(status: Doc<"requestStatuses"> | null | undefined): Doc<"requestStatuses"> {
+export function assertCustomStatusEditable(
+  status: Doc<"requestStatuses"> | null | undefined,
+): Doc<"requestStatuses"> & { project: Id<"projects"> } {
   if (!status) {
     throw new Error("Status not found");
   }
@@ -60,7 +62,7 @@ export function assertCustomStatusEditable(status: Doc<"requestStatuses"> | null
     throw new Error("Status is not linked to a project");
   }
 
-  return status;
+  return status as Doc<"requestStatuses"> & { project: Id<"projects"> };
 }
 
 function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {

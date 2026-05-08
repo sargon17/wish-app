@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
+import type { Id } from "@wish/convex-backend/data-model";
+
 import {
   assertCustomStatusEditable,
   assertNoDuplicateStatusName,
@@ -38,7 +40,7 @@ describe("requestStatusWorkflow", () => {
   });
 
   it("validates custom reorder payloads and editable status constraints", () => {
-    const projectId = "project-1";
+    const projectId = "project-1" as Id<"projects">;
     const status = {
       _id: "status-1",
       type: "custom",
@@ -70,6 +72,7 @@ describe("requestStatusWorkflow", () => {
       { _id: "custom-1", type: "custom", project: "project-1", position: 1 },
       { _id: "custom-0", type: "custom", project: "project-1", position: 0 },
     ] as any;
+    const projectId = "project-1" as Id<"projects">;
 
     const ctx = {
       db: {
@@ -81,7 +84,7 @@ describe("requestStatusWorkflow", () => {
       },
     } as any;
 
-    await expect(getOrderedStatusesForProject(ctx, "project-1")).resolves.toEqual([
+    await expect(getOrderedStatusesForProject(ctx, projectId)).resolves.toEqual([
       collected[0],
       collected[2],
       collected[1],
