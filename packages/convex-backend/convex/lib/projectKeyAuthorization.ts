@@ -1,5 +1,3 @@
-import type { HonoWithConvex } from "convex-helpers/server/hono";
-
 import type { Doc, Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
@@ -10,6 +8,13 @@ export const API_KEY_RATE_LIMIT = { limit: 120, windowMs: 60_000 };
 export const IP_RATE_LIMIT = { limit: 240, windowMs: 60_000 };
 
 export type ProjectOperationScope = "read" | "write" | "admin";
+
+type ProjectKeyAuthorizationContext = {
+  req: {
+    header(name: string): string | undefined;
+  };
+  env: Pick<ActionCtx, "runQuery" | "runMutation">;
+};
 
 type ProjectKeyAuthorizationSuccess = {
   ok: true;
@@ -24,7 +29,7 @@ type ProjectKeyAuthorizationFailure = {
 
 export type ProjectKeyAuthorizationResult = ProjectKeyAuthorizationSuccess | ProjectKeyAuthorizationFailure;
 
-export function getProjectApiKeyFromRequest(c: HonoWithConvex<ActionCtx>) {
+export function getProjectApiKeyFromRequest(c: ProjectKeyAuthorizationContext) {
   const headerKey = c.req.header("x-api-key");
   if (headerKey) {
     return headerKey.trim();
@@ -42,7 +47,7 @@ export function getProjectApiKeyFromRequest(c: HonoWithConvex<ActionCtx>) {
   return authorization.trim();
 }
 
-export function getClientIpAddress(c: HonoWithConvex<ActionCtx>) {
+export function getClientIpAddress(c: ProjectKeyAuthorizationContext) {
   const forwardedFor = c.req.header("x-forwarded-for");
   if (forwardedFor) {
     const [firstIp] = forwardedFor.split(",");
@@ -60,7 +65,7 @@ export function getClientIpAddress(c: HonoWithConvex<ActionCtx>) {
 }
 
 export async function authorizeProjectKeyRequest(
-  c: HonoWithConvex<ActionCtx>,
+  c: ProjectKeyAuthorizationContext,
   projectId: string,
   requiredScope: ProjectOperationScope,
 ): Promise<ProjectKeyAuthorizationResult> {
