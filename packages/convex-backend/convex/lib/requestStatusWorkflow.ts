@@ -65,6 +65,12 @@ export function assertCustomStatusEditable(
   return status as Doc<"requestStatuses"> & { project: Id<"projects"> };
 }
 
+export function assertCustomStatusRemovable(linkedRequest: Doc<"requests"> | null | undefined) {
+  if (linkedRequest) {
+    throw new Error("Statuses in use cannot be removed");
+  }
+}
+
 function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
   return (
     (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||

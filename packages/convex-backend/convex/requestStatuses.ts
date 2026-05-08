@@ -6,6 +6,7 @@ import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   assertCustomStatusEditable,
+  assertCustomStatusRemovable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
   assertValidStatusColor,
@@ -165,9 +166,7 @@ export const remove = mutation({
       .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.id))
       .first();
 
-    if (linkedRequest) {
-      throw new Error("Statuses in use cannot be removed");
-    }
+    assertCustomStatusRemovable(linkedRequest);
 
     await ctx.db.delete(args.id);
   },

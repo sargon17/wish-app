@@ -4,6 +4,7 @@ import type { Id } from "@wish/convex-backend/data-model";
 
 import {
   assertCustomStatusEditable,
+  assertCustomStatusRemovable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
   assertValidStatusColor,
@@ -76,6 +77,13 @@ describe("requestStatusWorkflow", () => {
     expect(() => assertValidCustomOrderPayload(statuses, ["status-1"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
+  });
+
+  it("rejects removing a status that still has linked requests", () => {
+    expect(() => assertCustomStatusRemovable({ _id: "request-1" } as any)).toThrow(
+      "Statuses in use cannot be removed",
+    );
+    expect(() => assertCustomStatusRemovable(undefined)).not.toThrow();
   });
 
   it("exposes backend ordering as the only project status ordering path", async () => {
