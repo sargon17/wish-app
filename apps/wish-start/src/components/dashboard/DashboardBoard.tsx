@@ -30,11 +30,12 @@ export default function DashboardBoard({
       [key: string]: typeof requests;
     } = {};
 
-    requests?.forEach((r) => {
+    requests &&
+      requests.map((r) => {
         if (!response[r.status]) {
           response[r.status] = [];
         }
-        response[r.status]?.push(r);
+        return response[r.status]?.push(r);
       });
     return response;
   })();
