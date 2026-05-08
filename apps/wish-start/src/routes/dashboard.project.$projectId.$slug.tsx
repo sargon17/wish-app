@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Cog, Plus } from 'lucide-react'
+import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
+import { Cog, Newspaper, Plus } from 'lucide-react'
 
 import DashboardBoard from '@/components/dashboard/DashboardBoard'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
@@ -17,6 +17,28 @@ export const Route = createFileRoute('/dashboard/project/$projectId/$slug')({
 function ProjectDetails() {
   const { projectId, slug } = Route.useParams()
   const { isLoading, isAuthenticated } = useStoreUserEffect()
+  const location = useLocation()
+  const isChangelogView = location.pathname.endsWith('/changelog')
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[calc(100dvh-8px)] flex-col overflow-hidden">
+        <Loading />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-[calc(100dvh-8px)] flex-col overflow-hidden px-6 py-6 text-sm text-muted-foreground">
+        Sign in to load this project.
+      </div>
+    )
+  }
+
+  if (isChangelogView) {
+    return <Outlet />
+  }
 
   return (
     <div className="flex h-[calc(100dvh-8px)] flex-col overflow-hidden">
@@ -36,6 +58,13 @@ function ProjectDetails() {
                 </Button>
               </RequestCreateEditDialog>
 
+              <Button className="shrink-0" variant="outline" asChild>
+                <Link to="/dashboard/project/$projectId/$slug/changelog" params={{ projectId, slug }}>
+                  <Newspaper />
+                  Changelog
+                </Link>
+              </Button>
+
               <ProjectSettings projectID={projectId as never}>
                 <Button variant="outline" className="group/button">
                   <Cog className="transition-all group-hover/button:rotate-45" />
@@ -45,14 +74,7 @@ function ProjectDetails() {
           }
         />
       </div>
-      {isLoading ? <Loading /> : null}
-      {!isLoading ? (
-        isAuthenticated ? (
-          <DashboardBoard projectId={projectId as never} />
-        ) : (
-          <div className="px-6 text-sm text-muted-foreground">Sign in to load this project.</div>
-        )
-      ) : null}
+      <DashboardBoard projectId={projectId as never} />
     </div>
   )
 }

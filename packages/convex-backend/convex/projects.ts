@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { createApiKeyRecord } from "./apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { ensureProjectPublicChangelogSlug } from "./lib/projectChangelog";
 import { toPublicProject } from "./lib/projectPublic";
 
 // export const getForCurrentUser = query({
@@ -60,6 +61,8 @@ export const createProject = mutation({
       user: user._id,
     });
 
+    await ensureProjectPublicChangelogSlug(ctx, projectId);
+
     const { apiKey } = await createApiKeyRecord(ctx, {
       projectId,
       createdBy: user._id,
@@ -94,6 +97,31 @@ export const updateProject = mutation({
   },
 });
 
+export const ensurePublicChangelogSlug = mutation({
+  args: {
+    id: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.id, user._id);
+
+    const project = await ensureProjectPublicChangelogSlug(ctx, args.id);
+    return toPublicProject(project);
+  },
+});
+
+export const getProjectByPublicChangelogSlugInternal = internalQuery({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("projects")
+      .withIndex("by_public_changelog_slug", (q) => q.eq("publicChangelogSlug", args.slug))
+      .unique();
+  },
+});
+
 export const deleteProject = mutation({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {
@@ -120,12 +148,17 @@ export const deleteProject = mutation({
       .query("apiKeys")
       .withIndex("by_project", (q) => q.eq("projectId", args.id))
       .collect();
+    const changelogEntries = await ctx.db
+      .query("changelogEntries")
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .collect();
 
     await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
     await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
     await Promise.all(requests.map((request) => ctx.db.delete(request._id)));
     await Promise.all(statuses.map((status) => ctx.db.delete(status._id)));
     await Promise.all(apiKeys.map((apiKey) => ctx.db.delete(apiKey._id)));
+    await Promise.all(changelogEntries.map((entry) => ctx.db.delete(entry._id)));
 
     await ctx.db.delete(args.id);
   },

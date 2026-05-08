@@ -11,7 +11,10 @@ export default defineSchema({
     title: v.string(),
     user: v.id("users"),
     apiKeyHash: v.optional(v.string()),
-  }).index("by_user", ["user"]),
+    publicChangelogSlug: v.optional(v.string()),
+  })
+    .index("by_user", ["user"])
+    .index("by_public_changelog_slug", ["publicChangelogSlug"]),
 
   apiKeys: defineTable({
     projectId: v.id("projects"),
@@ -89,4 +92,23 @@ export default defineSchema({
     appliedAt: v.number(),
     invitedAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
+
+  changelogEntries: defineTable({
+    projectId: v.id("projects"),
+    versionLabel: v.string(),
+    versionLabelNormalized: v.string(),
+    title: v.string(),
+    summary: v.optional(v.string()),
+    body: v.optional(v.string()),
+    type: v.union(v.literal("feature"), v.literal("improvement"), v.literal("fix")),
+    status: v.union(v.literal("draft"), v.literal("published")),
+    publishedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_status", ["projectId", "status"])
+    .index("by_project_version_label", ["projectId", "versionLabelNormalized"]),
 });

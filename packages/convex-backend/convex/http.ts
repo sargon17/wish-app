@@ -153,6 +153,28 @@ function getClientIpAddress(c: any) {
   return "unknown";
 }
 
+async function checkIpRateLimit(c: any) {
+  const clientIp = getClientIpAddress(c);
+  const ipRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
+    bucket: `ip:${clientIp}`,
+    limit: IP_RATE_LIMIT.limit,
+    windowMs: IP_RATE_LIMIT.windowMs,
+  });
+
+  if (!ipRateLimit.allowed) {
+    return c.json(
+      {
+        error: "Too many requests",
+        code: "rate_limited",
+        retryAfterMs: ipRateLimit.retryAfterMs,
+      },
+      429,
+    );
+  }
+
+  return null;
+}
+
 async function assertRequestBelongsToProject(
   c: any,
   requestId: string,
@@ -196,6 +218,27 @@ app.get("/api/project/:id/requests/", async (c) => {
     project: toPublicProject(project),
     requests: mappedRequests,
   });
+});
+
+app.get("/api/changelog/:slug", async (c) => {
+  const slug = c.req.param("slug");
+
+  if (!slug) {
+    return c.json({ error: "Missing changelog slug", code: "missing_changelog_slug" }, 400);
+  }
+
+  const rateLimitedResponse = await checkIpRateLimit(c);
+  if (rateLimitedResponse) {
+    return rateLimitedResponse;
+  }
+
+  const feed = await c.env.runQuery(internal.changelogEntries.getPublicBySlugInternal, { slug });
+
+  if (!feed) {
+    return c.json({ error: "Changelog not found", code: "changelog_not_found" }, 404);
+  }
+
+  return c.json(feed, 200);
 });
 
 app.get("/api/project/:id/upvotes", async (c) => {

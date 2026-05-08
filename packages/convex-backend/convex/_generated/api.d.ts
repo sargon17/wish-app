@@ -9,9 +9,11 @@
  */
 
 import type * as apiKeys from "../apiKeys.js";
+import type * as changelogEntries from "../changelogEntries.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_projectChangelog from "../lib/projectChangelog.js";
 import type * as lib_projectPublic from "../lib/projectPublic.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
@@ -33,9 +35,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
+  changelogEntries: typeof changelogEntries;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
+  "lib/projectChangelog": typeof lib_projectChangelog;
   "lib/projectPublic": typeof lib_projectPublic;
   projects: typeof projects;
   rateLimits: typeof rateLimits;
