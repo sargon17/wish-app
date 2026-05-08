@@ -132,7 +132,7 @@ export const deleteByClient = mutation({
       }
 
       if (comment.requestId !== args.requestId || comment.projectId !== args.projectId) {
-        throw new ConvexError({ code: "BAD_REQUEST", message: "Comment does not belong to this request" });
+        throw new ConvexError({ code: "NOT_FOUND", message: "Comment not found" });
       }
 
       const identity = await ctx.auth.getUserIdentity();

@@ -177,50 +177,58 @@ async function assertRequestBelongsToProject(
 }
 
 app.get("/api/project/:id/requests/", async (c) => {
-  const id = c.req.param("id");
+  try {
+    const id = c.req.param("id");
 
-  const authorization = await authorizeProjectRequest(c, id, "read");
-  if ("response" in authorization) {
-    return authorization.response;
+    const authorization = await authorizeProjectRequest(c, id, "read");
+    if ("response" in authorization) {
+      return authorization.response;
+    }
+
+    const project = authorization.project;
+    const projectId = id as Id<"projects">;
+    const requests = await c.env.runQuery(internal.requests.getByProjectInternal, { id: projectId });
+    const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
+      id: projectId,
+    });
+
+    const mappedRequests = requests.map((request) => {
+      const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
+      return { ...request, computedStatus };
+    });
+
+    return c.json({
+      project: toPublicProject(project),
+      requests: mappedRequests,
+    });
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
-
-  const project = authorization.project;
-  const projectId = id as Id<"projects">;
-  const requests = await c.env.runQuery(internal.requests.getByProjectInternal, { id: projectId });
-  const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
-    id: projectId,
-  });
-
-  const mappedRequests = requests.map((request) => {
-    const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
-    return { ...request, computedStatus };
-  });
-
-  return c.json({
-    project: toPublicProject(project),
-    requests: mappedRequests,
-  });
 });
 
 app.get("/api/changelog/:slug", async (c) => {
-  const slug = c.req.param("slug");
+  try {
+    const slug = c.req.param("slug");
 
-  if (!slug) {
-    return publicErrorJson(c, createPublicError("validation_failed"));
+    if (!slug) {
+      return publicErrorJson(c, createPublicError("validation_failed"));
+    }
+
+    const rateLimitedResponse = await checkIpRateLimit(c);
+    if (rateLimitedResponse) {
+      return rateLimitedResponse;
+    }
+
+    const feed = await c.env.runQuery(internal.changelogEntries.getPublicBySlugInternal, { slug });
+
+    if (!feed) {
+      return publicErrorJson(c, createPublicError("not_found"));
+    }
+
+    return c.json(feed, 200);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
-
-  const rateLimitedResponse = await checkIpRateLimit(c);
-  if (rateLimitedResponse) {
-    return rateLimitedResponse;
-  }
-
-  const feed = await c.env.runQuery(internal.changelogEntries.getPublicBySlugInternal, { slug });
-
-  if (!feed) {
-    return publicErrorJson(c, createPublicError("not_found"));
-  }
-
-  return c.json(feed, 200);
 });
 
 app.get("/api/project/:id/upvotes", async (c) => {
@@ -257,18 +265,24 @@ const CommentValidator = type({
   body: "string > 0",
 });
 
+async function parsePublicBody<T>(c: any, validator: { assert(value: unknown): T }) {
+  try {
+    const rawBody = await c.req.json();
+    return validator.assert(rawBody);
+  } catch {
+    throw createPublicError("validation_failed");
+  }
+}
+
+app.onError((error, c) => {
+  return publicErrorJson(c, toPublicErrorResponse(error));
+});
+
 app.post("/api/project/:id/request/", async (c) => {
   const id = c.req.param("id");
 
   try {
-    const rawBody = await c.req.json();
-    const body = (() => {
-      try {
-        return RequestValidator.assert(rawBody);
-      } catch {
-        throw createPublicError("validation_failed");
-      }
-    })();
+    const body = await parsePublicBody(c, RequestValidator);
     const authorization = await authorizeProjectRequest(c, id, "write");
     if ("response" in authorization) {
       return authorization.response;
@@ -357,14 +371,7 @@ app.post(
     const projectId = c.req.param("id");
 
     try {
-      const rawBody = await c.req.json();
-      const body = (() => {
-        try {
-          return CommentValidator.assert(rawBody);
-        } catch {
-          throw createPublicError("validation_failed");
-        }
-      })();
+      const body = await parsePublicBody(c, CommentValidator);
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
@@ -421,14 +428,7 @@ app.post(
     const projectId = c.req.param("id");
 
     try {
-      const rawBody = await c.req.json();
-      const body = (() => {
-        try {
-          return UpvoteValidator.assert(rawBody);
-        } catch {
-          throw createPublicError("validation_failed");
-        }
-      })();
+      const body = await parsePublicBody(c, UpvoteValidator);
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;

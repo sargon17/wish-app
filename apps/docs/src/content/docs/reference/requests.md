@@ -74,6 +74,7 @@ Response:
 - `403` with `{ "error": "Insufficient API key scope", "code": "insufficient_scope" }` when the key lacks `write`.
 - `404` with `{ "error": "Not found", "code": "not_found" }` when the project or request cannot be used from this route, including hidden existence cases.
 - `429` with `{ "error": "Too many requests", "code": "rate_limited", "retryAfterMs": number }` when throttled.
+- Malformed JSON bodies also return `400 validation_failed` rather than a framework/default error response.
 
 ## Delete request
 

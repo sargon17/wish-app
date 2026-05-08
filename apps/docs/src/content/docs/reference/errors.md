@@ -44,6 +44,7 @@ Public routes intentionally return `not_found` for cases where exposing a resour
 
 - A request id does not exist.
 - A request exists but does not belong to the project in the path.
+- A comment id exists but does not belong to the supplied request or project.
 - A project lookup fails on API-key-protected project routes.
 
 That keeps the public API from distinguishing "missing" from "not yours" in places where the distinction would disclose data.
