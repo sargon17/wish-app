@@ -73,8 +73,13 @@ function AppDevtools() {
       .then(([devtoolsModule, routerDevtoolsModule]) => {
         if (!active) return
 
-        setDevtools(() => devtoolsModule.TanStackDevtools)
-        setRouterDevtoolsPanel(() => routerDevtoolsModule.TanStackRouterDevtoolsPanel)
+        const TanStackDevtools = devtoolsModule.TanStackDevtools as ComponentType<{
+          config: { position: 'bottom-right' }
+          plugins: { name: string; render: React.ReactNode }[]
+        }>
+
+        setDevtools(TanStackDevtools)
+        setRouterDevtoolsPanel(routerDevtoolsModule.TanStackRouterDevtoolsPanel as ComponentType)
       })
       .catch(() => {
         // Devtools are optional and should never block rendering.
