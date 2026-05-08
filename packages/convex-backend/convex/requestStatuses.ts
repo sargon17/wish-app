@@ -43,7 +43,7 @@ function assertValidStatusName(displayName: string): { displayName: string; name
 }
 
 function assertValidStatusColor(color?: string) {
-  if (!color) {
+  if (color === undefined) {
     return;
   }
 
