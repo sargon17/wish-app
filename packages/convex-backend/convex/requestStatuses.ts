@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
@@ -18,7 +18,55 @@ function getDefaultStatusRank(name: string) {
   return index;
 }
 
-async function listStatusesByProjectId(ctx: QueryCtx, projectId: Id<"projects">) {
+function normalizeStatusDisplayName(label: string) {
+  return label.trim().replace(/\s+/g, " ");
+}
+
+function slugifyStatusName(label: string) {
+  return normalizeStatusDisplayName(label)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function assertValidStatusName(displayName: string): { displayName: string; name: string } {
+  const normalized = normalizeStatusDisplayName(displayName);
+  const slug = slugifyStatusName(normalized);
+
+  if (normalized.length < 2 || !slug) {
+    throw new Error("Status name must contain at least 2 readable characters");
+  }
+
+  return { displayName: normalized, name: slug };
+}
+
+function assertValidStatusColor(color?: string) {
+  if (!color) {
+    return;
+  }
+
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+    throw new Error("Color must be a 6-digit hex value");
+  }
+}
+
+function assertCustomStatusEditable(status: Doc<"requestStatuses"> | null | undefined): Doc<"requestStatuses"> {
+  if (!status) {
+    throw new Error("Status not found");
+  }
+  if (status.type === "default") {
+    throw new Error("Default statuses cannot be updated");
+  }
+  if (!status.project) {
+    throw new Error("Status is not linked to a project");
+  }
+
+  return status;
+}
+
+async function getOrderedStatusesForProject(ctx: QueryCtx, projectId: Id<"projects">): Promise<Doc<"requestStatuses">[]> {
   const statuses = await ctx.db
     .query("requestStatuses")
     .filter((q) =>
@@ -29,11 +77,26 @@ async function listStatusesByProjectId(ctx: QueryCtx, projectId: Id<"projects">)
   const defaultStatuses = statuses
     .filter((status) => status.type === "default")
     .sort((a, b) => getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name));
-  const customStatuses = statuses
-    .filter((status) => status.type === "custom")
-    .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime);
+  const customStatuses = await getOrderedCustomStatusesForProject(ctx, projectId, statuses);
 
   return [...defaultStatuses, ...customStatuses];
+}
+
+async function getOrderedCustomStatusesForProject(
+  ctx: QueryCtx | MutationCtx,
+  projectId: Id<"projects">,
+  statuses?: Doc<"requestStatuses">[],
+): Promise<Doc<"requestStatuses">[]> {
+  const projectStatuses =
+    statuses ??
+    (await ctx.db
+      .query("requestStatuses")
+      .withIndex("by_project", (q) => q.eq("project", projectId))
+      .collect());
+
+  return projectStatuses
+    .filter((status) => status.type === "custom")
+    .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime);
 }
 
 async function getRequestCountsByStatusId(ctx: QueryCtx, projectId: Id<"projects">) {
@@ -52,28 +115,48 @@ async function getRequestCountsByStatusId(ctx: QueryCtx, projectId: Id<"projects
   return counts;
 }
 
-async function getCustomStatusesByProjectId(ctx: QueryCtx | MutationCtx, projectId: Id<"projects">) {
-  return await ctx.db
-    .query("requestStatuses")
-    .withIndex("by_project", (q) => q.eq("project", projectId))
-    .collect();
+function assertNoDuplicateStatusName(statuses: Doc<"requestStatuses">[], name: string, currentStatusId?: Id<"requestStatuses">) {
+  const duplicate = statuses.find((status) => status.name === name && status._id !== currentStatusId);
+
+  if (duplicate) {
+    throw new Error("A status with this name already exists in the project");
+  }
 }
 
-function slugifyStatusName(label: string) {
-  return label
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function assertHexColor(color?: string) {
-  if (!color) {
-    return;
+function assertValidCustomOrderPayload(
+  statuses: Doc<"requestStatuses">[],
+  ids: Id<"requestStatuses">[],
+  projectId: Id<"projects">,
+) {
+  if (statuses.length !== ids.length) {
+    throw new Error("Invalid status order payload");
   }
 
-  if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
-    throw new Error("Color must be a 6-digit hex value");
+  const expectedIds = new Set(statuses.map((status) => status._id.toString()));
+  const receivedIds = new Set<string>();
+
+  for (const id of ids) {
+    const status = statuses.find((item) => item._id === id);
+
+    if (!status || status.type !== "custom" || status.project !== projectId) {
+      throw new Error("Invalid status order payload");
+    }
+
+    const key = id.toString();
+    if (receivedIds.has(key)) {
+      throw new Error("Invalid status order payload");
+    }
+    receivedIds.add(key);
+  }
+
+  if (expectedIds.size !== receivedIds.size) {
+    throw new Error("Invalid status order payload");
+  }
+
+  for (const id of expectedIds) {
+    if (!receivedIds.has(id)) {
+      throw new Error("Invalid status order payload");
+    }
   }
 }
 
@@ -90,7 +173,7 @@ export const getByProject = query({
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.id, user._id);
 
-    return await listStatusesByProjectId(ctx, args.id);
+    return await getOrderedStatusesForProject(ctx, args.id);
   },
 });
 
@@ -101,7 +184,7 @@ export const getManagementByProject = query({
     await assertProjectOwner(ctx, args.id, user._id);
 
     const [statuses, counts] = await Promise.all([
-      listStatusesByProjectId(ctx, args.id),
+      getOrderedStatusesForProject(ctx, args.id),
       getRequestCountsByStatusId(ctx, args.id),
     ]);
 
@@ -115,7 +198,7 @@ export const getManagementByProject = query({
 export const getByProjectInternal = internalQuery({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    return await listStatusesByProjectId(ctx, args.id);
+    return await getOrderedStatusesForProject(ctx, args.id);
   },
 });
 
@@ -130,23 +213,13 @@ export const create = mutation({
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.project, user._id);
 
-    const displayName = args.displayName.trim();
-    const name = slugifyStatusName(displayName);
-    assertHexColor(args.color);
+    const { displayName, name } = assertValidStatusName(args.displayName);
+    assertValidStatusColor(args.color);
 
-    const existingStatus = (await listStatusesByProjectId(ctx, args.project))
-      .find((status) => status.name === name);
+    const statuses = await getOrderedStatusesForProject(ctx, args.project);
+    assertNoDuplicateStatusName(statuses, name);
 
-    if (displayName.length < 2 || !name) {
-      throw new Error("Status name must contain at least 2 readable characters");
-    }
-
-    if (existingStatus) {
-      throw new Error("A status with this name already exists in the project");
-    }
-
-    const customStatuses = await getCustomStatusesByProjectId(ctx, args.project);
-
+    const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.project);
     const nextPosition = customStatuses.reduce((max, status) => {
       return Math.max(max, status.position ?? -1);
     }, -1) + 1;
@@ -170,33 +243,15 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = await ctx.db.get(args.id);
-
-    if (!status) {
-      throw new Error("Status not found");
-    }
-    if (status.type === "default") {
-      throw new Error("Default statuses cannot be updated");
-    }
-    if (!status.project) {
-      throw new Error("Status is not linked to a project");
-    }
+    const status = assertCustomStatusEditable(await ctx.db.get(args.id));
 
     await assertProjectOwner(ctx, status.project, user._id);
 
-    const displayName = args.displayName.trim();
-    const name = slugifyStatusName(displayName);
+    const { displayName, name } = assertValidStatusName(args.displayName);
     const description = args.description?.trim();
-    assertHexColor(args.color);
-    const duplicateStatus = (await listStatusesByProjectId(ctx, status.project))
-      .find((item) => item.name === name && item._id !== args.id);
-
-    if (displayName.length < 2 || !name) {
-      throw new Error("Status name must contain at least 2 readable characters");
-    }
-    if (duplicateStatus) {
-      throw new Error("A status with this name already exists in the project");
-    }
+    assertValidStatusColor(args.color);
+    const statuses = await getOrderedStatusesForProject(ctx, status.project);
+    assertNoDuplicateStatusName(statuses, name, args.id);
 
     await ctx.db.patch(args.id, {
       displayName,
@@ -216,25 +271,8 @@ export const reorderCustom = mutation({
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
 
-    const customStatuses = (await getCustomStatusesByProjectId(ctx, args.projectId))
-      .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime);
-
-    if (customStatuses.length !== args.ids.length) {
-      throw new Error("Invalid status order payload");
-    }
-
-    const expectedIds = new Set(customStatuses.map((status) => status._id.toString()));
-    const receivedIds = new Set(args.ids.map((id) => id.toString()));
-
-    if (expectedIds.size !== receivedIds.size) {
-      throw new Error("Invalid status order payload");
-    }
-
-    for (const id of expectedIds) {
-      if (!receivedIds.has(id)) {
-        throw new Error("Invalid status order payload");
-      }
-    }
+    const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.projectId);
+    assertValidCustomOrderPayload(customStatuses, args.ids, args.projectId);
 
     await Promise.all(args.ids.map((id, index) => ctx.db.patch(id, { position: index })));
   },
@@ -247,7 +285,6 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
-
     if (!status) {
       throw new Error("Status not found");
     }
@@ -283,7 +320,6 @@ export const updateColor = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const status = await ctx.db.get(args.id);
-
     if (!status) {
       throw new Error("Status not found");
     }
@@ -298,7 +334,7 @@ export const updateColor = mutation({
     const projectId = status.project;
 
     await assertProjectOwner(ctx, projectId, user._id);
-    assertHexColor(args.color);
+    assertValidStatusColor(args.color);
 
     try {
       await ctx.db.patch(args.id, { color: args.color });
