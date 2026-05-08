@@ -48,7 +48,7 @@ Output only a JSON object wrapped in `<architecture>` tags:
   "filesLikelyTouched": ["..."],
   "approach": ["Step 1", "Step 2"],
   "risks": ["..."],
-  "validation": ["pnpm run check-types"],
+  "validation": ["bun run check-types"],
   "constraints": ["..."]
 }
 </architecture>

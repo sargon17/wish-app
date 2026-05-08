@@ -39,9 +39,9 @@ Before committing, run the smallest useful validation for the touched files.
 
 Required when applicable:
 
-1. Run `pnpm run check-types` for TypeScript changes.
-2. Run `pnpm run lint` for lintable source changes.
-3. Run `pnpm run test` if tests exist or if you added tests.
+1. Run `bun run check-types` for TypeScript changes.
+2. Run `bun run lint` for lintable source changes.
+3. Run `bun run test` if tests exist or if you added tests.
 4. Run any relevant package script from `package.json`.
 5. Do not ignore failing typecheck, lint, or tests.
 

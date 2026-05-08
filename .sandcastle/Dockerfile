@@ -27,7 +27,6 @@ ENV BUN_INSTALL=/usr/local/bun
 ENV PATH="/usr/local/bun/bin:${PATH}"
 RUN curl -fsSL https://bun.sh/install | bash \
   && bun add --global @openai/codex \
-  && npm install --global pnpm@10.32.1 \
   && chmod -R a+rwX /usr/local/bun /usr/local/lib/node_modules /usr/local/bin
 
 USER agent

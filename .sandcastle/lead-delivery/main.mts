@@ -3,11 +3,11 @@
 // Flow per selected issue:
 //   architect → coder → review/coder fixes → tester/coder fixes → merge
 //
-// This TypeScript monorepo can validate inside the Docker sandbox with pnpm and
+// This TypeScript monorepo can validate inside the Docker sandbox with Bun and
 // TypeScript checks.
 //
 // Usage:
-//   pnpm run sandcastle:lead-delivery
+//   bun run sandcastle:lead-delivery
 
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
@@ -18,7 +18,7 @@ const MAX_VALIDATION_FIX_ATTEMPTS = 3;
 const BASE_BRANCH = "main";
 
 const hooks = {
-  sandbox: { onSandboxReady: [{ command: "pnpm --version" }] },
+  sandbox: { onSandboxReady: [{ command: "bun --version" }] },
 };
 
 const copyToWorktree: string[] = [];

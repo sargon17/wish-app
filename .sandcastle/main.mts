@@ -6,7 +6,7 @@
 //   3. Merger merges branches that produced commits and closes completed issues.
 //
 // Usage:
-//   pnpm run sandcastle
+//   bun run sandcastle
 
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
@@ -15,7 +15,7 @@ const MAX_ITERATIONS = Number(process.env.SANDCASTLE_MAX_ITERATIONS ?? 10);
 const BASE_BRANCH = "main";
 
 const hooks = {
-  sandbox: { onSandboxReady: [{ command: "pnpm --version" }] },
+  sandbox: { onSandboxReady: [{ command: "bun --version" }] },
 };
 
 const copyToWorktree: string[] = [];

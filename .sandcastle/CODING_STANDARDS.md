@@ -19,8 +19,8 @@
 
 ## Testing and validation
 
-- Run `pnpm run check-types` for TypeScript changes.
-- Run `pnpm run lint` for source changes where lint applies.
-- Run `pnpm run test` if tests exist or if you added tests.
+- Run `bun run check-types` for TypeScript changes.
+- Run `bun run lint` for source changes where lint applies.
+- Run `bun run test` if tests exist or if you added tests.
 - Prefer focused tests for new validation, schema, transformation, API, or UI behavior.
 - Do not commit with failing typecheck, lint, or tests.

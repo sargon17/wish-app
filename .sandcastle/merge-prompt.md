@@ -8,7 +8,7 @@ For each branch:
 
 1. Run `git merge <branch> --no-edit`.
 2. If there are merge conflicts, resolve them intelligently by reading both sides and choosing the correct resolution.
-3. After resolving conflicts, run `pnpm run check-types`, `pnpm run lint`, and any relevant tests or package scripts.
+3. After resolving conflicts, run `bun run check-types`, `bun run lint`, and any relevant tests or package scripts.
 4. Do not ignore failing validation.
 
 After all branches are merged, make a single commit summarizing the merge if Git did not already create merge commits.

@@ -33,15 +33,15 @@ Inspect:
 - Static analysis errors from tools available in this sandbox are blocking.
 - Formatting/lint/typecheck failures are blocking when the relevant tool exists.
 - Run the smallest useful validation first, then broader checks if justified.
-- This is a TypeScript monorepo using pnpm.
+- This is a TypeScript monorepo using Bun.
 
 # REQUIRED CHECK SELECTION
 
 Use the changed files to choose checks.
 
-- For TypeScript changes, run `pnpm run check-types`.
-- For lintable source changes, run `pnpm run lint`.
-- If tests exist or were added, run `pnpm run test` or the relevant test script.
+- For TypeScript changes, run `bun run check-types`.
+- For lintable source changes, run `bun run lint`.
+- If tests exist or were added, run `bun run test` or the relevant test script.
 - If package scripts expose a more targeted validation command, run it.
 - Do not skip available validation because it is slow.
 
@@ -53,7 +53,7 @@ Output only a JSON object wrapped in `<test>` tags:
 {
   "verdict": "pass",
   "summary": "What was validated and result.",
-  "commands": ["pnpm run check-types"],
+  "commands": ["bun run check-types"],
   "failures": []
 }
 </test>
