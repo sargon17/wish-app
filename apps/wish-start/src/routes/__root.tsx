@@ -49,15 +49,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function AppDevtools() {
-  const [Devtools, setDevtools] = useState<ComponentType<{
-    config: {
-      position: 'bottom-right'
-    }
-    plugins: Array<{
-      name: string
-      render: React.ReactNode
-    }>
-  }> | null>(null)
+  const [Devtools, setDevtools] = useState<ComponentType<any> | null>(null)
   const [RouterDevtoolsPanel, setRouterDevtoolsPanel] =
     useState<ComponentType | null>(null)
 
@@ -73,7 +65,7 @@ function AppDevtools() {
       .then(([devtoolsModule, routerDevtoolsModule]) => {
         if (!active) return
 
-        setDevtools(() => devtoolsModule.TanStackDevtools)
+        setDevtools(() => devtoolsModule.TanStackDevtools as ComponentType<any>)
         setRouterDevtoolsPanel(() => routerDevtoolsModule.TanStackRouterDevtoolsPanel)
       })
       .catch(() => {
