@@ -270,7 +270,7 @@ const CommentValidator = type({
 });
 
 function isPublicId(value: unknown): value is string {
-  return typeof value === "string" && /^[^:\s]+:[^:\s]+$/.test(value);
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function requirePublicId(value: unknown) {

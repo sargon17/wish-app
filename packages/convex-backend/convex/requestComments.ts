@@ -94,6 +94,7 @@ export const create = mutation({
         createdAt: Date.now(),
       });
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to create comment");
     }

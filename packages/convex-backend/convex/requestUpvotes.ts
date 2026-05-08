@@ -71,6 +71,7 @@ export const toggle = mutation({
 
       return { upvoted: true, upvoteCount: nextCount };
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to toggle upvote");
     }
