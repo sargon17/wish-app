@@ -42,6 +42,7 @@ Viewer identity:
 ## Response conventions
 
 - Successful mutating endpoints return HTTP `200` with an empty JSON body (`{}`).
-- Protected endpoints may return `401`, `403`, or `429` with an error payload.
-- Some validation and lookup failures still return `400` with an empty JSON body (`{}`).
+- Protected and public failures use the stable error contract documented in [Errors & Status Codes](/reference/errors/).
+- The public error payload is structured as `{ "error": string, "code": string }`, with `retryAfterMs` only for rate limiting.
+- Lookup failures that would reveal ownership or cross-project existence return `404 not_found` instead of exposing a forbidden or missing-resource distinction.
 - List endpoints return JSON objects with arrays of items.

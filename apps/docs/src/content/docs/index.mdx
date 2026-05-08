@@ -21,4 +21,4 @@ Quick links:
 2. Use the project id from your Wish dashboard.
 3. Start with `GET /api/project/:id/requests/` to list requests.
 4. Create a request, then add comments or toggle upvotes.
-5. Handle 400 responses with an empty JSON body.
+5. Handle failures with the stable public error contract from [Errors & Status Codes](/reference/errors/), including `404 not_found` for hidden-existence cases and `429 rate_limited` when throttled.

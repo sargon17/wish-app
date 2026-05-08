@@ -75,6 +75,7 @@ Response:
 - `404` with `{ "error": "Not found", "code": "not_found" }` when the project or request cannot be used from this route, including hidden existence cases.
 - `429` with `{ "error": "Too many requests", "code": "rate_limited", "retryAfterMs": number }` when throttled.
 - Malformed JSON bodies also return `400 validation_failed` rather than a framework/default error response.
+- For the complete stable contract, see [Errors & Status Codes](/reference/errors/).
 
 ## Delete request
 
@@ -91,6 +92,7 @@ Response:
 - `400` with `{ "error": "Invalid request", "code": "validation_failed" }` on invalid ids.
 - `404` with `{ "error": "Not found", "code": "not_found" }` when the request does not exist or does not belong to the project.
 - `401`, `403`, and `429` use the same auth error shapes as other protected endpoints.
+- For the complete stable contract, see [Errors & Status Codes](/reference/errors/).
 
 ## Request object shape
 

@@ -24,8 +24,9 @@ Notes:
 
 Response:
 - `200` with `{}` on success.
-- `400` with `{}` on validation, missing ids, or auth errors.
-- `401`, `403`, and `429` can also be returned by the API key layer before upvote logic runs.
+- Public failures use the stable error contract documented in [Errors & Status Codes](/reference/errors/).
+- Common responses include `400 validation_failed`, `401 missing_api_key` or `invalid_api_key`, `403 insufficient_scope` or `forbidden`, `404 not_found`, and `429 rate_limited`.
+- Request and project mismatches remain hidden behind `404 not_found` when revealing ownership would leak existence.
 
 ## Upvote behavior and rules
 
