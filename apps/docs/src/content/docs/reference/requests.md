@@ -69,9 +69,10 @@ Notes:
 
 Response:
 - `200` with `{}` on success.
-- `400` with `{}` on validation or project/status errors.
+- `400` with `{ "error": "Invalid request", "code": "validation_failed" }` when the body or request ids are invalid.
 - `401` with `{ "error": "...", "code": "missing_api_key" | "invalid_api_key" }` when the key is missing or invalid.
 - `403` with `{ "error": "Insufficient API key scope", "code": "insufficient_scope" }` when the key lacks `write`.
+- `404` with `{ "error": "Not found", "code": "not_found" }` when the project or request cannot be used from this route, including hidden existence cases.
 - `429` with `{ "error": "Too many requests", "code": "rate_limited", "retryAfterMs": number }` when throttled.
 
 ## Delete request
@@ -86,7 +87,8 @@ Notes:
 
 Response:
 - `200` with `{}` on success.
-- `400` with `{}` on errors or invalid ids.
+- `400` with `{ "error": "Invalid request", "code": "validation_failed" }` on invalid ids.
+- `404` with `{ "error": "Not found", "code": "not_found" }` when the request does not exist or does not belong to the project.
 - `401`, `403`, and `429` use the same auth error shapes as other protected endpoints.
 
 ## Request object shape

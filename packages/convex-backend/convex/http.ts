@@ -3,13 +3,16 @@ import type { HonoWithConvex } from "convex-helpers/server/hono";
 import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
 
-import { arktypeValidator } from "@hono/arktype-validator";
-
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import { getProjectApiKeyPrefix, hasApiKeyScope, verifyProjectApiKeyHash } from "./lib/apiKeys";
 import { toPublicProject } from "./lib/projectPublic";
+import {
+  createPublicError,
+  publicErrorJson,
+  toPublicErrorResponse,
+} from "./lib/publicErrors";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
 const API_KEY_RATE_LIMIT = { limit: 120, windowMs: 60_000 };
@@ -40,14 +43,14 @@ async function authorizeProjectRequest(
 ): Promise<{ project: Doc<"projects">; apiKey: Doc<"apiKeys"> } | { response: Response }> {
   const apiKey = getApiKeyFromRequest(c);
   if (!apiKey) {
-    return { response: c.json({ error: "Missing API key", code: "missing_api_key" }, 401) };
+    return { response: publicErrorJson(c, createPublicError("missing_api_key")) };
   }
 
   const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
     id: projectId as Id<"projects">,
   });
   if (!project) {
-    return { response: c.json({ error: "Project not found", code: "project_not_found" }, 404) };
+    return { response: publicErrorJson(c, createPublicError("not_found")) };
   }
 
   await c.env.runMutation(internal.apiKeys.migrateLegacyForProjectInternal, {
@@ -63,14 +66,7 @@ async function authorizeProjectRequest(
 
   if (!ipRateLimit.allowed) {
     return {
-      response: c.json(
-        {
-          error: "Too many requests",
-          code: "rate_limited",
-          retryAfterMs: ipRateLimit.retryAfterMs,
-        },
-        429,
-      ),
+      response: publicErrorJson(c, createPublicError("rate_limited", undefined, ipRateLimit.retryAfterMs)),
     };
   }
 
@@ -100,7 +96,7 @@ async function authorizeProjectRequest(
   }
 
   if (!matchedApiKey) {
-    return { response: c.json({ error: "Invalid API key", code: "invalid_api_key" }, 401) };
+    return { response: publicErrorJson(c, createPublicError("invalid_api_key")) };
   }
 
   const keyRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
@@ -111,20 +107,13 @@ async function authorizeProjectRequest(
 
   if (!keyRateLimit.allowed) {
     return {
-      response: c.json(
-        {
-          error: "Too many requests",
-          code: "rate_limited",
-          retryAfterMs: keyRateLimit.retryAfterMs,
-        },
-        429,
-      ),
+      response: publicErrorJson(c, createPublicError("rate_limited", undefined, keyRateLimit.retryAfterMs)),
     };
   }
 
   if (!hasApiKeyScope(matchedApiKey.scopes, requiredScope)) {
     return {
-      response: c.json({ error: "Insufficient API key scope", code: "insufficient_scope" }, 403),
+      response: publicErrorJson(c, createPublicError("insufficient_scope")),
     };
   }
 
@@ -162,14 +151,7 @@ async function checkIpRateLimit(c: any) {
   });
 
   if (!ipRateLimit.allowed) {
-    return c.json(
-      {
-        error: "Too many requests",
-        code: "rate_limited",
-        retryAfterMs: ipRateLimit.retryAfterMs,
-      },
-      429,
-    );
+    return publicErrorJson(c, createPublicError("rate_limited", undefined, ipRateLimit.retryAfterMs));
   }
 
   return null;
@@ -184,11 +166,11 @@ async function assertRequestBelongsToProject(
     id: requestId as Id<"requests">,
   });
   if (!request) {
-    return { response: c.json({ error: "Request not found" }, 404) };
+    return { response: publicErrorJson(c, createPublicError("not_found")) };
   }
 
   if (request.project !== (projectId as Id<"projects">)) {
-    return { response: c.json({ error: "Request not found" }, 404) };
+    return { response: publicErrorJson(c, createPublicError("not_found")) };
   }
 
   return { requestId: request._id };
@@ -224,7 +206,7 @@ app.get("/api/changelog/:slug", async (c) => {
   const slug = c.req.param("slug");
 
   if (!slug) {
-    return c.json({ error: "Missing changelog slug", code: "missing_changelog_slug" }, 400);
+    return publicErrorJson(c, createPublicError("validation_failed"));
   }
 
   const rateLimitedResponse = await checkIpRateLimit(c);
@@ -235,7 +217,7 @@ app.get("/api/changelog/:slug", async (c) => {
   const feed = await c.env.runQuery(internal.changelogEntries.getPublicBySlugInternal, { slug });
 
   if (!feed) {
-    return c.json({ error: "Changelog not found", code: "changelog_not_found" }, 404);
+    return publicErrorJson(c, createPublicError("not_found"));
   }
 
   return c.json(feed, 200);
@@ -246,7 +228,7 @@ app.get("/api/project/:id/upvotes", async (c) => {
   const clientId = c.req.query("clientId");
 
   try {
-    if (!id) throw new Error("invalid project id");
+    if (!id) throw createPublicError("validation_failed");
 
     const upvotes = await c.env.runQuery(api.requestUpvotes.getViewerUpvotesByProject, {
       projectId: id as Id<"projects">,
@@ -254,8 +236,8 @@ app.get("/api/project/:id/upvotes", async (c) => {
     });
 
     return c.json({ upvotes }, 200);
-  } catch {
-    return c.json({}, 400);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
 });
 
@@ -275,11 +257,18 @@ const CommentValidator = type({
   body: "string > 0",
 });
 
-app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator), async (c) => {
+app.post("/api/project/:id/request/", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.valid("json");
 
   try {
+    const rawBody = await c.req.json();
+    const body = (() => {
+      try {
+        return RequestValidator.assert(rawBody);
+      } catch {
+        throw createPublicError("validation_failed");
+      }
+    })();
     const authorization = await authorizeProjectRequest(c, id, "write");
     if ("response" in authorization) {
       return authorization.response;
@@ -294,15 +283,15 @@ app.post("/api/project/:id/request/", arktypeValidator("json", RequestValidator)
       (v) => v.name === "open",
     );
 
-    if (!project || !status) throw new Error("invalid project or status");
+    if (!project || !status) throw createPublicError("not_found");
 
     await c.env.runMutation(api.requests.create, {
       ...body,
       project: project._id,
       status: status._id,
     });
-  } catch {
-    return c.json({}, 400);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
 
   return c.json({}, 200);
@@ -318,7 +307,7 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
       return authorization.response;
     }
 
-    if (!reqId) throw new Error("invalid request id");
+    if (!reqId) throw createPublicError("validation_failed");
     const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
     if ("response" in requestAuthorization) {
       return requestAuthorization.response;
@@ -328,8 +317,8 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
       id: requestAuthorization.requestId,
       projectId: projectId as Id<"projects">,
     });
-  } catch {
-    return c.json({}, 400);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
 
   return c.json({}, 200);
@@ -345,7 +334,7 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
       return authorization.response;
     }
 
-    if (!reqId) throw new Error("invalid request id");
+    if (!reqId) throw createPublicError("validation_failed");
     const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
     if ("response" in requestAuthorization) {
       return requestAuthorization.response;
@@ -356,26 +345,32 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
     });
 
     return c.json({ comments }, 200);
-  } catch {
-    return c.json({}, 400);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
 });
 
 app.post(
   "/api/project/:id/request/:reqID/comment",
-  arktypeValidator("json", CommentValidator),
   async (c) => {
     const reqId = c.req.param("reqID");
     const projectId = c.req.param("id");
-    const body = await c.req.valid("json");
 
     try {
+      const rawBody = await c.req.json();
+      const body = (() => {
+        try {
+          return CommentValidator.assert(rawBody);
+        } catch {
+          throw createPublicError("validation_failed");
+        }
+      })();
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }
 
-      if (!reqId || !projectId) throw new Error("invalid request id");
+      if (!reqId || !projectId) throw createPublicError("validation_failed");
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;
@@ -387,8 +382,8 @@ app.post(
         clientId: body.clientId,
         body: body.body,
       });
-    } catch {
-      return c.json({}, 400);
+    } catch (error) {
+      return publicErrorJson(c, toPublicErrorResponse(error));
     }
 
     return c.json({}, 200);
@@ -403,8 +398,8 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
   const authHeader = c.req.header("Authorization");
 
   try {
-    if (!id || !reqId || !commentId) throw new Error("invalid request id");
-    if (!clientId && !authHeader) throw new Error("client id or auth is required");
+    if (!id || !reqId || !commentId) throw createPublicError("validation_failed");
+    if (!clientId && !authHeader) throw createPublicError("validation_failed");
 
     await c.env.runMutation(api.requestComments.deleteByClient, {
       id: commentId as Id<"requestComments">,
@@ -412,8 +407,8 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
       projectId: id as Id<"projects">,
       clientId: clientId || undefined,
     });
-  } catch {
-    return c.json({}, 400);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
   }
 
   return c.json({}, 200);
@@ -421,19 +416,25 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
 
 app.post(
   "/api/project/:id/request/:reqID/upvote",
-  arktypeValidator("json", UpvoteValidator),
   async (c) => {
     const reqId = c.req.param("reqID");
     const projectId = c.req.param("id");
-    const body = c.req.valid("json");
 
     try {
+      const rawBody = await c.req.json();
+      const body = (() => {
+        try {
+          return UpvoteValidator.assert(rawBody);
+        } catch {
+          throw createPublicError("validation_failed");
+        }
+      })();
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }
 
-      if (!reqId || !projectId) throw new Error("invalid request id");
+      if (!reqId || !projectId) throw createPublicError("validation_failed");
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;
@@ -444,8 +445,8 @@ app.post(
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
       });
-    } catch {
-      return c.json({}, 400);
+    } catch (error) {
+      return publicErrorJson(c, toPublicErrorResponse(error));
     }
 
     return c.json({}, 200);

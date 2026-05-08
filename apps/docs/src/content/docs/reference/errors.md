@@ -5,41 +5,30 @@ description: How the API signals failures and validation issues.
 
 ## Error responses
 
-The API currently uses two error styles:
-- `200` with `{}` for successful mutations.
-- `400` with `{}` for validation, missing ids, or auth errors.
-- `401`, `403`, and `429` with JSON error payloads for API key and rate-limit failures.
-
-Protected endpoint error payloads:
+Public routes now return a consistent JSON shape:
 
 ```json
 {
-  "error": "Missing API key",
-  "code": "missing_api_key"
-}
-```
-
-```json
-{
-  "error": "Invalid API key",
-  "code": "invalid_api_key"
-}
-```
-
-```json
-{
-  "error": "Insufficient API key scope",
-  "code": "insufficient_scope"
-}
-```
-
-```json
-{
-  "error": "Too many requests",
-  "code": "rate_limited",
+  "error": "string",
+  "code": "string",
   "retryAfterMs": 12000
 }
 ```
+
+The `retryAfterMs` field is only present for rate limiting. Successful mutations still return `200` with `{}`.
+
+## Public error contract
+
+| HTTP status | Code | Meaning | Client action |
+| --- | --- | --- | --- |
+| `400` | `validation_failed` | The request body or parameters were invalid. | Fix the payload and retry. |
+| `401` | `missing_api_key` | No API key was provided. | Add an API key. |
+| `401` | `invalid_api_key` | The key was malformed, expired, or otherwise not valid. | Replace the key. |
+| `403` | `insufficient_scope` | The key does not have the required scope. | Use a broader-scoped key. |
+| `403` | `forbidden` | The caller is authenticated but cannot perform the action. | Change the caller or stop the action. |
+| `404` | `not_found` | The resource does not exist or is intentionally hidden. | Treat it as unavailable. |
+| `429` | `rate_limited` | The caller is temporarily throttled. | Wait `retryAfterMs` and retry. |
+| `500` | `internal_error` | An unexpected server error occurred. | Retry later or report the failure. |
 
 ## Validation errors
 
@@ -49,10 +38,12 @@ Common validation checks enforced by the API:
 - `clientId` is required for public comments and upvotes.
 - Project and request ids must be valid and consistent.
 
-## 200 vs 400 responses
+## Existence hiding
 
-- Use `200` to confirm a mutation succeeded.
-- Use `400` to treat the request as failed and show a retry message.
-- Use `401` to rotate or replace the API key.
-- Use `403` to switch to a key with a broader scope.
-- Use `429` to retry after `retryAfterMs`.
+Public routes intentionally return `not_found` for cases where exposing a resource relationship would leak ownership or cross-project existence:
+
+- A request id does not exist.
+- A request exists but does not belong to the project in the path.
+- A project lookup fails on API-key-protected project routes.
+
+That keeps the public API from distinguishing "missing" from "not yours" in places where the distinction would disclose data.
