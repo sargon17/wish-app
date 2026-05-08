@@ -265,7 +265,7 @@ const CommentValidator = type({
   body: "string > 0",
 });
 
-async function parsePublicBody<T>(c: any, validator: { assert(value: unknown): T }) {
+async function parsePublicBody(c: any, validator: { assert(value: unknown): any }) {
   try {
     const rawBody = await c.req.json();
     return validator.assert(rawBody);
