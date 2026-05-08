@@ -12,9 +12,14 @@
     "dev:doc": "vp run wish-app-docs#dev",
     "format": "vp run -r fmt",
     "lint": "vp run -r lint",
+    "sandcastle": "bash -lc 'export GH_TOKEN=${GH_TOKEN:-$(gh auth token)}; bun .sandcastle/main.mts'",
+    "sandcastle:build-image": "docker build -t sandcastle:wish-app .sandcastle",
+    "sandcastle:lead-delivery": "bash -lc 'export GH_TOKEN=${GH_TOKEN:-$(gh auth token)}; bun .sandcastle/lead-delivery/main.mts'",
     "test": "vp run -r test"
   },
   "devDependencies": {
+    "@ai-hero/sandcastle": "^0.5.10",
+    "@types/node": "^22.19.15",
     "typescript": "^5.9.3",
     "vite-plus": "^0.1.12"
   },
