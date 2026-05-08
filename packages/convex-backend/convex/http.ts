@@ -179,6 +179,7 @@ async function assertRequestBelongsToProject(
 app.get("/api/project/:id/requests/", async (c) => {
   try {
     const id = c.req.param("id");
+    requirePublicId(id);
 
     const authorization = await authorizeProjectRequest(c, id, "read");
     if ("response" in authorization) {
@@ -236,7 +237,10 @@ app.get("/api/project/:id/upvotes", async (c) => {
   const clientId = c.req.query("clientId");
 
   try {
-    if (!id) throw createPublicError("validation_failed");
+    requirePublicId(id);
+    if (clientId !== undefined && clientId.trim().length === 0) {
+      throw createPublicError("validation_failed");
+    }
 
     const upvotes = await c.env.runQuery(api.requestUpvotes.getViewerUpvotesByProject, {
       projectId: id as Id<"projects">,
@@ -265,6 +269,16 @@ const CommentValidator = type({
   body: "string > 0",
 });
 
+function isPublicId(value: unknown): value is string {
+  return typeof value === "string" && /^[^:\s]+:[^:\s]+$/.test(value);
+}
+
+function requirePublicId(value: unknown) {
+  if (!isPublicId(value)) {
+    throw createPublicError("validation_failed");
+  }
+}
+
 async function parsePublicBody(c: any, validator: { assert(value: unknown): any }) {
   try {
     const rawBody = await c.req.json();
@@ -282,6 +296,7 @@ app.post("/api/project/:id/request/", async (c) => {
   const id = c.req.param("id");
 
   try {
+    requirePublicId(id);
     const body = await parsePublicBody(c, RequestValidator);
     const authorization = await authorizeProjectRequest(c, id, "write");
     if ("response" in authorization) {
@@ -316,12 +331,13 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
   const projectId = c.req.param("id");
 
   try {
+    requirePublicId(projectId);
+    requirePublicId(reqId);
     const authorization = await authorizeProjectRequest(c, projectId, "admin");
     if ("response" in authorization) {
       return authorization.response;
     }
 
-    if (!reqId) throw createPublicError("validation_failed");
     const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
     if ("response" in requestAuthorization) {
       return requestAuthorization.response;
@@ -343,12 +359,13 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   const projectId = c.req.param("id");
 
   try {
+    requirePublicId(projectId);
+    requirePublicId(reqId);
     const authorization = await authorizeProjectRequest(c, projectId, "read");
     if ("response" in authorization) {
       return authorization.response;
     }
 
-    if (!reqId) throw createPublicError("validation_failed");
     const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
     if ("response" in requestAuthorization) {
       return requestAuthorization.response;
@@ -371,13 +388,18 @@ app.post(
     const projectId = c.req.param("id");
 
     try {
+      requirePublicId(projectId);
+      requirePublicId(reqId);
       const body = await parsePublicBody(c, CommentValidator);
+      const trimmedBody = body.body.trim();
+      if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
+        throw createPublicError("validation_failed");
+      }
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }
 
-      if (!reqId || !projectId) throw createPublicError("validation_failed");
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;
@@ -387,7 +409,7 @@ app.post(
         requestId: requestAuthorization.requestId,
         projectId: projectId as Id<"projects">,
         clientId: body.clientId,
-        body: body.body,
+        body: trimmedBody,
       });
     } catch (error) {
       return publicErrorJson(c, toPublicErrorResponse(error));
@@ -405,8 +427,12 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
   const authHeader = c.req.header("Authorization");
 
   try {
-    if (!id || !reqId || !commentId) throw createPublicError("validation_failed");
-    if (!clientId && !authHeader) throw createPublicError("validation_failed");
+    requirePublicId(id);
+    requirePublicId(reqId);
+    requirePublicId(commentId);
+    if ((clientId !== undefined && clientId.trim().length === 0) || (!clientId && !authHeader)) {
+      throw createPublicError("validation_failed");
+    }
 
     await c.env.runMutation(api.requestComments.deleteByClient, {
       id: commentId as Id<"requestComments">,
@@ -428,13 +454,17 @@ app.post(
     const projectId = c.req.param("id");
 
     try {
+      requirePublicId(projectId);
+      requirePublicId(reqId);
       const body = await parsePublicBody(c, UpvoteValidator);
+      if (body.clientId.trim().length === 0) {
+        throw createPublicError("validation_failed");
+      }
       const authorization = await authorizeProjectRequest(c, projectId, "write");
       if ("response" in authorization) {
         return authorization.response;
       }
 
-      if (!reqId || !projectId) throw createPublicError("validation_failed");
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;

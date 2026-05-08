@@ -50,20 +50,20 @@ export const create = mutation({
     try {
       const trimmed = args.body.trim();
       if (trimmed.length === 0) {
-        throw new Error("Comment cannot be empty");
+        throw new ConvexError({ code: "BAD_REQUEST", message: "Comment cannot be empty" });
       }
 
       if (trimmed.length > 1000) {
-        throw new Error("Comment is too long");
+        throw new ConvexError({ code: "BAD_REQUEST", message: "Comment is too long" });
       }
 
       const request = await ctx.db.get(args.requestId);
       if (!request) {
-        throw new Error("Request not found");
+        throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
       if (request.project !== args.projectId) {
-        throw new Error("Request does not belong to project");
+        throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
       const user = await getCurrentUserOrNull(ctx);
@@ -79,7 +79,10 @@ export const create = mutation({
       }
 
       if (!args.clientId) {
-        throw new Error("Client id is required for public comments");
+        throw new ConvexError({
+          code: "BAD_REQUEST",
+          message: "Client id is required for public comments",
+        });
       }
 
       return await ctx.db.insert("requestComments", {

@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
@@ -14,11 +14,11 @@ export const toggle = mutation({
     try {
       const request = await ctx.db.get(args.requestId);
       if (!request) {
-        throw new Error("Request not found");
+        throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
       if (request.project !== args.projectId) {
-        throw new Error("Request does not belong to project");
+        throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
       const user = await getCurrentUserOrNull(ctx);
@@ -29,7 +29,10 @@ export const toggle = mutation({
       }
 
       if (!userId && !args.clientId) {
-        throw new Error("Client id is required for public upvotes");
+        throw new ConvexError({
+          code: "BAD_REQUEST",
+          message: "Client id is required for public upvotes",
+        });
       }
 
       const existing = userId
