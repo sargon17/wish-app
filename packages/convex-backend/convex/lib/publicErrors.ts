@@ -51,12 +51,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function isPublicErrorCode(value: unknown): value is PublicErrorCode {
+  return typeof value === "string" && publicErrorCodes.includes(value as PublicErrorCode);
+}
+
 function isPublicErrorInput(value: unknown): value is PublicErrorInput {
   if (!isRecord(value)) {
     return false;
   }
 
-  return typeof value.code === "string" && publicErrorCodes.includes(value.code as PublicErrorCode);
+  return isPublicErrorCode(value.code);
 }
 
 export function createPublicError(code: PublicErrorCode, error?: string, retryAfterMs?: number) {
@@ -84,8 +88,30 @@ export function publicErrorJson(c: { json: (body: PublicErrorResponse, status: n
   return c.json(publicErrorResponse(error), publicErrorStatus(error.code));
 }
 
-function isConvexErrorLike(error: unknown): error is { data?: unknown } {
-  return error instanceof ConvexError || (isRecord(error) && "data" in error);
+function publicErrorFromConvexError(error: unknown): PublicErrorResponse | null {
+  if (error instanceof ConvexError && isRecord(error.data)) {
+    const code = error.data.code;
+    if (code === "BAD_REQUEST") return publicErrorResponse({ code: "validation_failed" });
+    if (code === "NOT_FOUND") return publicErrorResponse({ code: "not_found" });
+    if (code === "FORBIDDEN") return publicErrorResponse({ code: "forbidden" });
+    if (code === "UNAUTHENTICATED") return publicErrorResponse({ code: "invalid_api_key" });
+    if (code === "RATE_LIMITED") return publicErrorResponse({ code: "rate_limited" });
+  }
+
+  if (isRecord(error) && isRecord(error.data)) {
+    const code = error.data.code;
+    if (!isPublicErrorCode(code) && code !== "BAD_REQUEST" && code !== "NOT_FOUND" && code !== "FORBIDDEN" && code !== "UNAUTHENTICATED" && code !== "RATE_LIMITED") {
+      return null;
+    }
+
+    if (code === "BAD_REQUEST") return publicErrorResponse({ code: "validation_failed" });
+    if (code === "NOT_FOUND") return publicErrorResponse({ code: "not_found" });
+    if (code === "FORBIDDEN") return publicErrorResponse({ code: "forbidden" });
+    if (code === "UNAUTHENTICATED") return publicErrorResponse({ code: "invalid_api_key" });
+    if (code === "RATE_LIMITED") return publicErrorResponse({ code: "rate_limited" });
+  }
+
+  return null;
 }
 
 export function toPublicErrorResponse(error: unknown, fallback: PublicErrorCode = "internal_error") {
@@ -93,24 +119,9 @@ export function toPublicErrorResponse(error: unknown, fallback: PublicErrorCode 
     return publicErrorResponse(error);
   }
 
-  if (error instanceof ConvexError && isRecord(error.data)) {
-    const code = error.data.code;
-    if (code === "BAD_REQUEST") return publicErrorResponse({ code: "validation_failed" });
-    if (code === "NOT_FOUND") return publicErrorResponse({ code: "not_found" });
-    if (code === "FORBIDDEN") return publicErrorResponse({ code: "forbidden" });
-    if (code === "UNAUTHENTICATED") return publicErrorResponse({ code: "invalid_api_key" });
-  }
-
-  if (isConvexErrorLike(error) && isRecord(error.data)) {
-    const code = error.data.code;
-    if (code === "BAD_REQUEST") return publicErrorResponse({ code: "validation_failed" });
-    if (code === "NOT_FOUND") return publicErrorResponse({ code: "not_found" });
-    if (code === "FORBIDDEN") return publicErrorResponse({ code: "forbidden" });
-    if (code === "UNAUTHENTICATED") return publicErrorResponse({ code: "invalid_api_key" });
-  }
-
-  if (error instanceof Error) {
-    return publicErrorResponse({ code: fallback });
+  const convexError = publicErrorFromConvexError(error);
+  if (convexError) {
+    return convexError;
   }
 
   return publicErrorResponse({ code: fallback });
