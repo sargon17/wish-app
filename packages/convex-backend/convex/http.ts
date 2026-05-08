@@ -4,7 +4,7 @@ import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
 
 import { api, internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import {
   authorizeProjectKeyRequest,
