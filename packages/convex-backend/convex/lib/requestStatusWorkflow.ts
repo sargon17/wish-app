@@ -66,7 +66,11 @@ export function assertCustomStatusEditable(
 }
 
 function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
-  return (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime;
+  return (
+    (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+    a._creationTime - b._creationTime ||
+    a._id.toString().localeCompare(b._id.toString())
+  );
 }
 
 export async function getOrderedCustomStatusesForProject(

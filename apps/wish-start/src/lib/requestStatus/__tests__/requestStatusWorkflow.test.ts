@@ -28,6 +28,8 @@ describe("requestStatusWorkflow", () => {
 
   it("rejects invalid colors and duplicate names", () => {
     expect(() => assertValidStatusColor("orange")).toThrow("Color must be a 6-digit hex value");
+    expect(() => assertValidStatusColor("")).toThrow("Color must be a 6-digit hex value");
+    expect(() => assertValidStatusColor("#F97316")).not.toThrow();
 
     const statuses = [
       { _id: "1", name: "open" },
@@ -58,6 +60,16 @@ describe("requestStatusWorkflow", () => {
       { _id: "status-2", type: "custom", project: projectId },
     ] as any;
 
+    expect(() =>
+      assertValidCustomOrderPayload(
+        [
+          ...statuses,
+          { _id: "status-3", type: "default", project: undefined },
+        ],
+        ["status-1", "status-2"] as any,
+        projectId,
+      ),
+    ).toThrow("Invalid status order payload");
     expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-1"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
@@ -68,9 +80,11 @@ describe("requestStatusWorkflow", () => {
 
   it("exposes backend ordering as the only project status ordering path", async () => {
     const collected = [
-      { _id: "default-1", type: "default", name: "open" },
-      { _id: "custom-1", type: "custom", project: "project-1", position: 1 },
-      { _id: "custom-0", type: "custom", project: "project-1", position: 0 },
+      { _id: "default-1", type: "default", name: "open", _creationTime: 1 },
+      { _id: "custom-1", type: "custom", project: "project-1", position: 1, _creationTime: 20 },
+      { _id: "custom-0", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
+      { _id: "custom-missing-a", type: "custom", project: "project-1", _creationTime: 30 },
+      { _id: "custom-missing-b", type: "custom", project: "project-1", _creationTime: 25 },
     ] as any;
     const projectId = "project-1" as Id<"projects">;
 
@@ -88,6 +102,8 @@ describe("requestStatusWorkflow", () => {
       collected[0],
       collected[2],
       collected[1],
+      collected[4],
+      collected[3],
     ]);
   });
 });
