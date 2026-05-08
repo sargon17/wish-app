@@ -11,14 +11,14 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 
-const MAX_ITERATIONS = 10;
+const MAX_ITERATIONS = Number(process.env.SANDCASTLE_MAX_ITERATIONS ?? 10);
 const BASE_BRANCH = "main";
 
 const hooks = {
-  sandbox: { onSandboxReady: [{ command: "corepack enable && pnpm install --frozen-lockfile" }] },
+  sandbox: { onSandboxReady: [{ command: "pnpm --version" }] },
 };
 
-const copyToWorktree = ["node_modules"];
+const copyToWorktree: string[] = [];
 
 const githubToken = process.env.GH_TOKEN;
 if (!githubToken) {
@@ -26,10 +26,11 @@ if (!githubToken) {
 }
 
 const sandboxProvider = docker({
-  env: { GH_TOKEN: githubToken },
+  imageName: "sandcastle:wish-app",
+  env: { CI: "true", GH_TOKEN: githubToken },
   mounts: [
     {
-      hostPath: "~/.codex",
+      hostPath: "~/.codex-sandcastle",
       sandboxPath: "~/.codex",
     },
     {
