@@ -4,7 +4,7 @@ Here are the open issues in the repo:
 
 <issues-json>
 
-!`gh issue list --state open --limit 200 --json number,title,body,labels,comments --jq '[.[] | select([.labels[].name] | index("ready-for-agents")) | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
+!`gh issue list --state open --limit 200 --json number,title,body,labels,comments --jq '[.[] | select(([.labels[].name] | index("ready-for-agents")) or ([.labels[].name] | index("ready-for-agent"))) | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
 
 </issues-json>
 
