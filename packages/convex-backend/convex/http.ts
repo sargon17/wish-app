@@ -3,14 +3,19 @@ import type { HonoWithConvex } from "convex-helpers/server/hono";
 import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
 
-import { api, internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
+import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
 import {
-  authorizeProjectKeyRequest,
-  getClientIpAddress,
-  IP_RATE_LIMIT,
-} from "./lib/projectKeyAuthorization";
+  createComment,
+  createRequest,
+  deleteComment,
+  deleteRequest,
+  listComments,
+  listRequests,
+  listUpvotes,
+  toggleUpvote,
+} from "./lib/requestIntake";
 import { toPublicProject } from "./lib/projectPublic";
 import {
   createPublicError,
@@ -35,51 +40,17 @@ async function checkIpRateLimit(c: any) {
   return null;
 }
 
-async function assertRequestBelongsToProject(
-  c: any,
-  requestId: string,
-  projectId: string,
-): Promise<{ response: Response } | { requestId: Id<"requests"> }> {
-  const request = await c.env.runQuery(internal.requests.getRequestByIdInternal, {
-    id: requestId as Id<"requests">,
-  });
-  if (!request) {
-    return { response: publicErrorJson(c, createPublicError("not_found")) };
-  }
-
-  if (request.project !== (projectId as Id<"projects">)) {
-    return { response: publicErrorJson(c, createPublicError("not_found")) };
-  }
-
-  return { requestId: request._id };
-}
-
 app.get("/api/project/:id/requests/", async (c) => {
   try {
     const id = c.req.param("id");
     requirePublicId(id);
 
-    const authorization = await authorizeProjectKeyRequest(c, id, "read");
-    if (!authorization.ok) {
-      return publicErrorJson(c, authorization.error);
+    const result = await listRequests(c, id);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
     }
 
-    const project = authorization.project;
-    const projectId = id as Id<"projects">;
-    const requests = await c.env.runQuery(internal.requests.getByProjectInternal, { id: projectId });
-    const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
-      id: projectId,
-    });
-
-    const mappedRequests = requests.map((request) => {
-      const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
-      return { ...request, computedStatus };
-    });
-
-    return c.json({
-      project: toPublicProject(project),
-      requests: mappedRequests,
-    });
+    return c.json({ project: toPublicProject(result.project), requests: result.requests });
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -120,12 +91,12 @@ app.get("/api/project/:id/upvotes", async (c) => {
       throw createPublicError("validation_failed");
     }
 
-    const upvotes = await c.env.runQuery(api.requestUpvotes.getViewerUpvotesByProject, {
-      projectId: id as Id<"projects">,
-      clientId: clientId || undefined,
-    });
+    const result = await listUpvotes(c, id, clientId || undefined);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
 
-    return c.json({ upvotes }, 200);
+    return c.json({ upvotes: result.upvotes }, 200);
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -175,28 +146,15 @@ app.post("/api/project/:id/request/", async (c) => {
 
   try {
     requirePublicId(id);
-    const authorization = await authorizeProjectKeyRequest(c, id, "write");
-    if (!authorization.ok) {
-      return publicErrorJson(c, authorization.error);
-    }
-
-    const project = authorization.project;
     const body = await parsePublicBody(c, RequestValidator);
-    const status = (
-      await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
-        id: id as Id<"projects">,
-      })
-    ).find(
-      (v) => v.name === "open",
-    );
-
-    if (!project || !status) throw createPublicError("not_found");
-
-    await c.env.runMutation(api.requests.create, {
-      ...body,
-      project: project._id,
-      status: status._id,
+    const result = await createRequest(c, id, {
+      text: body.text,
+      description: body.description,
+      clientId: body.clientId,
     });
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -211,20 +169,10 @@ app.delete("/api/project/:id/request/:reqID", async (c) => {
   try {
     requirePublicId(projectId);
     requirePublicId(reqId);
-    const authorization = await authorizeProjectKeyRequest(c, projectId, "admin");
-    if (!authorization.ok) {
-      return publicErrorJson(c, authorization.error);
+    const result = await deleteRequest(c, projectId, reqId);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
     }
-
-    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
-    if ("response" in requestAuthorization) {
-      return requestAuthorization.response;
-    }
-
-    await c.env.runMutation(internal.requests.deleteRequestByApiKeyInternal, {
-      id: requestAuthorization.requestId,
-      projectId: projectId as Id<"projects">,
-    });
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -239,21 +187,12 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   try {
     requirePublicId(projectId);
     requirePublicId(reqId);
-    const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
-    if (!authorization.ok) {
-      return publicErrorJson(c, authorization.error);
+    const result = await listComments(c, projectId, reqId);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
     }
 
-    const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
-    if ("response" in requestAuthorization) {
-      return requestAuthorization.response;
-    }
-
-    const comments = await c.env.runQuery(internal.requestComments.listByRequestInternal, {
-      requestId: requestAuthorization.requestId,
-    });
-
-    return c.json({ comments }, 200);
+    return c.json({ comments: result.comments }, 200);
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -264,32 +203,22 @@ app.post(
   async (c) => {
     const reqId = c.req.param("reqID");
     const projectId = c.req.param("id");
-
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
-      if (!authorization.ok) {
-        return publicErrorJson(c, authorization.error);
-      }
-
-      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
-      if ("response" in requestAuthorization) {
-        return requestAuthorization.response;
-      }
-
       const body = await parsePublicBody(c, CommentValidator);
       const trimmedBody = body.body.trim();
       if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
         throw createPublicError("validation_failed");
       }
 
-      await c.env.runMutation(api.requestComments.create, {
-        requestId: requestAuthorization.requestId,
-        projectId: projectId as Id<"projects">,
+      const result = await createComment(c, projectId, reqId, {
         clientId: body.clientId,
         body: trimmedBody,
       });
+      if (!result.ok) {
+        return publicErrorJson(c, result.error);
+      }
     } catch (error) {
       return publicErrorJson(c, toPublicErrorResponse(error));
     }
@@ -313,12 +242,7 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
       throw createPublicError("validation_failed");
     }
 
-    await c.env.runMutation(api.requestComments.deleteByClient, {
-      id: commentId as Id<"requestComments">,
-      requestId: reqId as Id<"requests">,
-      projectId: id as Id<"projects">,
-      clientId: clientId || undefined,
-    });
+    await deleteComment(c, id, reqId, commentId, clientId || undefined);
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -331,30 +255,18 @@ app.post(
   async (c) => {
     const reqId = c.req.param("reqID");
     const projectId = c.req.param("id");
-
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
-      if (!authorization.ok) {
-        return publicErrorJson(c, authorization.error);
-      }
-
-      const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
-      if ("response" in requestAuthorization) {
-        return requestAuthorization.response;
-      }
-
       const body = await parsePublicBody(c, UpvoteValidator);
       if (body.clientId.trim().length === 0) {
         throw createPublicError("validation_failed");
       }
 
-      await c.env.runMutation(api.requestUpvotes.toggle, {
-        requestId: requestAuthorization.requestId,
-        projectId: projectId as Id<"projects">,
-        clientId: body.clientId,
-      });
+      const result = await toggleUpvote(c, projectId, reqId, body.clientId);
+      if (!result.ok) {
+        return publicErrorJson(c, result.error);
+      }
     } catch (error) {
       return publicErrorJson(c, toPublicErrorResponse(error));
     }
