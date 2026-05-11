@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node ./scripts/build-docs.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "check-types": "tsc --noEmit",
