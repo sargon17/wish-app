@@ -15,8 +15,10 @@ describe("requestBoard dragPayload", () => {
 
     writeRequestDragPayload(dataTransfer, "request-1");
 
-    expect(data.get(REQUEST_DRAG_MIME)).toBe("request-1");
-    expect(data.get("text/plain")).toBe("request-1");
+    expect(data.get(REQUEST_DRAG_MIME)).toBe(
+      JSON.stringify({ type: "request", requestId: "request-1" }),
+    );
+    expect(data.get("text/plain")).toBe("wish-request:request-1");
     expect(readRequestDragPayload(dataTransfer)).toBe("request-1");
   });
 
@@ -26,5 +28,21 @@ describe("requestBoard dragPayload", () => {
     } as Pick<DataTransfer, "getData">;
 
     expect(readRequestDragPayload(dataTransfer)).toBeUndefined();
+  });
+
+  it("ignores arbitrary text/plain drops", () => {
+    const dataTransfer = {
+      getData: (key: string) => (key === "text/plain" ? "not-a-request" : ""),
+    } as Pick<DataTransfer, "getData">;
+
+    expect(readRequestDragPayload(dataTransfer)).toBeUndefined();
+  });
+
+  it("reads the legacy prefixed fallback payload", () => {
+    const dataTransfer = {
+      getData: (key: string) => (key === "text/plain" ? "wish-request:request-legacy" : ""),
+    } as Pick<DataTransfer, "getData">;
+
+    expect(readRequestDragPayload(dataTransfer)).toBe("request-legacy");
   });
 });

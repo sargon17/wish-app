@@ -86,7 +86,7 @@ export default function RequestCreateEditDialog({
     mode: "onChange",
   });
 
-  const { handleSubmit, reset } = form;
+  const { handleSubmit, reset, setValue, getValues } = form;
 
   async function onSubmit(values: typeof ArkSchema.infer) {
     try {
@@ -118,6 +118,23 @@ export default function RequestCreateEditDialog({
   useEffect(() => {
     if (!isOpen) reset();
   }, [isOpen, reset]);
+
+  useEffect(() => {
+    if (!isOpen || !setDefaultStatus) {
+      return;
+    }
+
+    const currentStatus = getValues("status");
+    if (currentStatus || isEditMode) {
+      return;
+    }
+
+    setValue("status", setDefaultStatus, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: true,
+    });
+  }, [getValues, isEditMode, isOpen, setDefaultStatus, setValue]);
 
   return (
     <Dialog
