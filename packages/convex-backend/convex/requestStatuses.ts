@@ -7,6 +7,13 @@ import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
 const DEFAULT_STATUS_ORDER = ["open", "planned", "under-review", "in-progress", "completed", "done", "closed"] as const;
+export const STARTER_PROJECT_STATUSES = [
+  { name: "open", displayName: "Open" },
+  { name: "under-review", displayName: "Under Review" },
+  { name: "planned", displayName: "Planned" },
+  { name: "in-progress", displayName: "In Progress" },
+  { name: "done", displayName: "Done" },
+] as const;
 
 function getDefaultStatusRank(name: string) {
   const index = DEFAULT_STATUS_ORDER.indexOf(name as (typeof DEFAULT_STATUS_ORDER)[number]);
@@ -19,21 +26,24 @@ function getDefaultStatusRank(name: string) {
 }
 
 async function listStatusesByProjectId(ctx: QueryCtx, projectId: Id<"projects">) {
-  const statuses = await ctx.db
+  const projectStatuses = await ctx.db
     .query("requestStatuses")
-    .filter((q) =>
-      q.or(q.eq(q.field("project"), projectId), q.eq(q.field("type"), "default")),
-    )
+    .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const defaultStatuses = statuses
-    .filter((status) => status.type === "default")
-    .sort((a, b) => getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name));
-  const customStatuses = statuses
-    .filter((status) => status.type === "custom")
-    .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime);
+  if (projectStatuses.length > 0) {
+    return projectStatuses.sort((a, b) =>
+      (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a._creationTime - b._creationTime
+    );
+  }
 
-  return [...defaultStatuses, ...customStatuses];
+  const defaultStatuses = await ctx.db
+    .query("requestStatuses")
+    .filter((q) => q.eq(q.field("type"), "default"))
+    .collect();
+
+  return defaultStatuses
+    .sort((a, b) => getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name));
 }
 
 async function getRequestCountsByStatusId(ctx: QueryCtx, projectId: Id<"projects">) {
