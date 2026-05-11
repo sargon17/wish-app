@@ -14,7 +14,6 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     viteReact(),
-    devtools(),
     nitro()
   ],
   resolve: {
