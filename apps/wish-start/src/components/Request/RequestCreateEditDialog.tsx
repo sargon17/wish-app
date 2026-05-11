@@ -121,7 +121,7 @@ export default function RequestCreateEditDialog({
 
   useEffect(() => {
     if (!isOpen) reset();
-  }, [isOpen, reset]);
+  }, [isOpen]);
 
   return (
     <Dialog

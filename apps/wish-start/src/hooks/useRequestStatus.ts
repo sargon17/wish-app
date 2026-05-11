@@ -44,7 +44,7 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
       setStatus(originalStatus);
       setHasChanged(false);
     }
-  }, [originalStatus, status]);
+  }, [originalStatus?._id]);
 
   const checkIfChanged = (status: Doc<"requestStatuses">) => {
     if (status?._id !== originalStatus?._id) {
@@ -61,7 +61,7 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
 
   const setById = (id: UseRequestSetByIdProps) => {
     const status = findCurrentStatus({ id, statuses });
-    if (status) set(status);
+    status && set(status);
   };
 
   const setNextStatus = () => {
@@ -71,9 +71,7 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
   };
 
   const save = () => {
-    if (status) {
-      editRequest({ id: request._id, text: request.text, status: status._id });
-    }
+    status && editRequest({ id: request._id, text: request.text, status: status?._id });
   };
 
   const state = {
