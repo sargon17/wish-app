@@ -111,8 +111,8 @@ describe("requestStatusWorkflow", () => {
       { _id: "custom-1", type: "custom", project: "project-1", position: 1, _creationTime: 20 },
       { _id: "custom-0-b", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
       { _id: "custom-0-a", type: "custom", project: "project-1", position: 0, _creationTime: 8 },
-      { _id: "custom-missing-b", type: "custom", project: "project-1", _creationTime: 30 },
       { _id: "custom-missing-a", type: "custom", project: "project-1", _creationTime: 25 },
+      { _id: "custom-missing-b", type: "custom", project: "project-1", _creationTime: 30 },
       { _id: "other-project", type: "custom", project: "project-2", position: 0, _creationTime: 5 },
     ] as any;
     const projectId = "project-1" as Id<"projects">;
