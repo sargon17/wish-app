@@ -9,7 +9,7 @@ A project-owned workflow board where requests are grouped into ordered statuses.
 _Avoid_: board when the project context is unclear
 
 **Status**:
-A project-owned workflow stage that requests can occupy on a project board.
+A project-owned workflow stage that requests can occupy on a project board, shown in the same order everywhere in the project.
 _Avoid_: column, state
 
 **Starter Status**:
@@ -18,7 +18,8 @@ _Avoid_: default status, system status, locked status
 
 ## Relationships
 
-- A **Project Board** has one or more **Statuses**
+- A **Project Board** must have at least one **Status**
+- The first **Status** in a **Project Board** is the starting **Status** for every new **Request** that does not specify a valid **Status**
 - A **Starter Status** is created with a new **Project Board** and then treated as a normal **Status**
 - A **Status** belongs to exactly one **Project Board**
 - A **Request** belongs to exactly one **Status** on its **Project Board**

@@ -15,6 +15,7 @@ import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_projectChangelog from "../lib/projectChangelog.js";
 import type * as lib_projectPublic from "../lib/projectPublic.js";
+import type * as lib_publicErrors from "../lib/publicErrors.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as requestComments from "../requestComments.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   "lib/authorization": typeof lib_authorization;
   "lib/projectChangelog": typeof lib_projectChangelog;
   "lib/projectPublic": typeof lib_projectPublic;
+  "lib/publicErrors": typeof lib_publicErrors;
   projects: typeof projects;
   rateLimits: typeof rateLimits;
   requestComments: typeof requestComments;
