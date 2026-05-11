@@ -11,7 +11,7 @@ describe("requestBoard dragPayload", () => {
       setData: (key: string, value: string) => {
         data.set(key, value);
       },
-    } as DataTransfer;
+    } as unknown as DataTransfer;
 
     writeRequestDragPayload(dataTransfer, "request-1");
 

@@ -23,7 +23,7 @@ export function toUpvotedRequestSet(viewerUpvotes?: Id<"requests">[]) {
 }
 
 export function createMoveRequestToStatus(
-  updateStatus: (args: { id: Id<"requests">; status: Id<"requestStatuses"> }) => Promise<void>,
+  updateStatus: (args: { id: Id<"requests">; status: Id<"requestStatuses"> }) => Promise<unknown>,
 ) {
   return async function moveRequestToStatus(
     requestId: string,
