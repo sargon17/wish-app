@@ -1,6 +1,6 @@
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { createPublicError } from "./publicErrors";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
 
@@ -27,8 +27,8 @@ export async function listRequests(c: RequestIntakeContext, projectId: string) {
   return {
     ok: true as const,
     project: authorization.project,
-    requests: requests.map((request) => {
-      const computedStatus = requestStatuses.find((status) => status._id === request.status)!;
+    requests: requests.map((request: Doc<"requests">) => {
+      const computedStatus = requestStatuses.find((status: Doc<"requestStatuses">) => status._id === request.status)!;
       return { ...request, computedStatus };
     }),
   };
@@ -54,7 +54,7 @@ async function getOpenStatusId(c: RequestIntakeContext, projectId: string) {
   const statuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
     id: projectId as Id<"projects">,
   });
-  const openStatus = statuses.find((status) => status.name === "open");
+  const openStatus = statuses.find((status: Doc<"requestStatuses">) => status.name === "open");
 
   if (!openStatus) {
     throw createPublicError("not_found");
