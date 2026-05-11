@@ -13,6 +13,7 @@ import {
   assertValidStatusName,
   getOrderedCustomStatusesForProject,
   getOrderedStatusesForProject,
+  normalizeStatusDescription,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
@@ -90,6 +91,7 @@ export const create = mutation({
 
     const statuses = await getOrderedStatusesForProject(ctx, args.project);
     assertNoDuplicateStatusName(statuses, name);
+    const description = normalizeStatusDescription(args.description);
 
     const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.project);
     const nextPosition = customStatuses.reduce((max, status) => {
@@ -100,6 +102,7 @@ export const create = mutation({
       ...args,
       name,
       displayName,
+      description,
       type: "custom",
       position: nextPosition,
     });
@@ -120,7 +123,7 @@ export const update = mutation({
     await assertProjectOwner(ctx, status.project, user._id);
 
     const { displayName, name } = assertValidStatusName(args.displayName);
-    const description = args.description?.trim();
+    const description = normalizeStatusDescription(args.description);
     assertValidStatusColor(args.color);
     const statuses = await getOrderedStatusesForProject(ctx, status.project);
     assertNoDuplicateStatusName(statuses, name, args.id);
@@ -128,7 +131,7 @@ export const update = mutation({
     await ctx.db.patch(args.id, {
       displayName,
       name,
-      description: description && description.length > 0 ? description : undefined,
+      description,
       color: args.color,
     });
   },

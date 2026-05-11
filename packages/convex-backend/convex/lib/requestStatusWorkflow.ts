@@ -17,6 +17,12 @@ export function normalizeStatusDisplayName(label: string) {
   return label.trim().replace(/\s+/g, " ");
 }
 
+export function normalizeStatusDescription(description?: string) {
+  const trimmed = description?.trim();
+
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
+
 export function slugifyStatusName(label: string) {
   return normalizeStatusDisplayName(label)
     .normalize("NFKD")

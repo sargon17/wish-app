@@ -12,12 +12,15 @@ import {
   getDefaultStatusRank,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
+  normalizeStatusDescription,
   slugifyStatusName,
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
 
 describe("requestStatusWorkflow", () => {
   it("normalizes and slugifies status names consistently", () => {
     expect(normalizeStatusDisplayName("  In   Review  ")).toBe("In Review");
+    expect(normalizeStatusDescription("  Explain workflow stage  ")).toBe("Explain workflow stage");
+    expect(normalizeStatusDescription("   ")).toBeUndefined();
     expect(slugifyStatusName("Crème Brûlée")).toBe("creme-brulee");
     expect(assertValidStatusName("  In Review  ")).toEqual({ displayName: "In Review", name: "in-review" });
   });
