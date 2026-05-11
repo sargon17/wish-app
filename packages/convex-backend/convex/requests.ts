@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   const request = await ctx.db.get(id);
@@ -121,6 +122,7 @@ export const create = mutation({
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
+    await assertStatusBelongsToProject(ctx, args.status, args.project);
     await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
   },
 });
@@ -140,6 +142,7 @@ export const edit = mutation({
       throw new Error("Request not found");
     }
     await assertProjectOwner(ctx, request.project, user._id);
+    await assertStatusBelongsToProject(ctx, args.status, request.project);
 
     await ctx.db.patch(id, { ...fields });
   },
@@ -157,6 +160,7 @@ export const updateStatus = mutation({
       throw new Error("Request not found");
     }
     await assertProjectOwner(ctx, request.project, user._id);
+    await assertStatusBelongsToProject(ctx, args.status, request.project);
 
     await ctx.db.patch(args.id, { status: args.status });
   },
