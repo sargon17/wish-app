@@ -1,11 +1,11 @@
 "use client";
 import { useQuery } from "convex/react";
-import { useMemo } from "react";
 
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 
 import DashboardBoardColumn from "./DashboardBoardColumn";
+import { useRequestBoardState } from "@/hooks/useRequestBoardState";
 
 interface Props {
   projectId: Id<"projects">;
@@ -21,23 +21,12 @@ export default function DashboardBoard({
     project ? { projectId: project._id } : "skip",
   );
 
-  const upvotedSet = useMemo(() => new Set(viewerUpvotes ?? []), [viewerUpvotes]);
+  const { getRequestsForStatus, handleRequestDrop, upvotedSet } = useRequestBoardState({
+    requests: requests ?? undefined,
+    viewerUpvotes: viewerUpvotes ?? undefined,
+  });
 
   if (!project) return null;
-
-  const sortedRequests = (() => {
-    const response: {
-      [key: string]: typeof requests;
-    } = {};
-
-    requests?.map((r) => {
-        if (!response[r.status]) {
-          response[r.status] = [];
-        }
-        response[r.status]?.push(r);
-      });
-    return response;
-  })();
 
   return (
     <div className="flex h-full gap-2 w-full overflow-x-scroll px-2 md:px-6 p-px">
@@ -48,11 +37,12 @@ export default function DashboardBoard({
         <DashboardBoardColumn
           key={status._id}
           title={status.displayName}
-          requests={sortedRequests[status._id.toString()]}
+          requests={getRequestsForStatus(status._id)}
           projectId={project._id}
           statusId={status._id}
           color={status.color}
           upvotedSet={upvotedSet}
+          onDropRequest={handleRequestDrop}
         />
       ))}
     </div>

@@ -1,8 +1,7 @@
 "use client";
-import { useMutation } from "convex/react";
 import { useRef, useState } from "react";
+import type { DragEvent } from "react";
 
-import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 
 import RequestCard from "../Request/RequestCard";
@@ -18,6 +17,7 @@ interface Props {
   statusId: Id<"requestStatuses">;
   color?: string;
   upvotedSet: Set<Id<"requests">>;
+  onDropRequest: (event: DragEvent<HTMLDivElement>, statusId: Id<"requestStatuses">) => void;
 }
 
 export default function DashboardBoardColumn({
@@ -27,23 +27,23 @@ export default function DashboardBoardColumn({
   statusId,
   color,
   upvotedSet,
+  onDropRequest,
 }: Props) {
-  const updateStatus = useMutation(api.requests.updateStatus);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragDepth = useRef(0);
 
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     if (!isDraggingOver) setIsDraggingOver(true);
   }
 
-  function handleDragEnter(e: React.DragEvent<HTMLDivElement>) {
+  function handleDragEnter(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     dragDepth.current += 1;
     if (!isDraggingOver) setIsDraggingOver(true);
   }
 
-  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     dragDepth.current -= 1;
     if (dragDepth.current <= 0) {
@@ -52,19 +52,11 @@ export default function DashboardBoardColumn({
     }
   }
 
-  async function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     dragDepth.current = 0;
     setIsDraggingOver(false);
-    const requestId = e.dataTransfer.getData("requestId");
-    if (!requestId) return;
-    try {
-      await updateStatus({ id: requestId as unknown as Id<"requests">, status: statusId });
-    } catch (err) {
-      console.error("Failed to move request", err);
-    } finally {
-      setIsDraggingOver(false);
-    }
+    onDropRequest(e, statusId);
   }
   return (
     <div

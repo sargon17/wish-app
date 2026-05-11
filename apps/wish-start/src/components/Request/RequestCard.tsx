@@ -1,6 +1,7 @@
 "use client";
 import type { Doc } from "@wish/convex-backend/data-model";
 import { trimTo } from "@/lib/text";
+import { writeRequestDragPayload } from "@/lib/requestBoard/dragPayload";
 
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -26,10 +27,7 @@ export default function RequestCard({ request, upvotedSet }: Props) {
         draggable
         onDragStart={(e) => {
           try {
-            const id = request._id as unknown as string;
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("requestId", id);
-            e.dataTransfer.setData("text/plain", id);
+            writeRequestDragPayload(e.dataTransfer, request._id);
           } catch {
             // noop
           }
