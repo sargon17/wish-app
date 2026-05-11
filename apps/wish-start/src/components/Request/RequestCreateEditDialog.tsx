@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 import { arktypeResolver } from "@hookform/resolvers/arktype";
+import { getRequestDialogDefaultStatus } from "@/lib/requestBoard/defaultStatus";
 
 interface Props extends React.ComponentProps<typeof Dialog> {
   method?: "create" | "edit";
@@ -68,17 +69,12 @@ export default function RequestCreateEditDialog({
 
   const isEditMode = method === "edit" && request;
 
-  const setDefaultStatus = (() => {
-    if (isEditMode) {
-      return request.status;
-    }
-
-    if (!status && statuses && statuses[0]) {
-      return statuses[0]._id;
-    }
-
-    return status || "";
-  })();
+  const setDefaultStatus = getRequestDialogDefaultStatus({
+    method,
+    request,
+    explicitStatus: status,
+    statuses: statuses ?? undefined,
+  });
 
   const form = useForm<typeof ArkSchema.infer>({
     resolver: arktypeResolver(ArkSchema),
@@ -90,7 +86,7 @@ export default function RequestCreateEditDialog({
     mode: "onChange",
   });
 
-  const { handleSubmit, reset } = form;
+  const { handleSubmit, reset, setValue, getValues } = form;
 
   async function onSubmit(values: typeof ArkSchema.infer) {
     try {
@@ -121,7 +117,24 @@ export default function RequestCreateEditDialog({
 
   useEffect(() => {
     if (!isOpen) reset();
-  }, [isOpen]);
+  }, [isOpen, reset]);
+
+  useEffect(() => {
+    if (!isOpen || !setDefaultStatus) {
+      return;
+    }
+
+    const currentStatus = getValues("status");
+    if (currentStatus || isEditMode) {
+      return;
+    }
+
+    setValue("status", setDefaultStatus, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: true,
+    });
+  }, [getValues, isEditMode, isOpen, setDefaultStatus, setValue]);
 
   return (
     <Dialog

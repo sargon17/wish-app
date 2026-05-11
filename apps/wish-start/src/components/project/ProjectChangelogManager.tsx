@@ -245,6 +245,10 @@ export default function ProjectChangelogManager({
         setIsEditorOpen(false);
         toast.success("Draft created");
       } else {
+        if (!("_id" in selectedEntry)) {
+          return;
+        }
+
         await saveEntry({
           entryId: selectedEntry._id,
           versionLabel: values.versionLabel,
