@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import type { QueryCtx } from "./_generated/server";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
@@ -11,27 +10,13 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  getNextCustomStatusPosition,
+  getManagementStatusesForProject,
   getOrderedCustomStatusesForProject,
   getOrderedStatusesForProject,
   normalizeStatusDescription,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
-
-async function getRequestCountsByStatusId(ctx: QueryCtx, projectId: Id<"projects">) {
-  const requests = await ctx.db
-    .query("requests")
-    .withIndex("by_project", (q) => q.eq("project", projectId))
-    .collect();
-
-  const counts = new Map<string, number>();
-
-  for (const request of requests) {
-    const key = request.status.toString();
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-
-  return counts;
-}
 
 export const getById = query({
   args: { id: v.string() },
@@ -56,15 +41,7 @@ export const getManagementByProject = query({
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.id, user._id);
 
-    const [statuses, counts] = await Promise.all([
-      getOrderedStatusesForProject(ctx, args.id),
-      getRequestCountsByStatusId(ctx, args.id),
-    ]);
-
-    return statuses.map((status) => ({
-      ...status,
-      requestCount: counts.get(status._id.toString()) ?? 0,
-    }));
+    return await getManagementStatusesForProject(ctx, args.id);
   },
 });
 
@@ -92,11 +69,8 @@ export const create = mutation({
     const statuses = await getOrderedStatusesForProject(ctx, args.project);
     assertNoDuplicateStatusName(statuses, name);
     const description = normalizeStatusDescription(args.description);
-
     const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.project);
-    const nextPosition = customStatuses.reduce((max, status) => {
-      return Math.max(max, status.position ?? -1);
-    }, -1) + 1;
+    const nextPosition = getNextCustomStatusPosition(customStatuses);
 
     await ctx.db.insert("requestStatuses", {
       ...args,
@@ -187,12 +161,6 @@ export const updateColor = mutation({
 
     await assertProjectOwner(ctx, projectId, user._id);
     assertValidStatusColor(args.color);
-
-    try {
-      await ctx.db.patch(args.id, { color: args.color });
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    await ctx.db.patch(args.id, { color: args.color });
   },
 });

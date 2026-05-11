@@ -10,10 +10,12 @@ import {
   assertValidStatusColor,
   assertValidStatusName,
   getDefaultStatusRank,
+  getNextCustomStatusPosition,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
   normalizeStatusDescription,
   slugifyStatusName,
+  sortDefaultStatuses,
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
 
 describe("requestStatusWorkflow", () => {
@@ -28,6 +30,18 @@ describe("requestStatusWorkflow", () => {
   it("sorts default statuses ahead of custom ones by fixed rank", () => {
     expect(getDefaultStatusRank("open")).toBe(0);
     expect(getDefaultStatusRank("unknown")).toBe(Number.MAX_SAFE_INTEGER);
+
+    const defaultStatuses = [
+      { _id: "default-2", type: "default", name: "done", _creationTime: 2 },
+      { _id: "default-1", type: "default", name: "open", _creationTime: 1 },
+      { _id: "default-3", type: "default", name: "archived", _creationTime: 3 },
+    ] as any;
+
+    expect([...defaultStatuses].sort(sortDefaultStatuses).map((status) => status.name)).toEqual([
+      "open",
+      "done",
+      "archived",
+    ]);
   });
 
   it("rejects invalid colors and duplicate names", () => {
@@ -80,6 +94,8 @@ describe("requestStatusWorkflow", () => {
     expect(() => assertValidCustomOrderPayload(statuses, ["status-1"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
+
+    expect(getNextCustomStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
   });
 
   it("rejects removing a status that still has linked requests", () => {

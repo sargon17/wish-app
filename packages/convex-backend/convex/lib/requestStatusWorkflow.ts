@@ -13,6 +13,10 @@ export function getDefaultStatusRank(name: string) {
   return index;
 }
 
+export function sortDefaultStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
+  return getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name);
+}
+
 export function normalizeStatusDisplayName(label: string) {
   return label.trim().replace(/\s+/g, " ");
 }
@@ -85,6 +89,40 @@ function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"request
   );
 }
 
+export function getNextCustomStatusPosition(statuses: Doc<"requestStatuses">[]) {
+  return statuses.reduce((max, status) => {
+    return Math.max(max, status.position ?? -1);
+  }, -1) + 1;
+}
+
+async function getRequestCountsByStatusId(ctx: QueryCtx | MutationCtx, projectId: Id<"projects">) {
+  const requests = await ctx.db
+    .query("requests")
+    .withIndex("by_project", (q) => q.eq("project", projectId))
+    .collect();
+
+  const counts = new Map<string, number>();
+
+  for (const request of requests) {
+    const key = request.status.toString();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
+export async function getManagementStatusesForProject(ctx: QueryCtx | MutationCtx, projectId: Id<"projects">) {
+  const [statuses, counts] = await Promise.all([
+    getOrderedStatusesForProject(ctx, projectId),
+    getRequestCountsByStatusId(ctx, projectId),
+  ]);
+
+  return statuses.map((status) => ({
+    ...status,
+    requestCount: counts.get(status._id.toString()) ?? 0,
+  }));
+}
+
 export async function getOrderedCustomStatusesForProject(
   ctx: QueryCtx | MutationCtx,
   projectId: Id<"projects">,
@@ -106,9 +144,7 @@ export async function getOrderedStatusesForProject(ctx: QueryCtx, projectId: Id<
     .filter((q) => q.or(q.eq(q.field("project"), projectId), q.eq(q.field("type"), "default")))
     .collect();
 
-  const defaultStatuses = statuses
-    .filter((status) => status.type === "default")
-    .sort((a, b) => getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name));
+  const defaultStatuses = statuses.filter((status) => status.type === "default").sort(sortDefaultStatuses);
   const customStatuses = await getOrderedCustomStatusesForProject(ctx, projectId, statuses);
 
   return [...defaultStatuses, ...customStatuses];
