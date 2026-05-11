@@ -89,6 +89,24 @@ export function assertCustomStatusRemovable(linkedRequest: Doc<"requests"> | nul
   }
 }
 
+export async function assertStatusBelongsToProject(
+  ctx: QueryCtx | MutationCtx,
+  statusId: Id<"requestStatuses">,
+  projectId: Id<"projects">,
+) {
+  const status = await ctx.db.get(statusId);
+
+  if (!status) {
+    throw new Error("Status not found");
+  }
+
+  if (status.project !== projectId) {
+    throw new Error("Status does not belong to project");
+  }
+
+  return status;
+}
+
 function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
   return (
     (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
