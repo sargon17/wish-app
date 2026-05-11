@@ -22,6 +22,7 @@ _Avoid_: default status, system status, locked status
 - The first **Status** in a **Project Board** is the starting **Status** for every new **Request** that does not specify a valid **Status**
 - A **Starter Status** is created with a new **Project Board** and then treated as a normal **Status**
 - A **Status** belongs to exactly one **Project Board**
+- Status names are unique within a **Project Board**
 - A **Request** belongs to exactly one **Status** on its **Project Board**
 - Removing a **Status** that has **Requests** requires moving those **Requests** to another **Status** on the same **Project Board**
 
