@@ -121,18 +121,19 @@ describe("requestStatusWorkflow", () => {
       db: {
         query: () => ({
           withIndex: () => ({
-            collect: async () => collected.filter((status) => status.project === projectId),
+            collect: async () =>
+              collected.filter((status: (typeof collected)[number]) => status.project === projectId),
           }),
         }),
       },
     } as any;
 
     await expect(getOrderedStatusesForProject(ctx, projectId)).resolves.toEqual([
-      collected[2],
       collected[3],
+      collected[2],
       collected[1],
-      collected[5],
       collected[4],
+      collected[5],
     ]);
   });
 });
