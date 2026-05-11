@@ -6,6 +6,7 @@ import { createApiKeyRecord } from "./apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { ensureProjectPublicChangelogSlug } from "./lib/projectChangelog";
 import { toPublicProject } from "./lib/projectPublic";
+import { STARTER_PROJECT_STATUSES } from "./requestStatuses";
 
 // export const getForCurrentUser = query({
 //   args: {},
@@ -60,6 +61,16 @@ export const createProject = mutation({
       title: args.title,
       user: user._id,
     });
+
+    for (const [position, status] of STARTER_PROJECT_STATUSES.entries()) {
+      await ctx.db.insert("requestStatuses", {
+        name: status.name,
+        displayName: status.displayName,
+        project: projectId,
+        type: "custom",
+        position,
+      });
+    }
 
     await ensureProjectPublicChangelogSlug(ctx, projectId);
 

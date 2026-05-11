@@ -18,6 +18,13 @@ import {
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
+export const STARTER_PROJECT_STATUSES = [
+  { name: "open", displayName: "Open" },
+  { name: "under-review", displayName: "Under Review" },
+  { name: "planned", displayName: "Planned" },
+  { name: "in-progress", displayName: "In Progress" },
+  { name: "done", displayName: "Done" },
+] as const;
 export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
