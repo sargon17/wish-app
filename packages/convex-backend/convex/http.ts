@@ -175,13 +175,13 @@ app.post("/api/project/:id/request/", async (c) => {
 
   try {
     requirePublicId(id);
-    const body = await parsePublicBody(c, RequestValidator);
     const authorization = await authorizeProjectKeyRequest(c, id, "write");
     if (!authorization.ok) {
       return publicErrorJson(c, authorization.error);
     }
 
     const project = authorization.project;
+    const body = await parsePublicBody(c, RequestValidator);
     const status = (
       await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
         id: id as Id<"projects">,
@@ -268,11 +268,6 @@ app.post(
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const body = await parsePublicBody(c, CommentValidator);
-      const trimmedBody = body.body.trim();
-      if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
-        throw createPublicError("validation_failed");
-      }
       const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
       if (!authorization.ok) {
         return publicErrorJson(c, authorization.error);
@@ -281,6 +276,12 @@ app.post(
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;
+      }
+
+      const body = await parsePublicBody(c, CommentValidator);
+      const trimmedBody = body.body.trim();
+      if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
+        throw createPublicError("validation_failed");
       }
 
       await c.env.runMutation(api.requestComments.create, {
@@ -334,10 +335,6 @@ app.post(
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const body = await parsePublicBody(c, UpvoteValidator);
-      if (body.clientId.trim().length === 0) {
-        throw createPublicError("validation_failed");
-      }
       const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
       if (!authorization.ok) {
         return publicErrorJson(c, authorization.error);
@@ -346,6 +343,11 @@ app.post(
       const requestAuthorization = await assertRequestBelongsToProject(c, reqId, projectId);
       if ("response" in requestAuthorization) {
         return requestAuthorization.response;
+      }
+
+      const body = await parsePublicBody(c, UpvoteValidator);
+      if (body.clientId.trim().length === 0) {
+        throw createPublicError("validation_failed");
       }
 
       await c.env.runMutation(api.requestUpvotes.toggle, {
