@@ -1,6 +1,6 @@
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
-import type { Doc, Id } from "../_generated/dataModel";
+import type { Id } from "../_generated/dataModel";
 import { createPublicError } from "./publicErrors";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
 

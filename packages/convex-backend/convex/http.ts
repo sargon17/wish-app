@@ -5,11 +5,7 @@ import { Hono } from "hono";
 
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
-import {
-  authorizeProjectKeyRequest,
-  getClientIpAddress,
-  IP_RATE_LIMIT,
-} from "./lib/projectKeyAuthorization";
+import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
 import {
   createComment,
   createRequest,
@@ -150,10 +146,6 @@ app.post("/api/project/:id/request/", async (c) => {
 
   try {
     requirePublicId(id);
-    const authorization = await authorizeProjectKeyRequest(c, id, "write");
-    if (!authorization.ok) {
-      return publicErrorJson(c, authorization.error);
-    }
     const body = await parsePublicBody(c, RequestValidator);
     const result = await createRequest(c, id, {
       text: body.text,
@@ -214,10 +206,6 @@ app.post(
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
-      if (!authorization.ok) {
-        return publicErrorJson(c, authorization.error);
-      }
       const body = await parsePublicBody(c, CommentValidator);
       const trimmedBody = body.body.trim();
       if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
@@ -270,10 +258,6 @@ app.post(
     try {
       requirePublicId(projectId);
       requirePublicId(reqId);
-      const authorization = await authorizeProjectKeyRequest(c, projectId, "write");
-      if (!authorization.ok) {
-        return publicErrorJson(c, authorization.error);
-      }
       const body = await parsePublicBody(c, UpvoteValidator);
       if (body.clientId.trim().length === 0) {
         throw createPublicError("validation_failed");
