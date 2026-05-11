@@ -12,16 +12,10 @@ Verified design and source behavior for the shared project-key authorization hel
 
 Repo validation status in this sandbox:
 
-- `bun run check-types`: rerun in this pass; fails in unrelated `apps/wish-start` files:
-  - `src/components/project/ProjectChangelogManager.tsx`
-  - `src/routes/__root.tsx`
-- `bun run lint`: rerun in this pass; fails in unrelated `apps/wish-start` files:
-  - `src/components/dashboard/DashboardBoard.tsx`
-  - `src/components/Request/RequestCreateEditDialog.tsx`
-  - `src/hooks/useRequestStatus.ts`
-  - `src/lib/utils.test.ts`
-  - `vite.config.ts`
-- `bun` was installed locally in this sandbox so the repo scripts could be exercised.
+- `npx tsc -p packages/convex-backend/convex/tsconfig.json --noEmit`: passed in this pass.
+- `bun`: not available on PATH in this sandbox, so the repo scripts could not be rerun directly here.
+- `bun run check-types`: not rerun in this pass because `bun` is unavailable in this sandbox.
+- `bun run lint`: not rerun in this pass because `bun` is unavailable in this sandbox.
 - `bun run test`: not rerun in this pass.
 - `bun run build`: not rerun in this pass.
 - `bun --filter @wish/convex-backend run check-types`: not rerun in this pass.
