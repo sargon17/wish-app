@@ -143,6 +143,16 @@ export default function ProjectStatusCard({
                 {status.description ?? "This system status is shared across projects and cannot be renamed or removed here."}
               </p>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" size="sm" disabled={!canMoveUp || isReordering} onClick={() => void onMoveUp?.()}>
+                <ArrowUp className="size-4" />
+                Up
+              </Button>
+              <Button type="button" variant="outline" size="sm" disabled={!canMoveDown || isReordering} onClick={() => void onMoveDown?.()}>
+                <ArrowDown className="size-4" />
+                Down
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -160,19 +170,11 @@ export default function ProjectStatusCard({
                 {previewName}
               </span>
               <Badge variant="secondary">{requestCount} requests</Badge>
-              <Badge variant="outline">{isDefault ? "Default" : "Custom"}</Badge>
-              {isDefault ? (
-                <Badge variant="outline" className="gap-1 text-muted-foreground">
-                  <Lock className="size-3" />
-                  Locked
-                </Badge>
-              ) : null}
+              <Badge variant="outline">Custom</Badge>
             </div>
 
             <p className="max-w-2xl text-sm text-muted-foreground">
-              {isDefault
-                ? status.description ?? "This system status is shared and read-only inside project settings."
-                : "Custom statuses can be renamed, recolored, described, and reordered for this project."}
+              Custom statuses can be renamed, recolored, described, and reordered for this project.
             </p>
           </div>
 

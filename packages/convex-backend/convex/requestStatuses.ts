@@ -10,10 +10,9 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
-  getNextCustomStatusPosition,
   getManagementStatusesForProject,
-  getOrderedCustomStatusesForProject,
   getOrderedStatusesForProject,
+  getNextWorkflowStatusPosition,
   normalizeStatusDescription,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
@@ -76,8 +75,7 @@ export const create = mutation({
     const statuses = await getOrderedStatusesForProject(ctx, args.project);
     assertNoDuplicateStatusName(statuses, name);
     const description = normalizeStatusDescription(args.description);
-    const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.project);
-    const nextPosition = getNextCustomStatusPosition(customStatuses);
+    const nextPosition = getNextWorkflowStatusPosition(statuses);
 
     await ctx.db.insert("requestStatuses", {
       ...args,
@@ -118,7 +116,7 @@ export const update = mutation({
   },
 });
 
-export const reorderCustom = mutation({
+export const reorder = mutation({
   args: {
     projectId: v.id("projects"),
     ids: v.array(v.id("requestStatuses")),
@@ -127,8 +125,8 @@ export const reorderCustom = mutation({
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
 
-    const customStatuses = await getOrderedCustomStatusesForProject(ctx, args.projectId);
-    assertValidCustomOrderPayload(customStatuses, args.ids, args.projectId);
+    const statuses = await getOrderedStatusesForProject(ctx, args.projectId);
+    assertValidCustomOrderPayload(statuses, args.ids, args.projectId);
 
     await Promise.all(args.ids.map((id, index) => ctx.db.patch(id, { position: index })));
   },

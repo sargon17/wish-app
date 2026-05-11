@@ -16,7 +16,7 @@ import type { Id } from "@wish/convex-backend/data-model";
 
 export default function ProjectStatusesManager({ projectID }: { projectID: Id<"projects"> }) {
   const statuses = useQuery(api.requestStatuses.getManagementByProject, { id: projectID });
-  const reorderCustomStatuses = useMutation(api.requestStatuses.reorderCustom);
+  const reorderStatuses = useMutation(api.requestStatuses.reorder);
   const [isReordering, setIsReordering] = useState(false);
 
   if (!statuses) {
@@ -30,17 +30,15 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
     );
   }
 
-  const defaultStatuses = statuses.filter((status) => status.type === "default");
-  const customStatuses = statuses.filter((status) => status.type === "custom");
   const statusesInUse = statuses.filter((status) => status.requestCount > 0).length;
   const totalRequests = statuses.reduce((sum, status) => sum + status.requestCount, 0);
 
-  async function moveCustomStatus(statusId: Id<"requestStatuses">, direction: "up" | "down") {
+  async function moveStatus(statusId: Id<"requestStatuses">, direction: "up" | "down") {
     if (isReordering) {
       return;
     }
 
-    const currentIndex = customStatuses.findIndex((status) => status._id === statusId);
+    const currentIndex = statuses.findIndex((status) => status._id === statusId);
 
     if (currentIndex < 0) {
       return;
@@ -48,11 +46,11 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
     const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
-    if (nextIndex < 0 || nextIndex >= customStatuses.length) {
+    if (nextIndex < 0 || nextIndex >= statuses.length) {
       return;
     }
 
-    const nextStatuses = [...customStatuses];
+    const nextStatuses = [...statuses];
     const [movedStatus] = nextStatuses.splice(currentIndex, 1);
 
     if (!movedStatus) {
@@ -63,7 +61,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
     try {
       setIsReordering(true);
-      await reorderCustomStatuses({
+      await reorderStatuses({
         projectId: projectID,
         ids: nextStatuses.map((status) => status._id),
       });
@@ -87,7 +85,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Status management</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Keep the board readable, the request form predictable, and your custom workflow under control.
+              Keep the board readable, the request form predictable, and the project workflow ordered end to end.
             </p>
           </div>
         </div>
@@ -107,7 +105,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
               <Layers2 className="size-4 text-orange-300" />
               Total statuses
             </CardTitle>
-            <CardDescription>Default and custom states available to the project.</CardDescription>
+            <CardDescription>All project states shown in workflow order.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-semibold">{statuses.length}</div>
@@ -118,12 +116,12 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ListOrdered className="size-4 text-orange-300" />
-              Custom workflow
+              Workflow order
             </CardTitle>
-            <CardDescription>These can be edited and reordered inside this project.</CardDescription>
+            <CardDescription>Any status can move, while defaults stay locked for edits and removal.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold">{customStatuses.length}</div>
+            <div className="text-3xl font-semibold">{statuses.length}</div>
           </CardContent>
         </Card>
 
@@ -144,47 +142,24 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
       <Card className="border-border/70 bg-gradient-to-b from-card to-card/80">
         <CardHeader>
-          <CardTitle>Default statuses</CardTitle>
+          <CardTitle>Project statuses</CardTitle>
           <CardDescription>
-            Shared system statuses stay locked. They remain available across the product, but cannot be renamed or removed here.
+            Shared system statuses stay locked for edits and removal. Reordering updates the project workflow for every status.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {defaultStatuses.map((status) => (
-            <ProjectStatusCard key={status._id} status={status} requestCount={status.requestCount} />
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="border-orange-500/15 bg-gradient-to-b from-orange-500/6 via-card to-card">
-        <CardHeader>
-          <CardTitle>Custom statuses</CardTitle>
-          <CardDescription>
-            Edit labels, adjust descriptions, tweak colors, and control the order of custom workflow steps.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {customStatuses.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
-              <p className="text-sm font-medium">No custom statuses yet.</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add one to create project-specific workflow stages beyond the default system set.
-              </p>
-            </div>
-          ) : null}
-
-          {customStatuses.map((status, index) => (
-            <div key={status._id} className="space-y-4">
+          {statuses.map((status, index) => (
+            <div key={status._id} className="space-y-3">
               <ProjectStatusCard
                 status={status}
                 requestCount={status.requestCount}
                 canMoveUp={index > 0}
-                canMoveDown={index < customStatuses.length - 1}
+                canMoveDown={index < statuses.length - 1}
                 isReordering={isReordering}
-                onMoveUp={() => moveCustomStatus(status._id, "up")}
-                onMoveDown={() => moveCustomStatus(status._id, "down")}
+                onMoveUp={() => moveStatus(status._id, "up")}
+                onMoveDown={() => moveStatus(status._id, "down")}
               />
-              {index < customStatuses.length - 1 ? <Separator /> : null}
+              {index < statuses.length - 1 ? <Separator /> : null}
             </div>
           ))}
         </CardContent>

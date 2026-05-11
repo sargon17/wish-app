@@ -11,7 +11,7 @@ import {
   assertValidStatusName,
   getDefaultStatusRank,
   getManagementStatusesForProject,
-  getNextCustomStatusPosition,
+  getNextWorkflowStatusPosition,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
   normalizeStatusDescription,
@@ -60,7 +60,7 @@ describe("requestStatusWorkflow", () => {
     );
   });
 
-  it("validates custom reorder payloads and editable status constraints", () => {
+  it("validates workflow reorder payloads and editable status constraints", () => {
     const projectId = "project-1" as Id<"projects">;
     const status = {
       _id: "status-1",
@@ -75,28 +75,41 @@ describe("requestStatusWorkflow", () => {
     );
 
     const statuses = [
+      { _id: "status-0", type: "default", project: projectId },
       { _id: "status-1", type: "custom", project: projectId },
       { _id: "status-2", type: "custom", project: projectId },
     ] as any;
 
+    expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-0", "status-2"] as any, projectId)).not.toThrow();
     expect(() =>
       assertValidCustomOrderPayload(
-        [
-          ...statuses,
-          { _id: "status-3", type: "default", project: undefined },
-        ],
-        ["status-1", "status-2"] as any,
+        statuses,
+        ["status-0", "status-2", "status-2"] as any,
         projectId,
       ),
     ).toThrow("Invalid status order payload");
-    expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-1"] as any, projectId)).toThrow(
+    expect(() =>
+      assertValidCustomOrderPayload(
+        statuses,
+        ["status-0", "status-2"] as any,
+        projectId,
+      ),
+    ).toThrow("Invalid status order payload");
+    expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-1", "status-0"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
     expect(() => assertValidCustomOrderPayload(statuses, ["status-1"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
+    expect(() =>
+      assertValidCustomOrderPayload(
+        statuses,
+        ["status-0", "status-1", "status-2", "status-3"] as any,
+        projectId,
+      ),
+    ).toThrow("Invalid status order payload");
 
-    expect(getNextCustomStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
+    expect(getNextWorkflowStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
   });
 
   it("rejects removing a status that still has linked requests", () => {
@@ -148,9 +161,45 @@ describe("requestStatusWorkflow", () => {
     expect(withIndexArgs).toEqual(["by_project"]);
   });
 
+  it("uses the full workflow order for management views and appends new statuses after the last position", async () => {
+    const statuses = [
+      { _id: "default-1", type: "default", project: "project-1", position: 0, _creationTime: 1 },
+      { _id: "custom-1", type: "custom", project: "project-1", position: 1, _creationTime: 2 },
+      { _id: "custom-2", type: "custom", project: "project-1", position: 2, _creationTime: 3 },
+    ] as any;
+    const projectId = "project-1" as Id<"projects">;
+
+    const ctx = {
+      db: {
+        query: (table: string) => {
+          if (table === "requestStatuses") {
+            return {
+              withIndex: () => ({
+                collect: async () => statuses,
+              }),
+            };
+          }
+
+          return {
+            withIndex: () => ({
+              collect: async () => [],
+            }),
+          };
+        },
+      },
+    } as any;
+
+    await expect(getManagementStatusesForProject(ctx, projectId)).resolves.toEqual([
+      { ...statuses[0], requestCount: 0 },
+      { ...statuses[1], requestCount: 0 },
+      { ...statuses[2], requestCount: 0 },
+    ]);
+    expect(getNextWorkflowStatusPosition(statuses)).toBe(3);
+  });
+
   it("returns ordered management statuses with request counts", async () => {
     const statuses = [
-      { _id: "status-2", type: "custom", project: "project-1", position: 1, _creationTime: 20 },
+      { _id: "status-2", type: "default", project: "project-1", position: 1, _creationTime: 20 },
       { _id: "status-1", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
       { _id: "status-3", type: "custom", project: "project-1", position: 0, _creationTime: 12 },
     ] as any;

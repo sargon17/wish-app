@@ -185,7 +185,7 @@ export function assertValidCustomOrderPayload(
   for (const id of ids) {
     const status = statuses.find((item) => item._id === id);
 
-    if (!status || status.type !== "custom" || status.project !== projectId) {
+    if (!status || status.project !== projectId) {
       throw new Error("Invalid status order payload");
     }
 
@@ -205,4 +205,10 @@ export function assertValidCustomOrderPayload(
       throw new Error("Invalid status order payload");
     }
   }
+}
+
+export function getNextWorkflowStatusPosition(statuses: Doc<"requestStatuses">[]) {
+  return statuses.reduce((max, status) => {
+    return Math.max(max, status.position ?? -1);
+  }, -1) + 1;
 }
