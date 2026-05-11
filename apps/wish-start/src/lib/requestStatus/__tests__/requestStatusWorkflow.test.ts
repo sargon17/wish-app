@@ -105,32 +105,34 @@ describe("requestStatusWorkflow", () => {
     expect(() => assertCustomStatusRemovable(undefined)).not.toThrow();
   });
 
-  it("exposes backend ordering as the only project status ordering path", async () => {
+  it("returns only project-owned statuses ordered by workflow position and creation time", async () => {
     const collected = [
       { _id: "default-1", type: "default", name: "open", _creationTime: 1 },
       { _id: "custom-1", type: "custom", project: "project-1", position: 1, _creationTime: 20 },
-      { _id: "custom-0", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
-      { _id: "custom-missing-a", type: "custom", project: "project-1", _creationTime: 30 },
-      { _id: "custom-missing-b", type: "custom", project: "project-1", _creationTime: 25 },
+      { _id: "custom-0-b", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
+      { _id: "custom-0-a", type: "custom", project: "project-1", position: 0, _creationTime: 8 },
+      { _id: "custom-missing-b", type: "custom", project: "project-1", _creationTime: 30 },
+      { _id: "custom-missing-a", type: "custom", project: "project-1", _creationTime: 25 },
+      { _id: "other-project", type: "custom", project: "project-2", position: 0, _creationTime: 5 },
     ] as any;
     const projectId = "project-1" as Id<"projects">;
 
     const ctx = {
       db: {
         query: () => ({
-          filter: () => ({
-            collect: async () => collected,
+          withIndex: () => ({
+            collect: async () => collected.filter((status) => status.project === projectId),
           }),
         }),
       },
     } as any;
 
     await expect(getOrderedStatusesForProject(ctx, projectId)).resolves.toEqual([
-      collected[0],
       collected[2],
-      collected[1],
-      collected[4],
       collected[3],
+      collected[1],
+      collected[5],
+      collected[4],
     ]);
   });
 });

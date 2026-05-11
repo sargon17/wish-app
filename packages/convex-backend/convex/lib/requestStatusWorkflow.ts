@@ -17,6 +17,14 @@ export function sortDefaultStatuses(a: Doc<"requestStatuses">, b: Doc<"requestSt
   return getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name);
 }
 
+function sortProjectOwnedStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
+  return (
+    (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+    a._creationTime - b._creationTime ||
+    a._id.toString().localeCompare(b._id.toString())
+  );
+}
+
 export function normalizeStatusDisplayName(label: string) {
   return label.trim().replace(/\s+/g, " ");
 }
@@ -138,24 +146,16 @@ export async function getOrderedCustomStatusesForProject(
   return projectStatuses.filter((status) => status.type === "custom").sort(sortByCustomWorkflowPosition);
 }
 
-export async function getOrderedStatusesForProject(ctx: QueryCtx, projectId: Id<"projects">): Promise<Doc<"requestStatuses">[]> {
+export async function getOrderedStatusesForProject(
+  ctx: QueryCtx | MutationCtx,
+  projectId: Id<"projects">,
+): Promise<Doc<"requestStatuses">[]> {
   const projectStatuses = await ctx.db
     .query("requestStatuses")
     .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const customStatuses = projectStatuses.filter((status) => status.type === "custom").sort(sortByCustomWorkflowPosition);
-
-  if (customStatuses.length > 0) {
-    return customStatuses;
-  }
-
-  const defaultStatuses = await ctx.db
-    .query("requestStatuses")
-    .filter((q) => q.eq(q.field("type"), "default"))
-    .collect();
-
-  return defaultStatuses.sort(sortDefaultStatuses);
+  return projectStatuses.sort(sortProjectOwnedStatuses);
 }
 
 export function assertNoDuplicateStatusName(
