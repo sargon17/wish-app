@@ -139,15 +139,23 @@ export async function getOrderedCustomStatusesForProject(
 }
 
 export async function getOrderedStatusesForProject(ctx: QueryCtx, projectId: Id<"projects">): Promise<Doc<"requestStatuses">[]> {
-  const statuses = await ctx.db
+  const projectStatuses = await ctx.db
     .query("requestStatuses")
-    .filter((q) => q.or(q.eq(q.field("project"), projectId), q.eq(q.field("type"), "default")))
+    .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const defaultStatuses = statuses.filter((status) => status.type === "default").sort(sortDefaultStatuses);
-  const customStatuses = await getOrderedCustomStatusesForProject(ctx, projectId, statuses);
+  const customStatuses = projectStatuses.filter((status) => status.type === "custom").sort(sortByCustomWorkflowPosition);
 
-  return [...defaultStatuses, ...customStatuses];
+  if (customStatuses.length > 0) {
+    return customStatuses;
+  }
+
+  const defaultStatuses = await ctx.db
+    .query("requestStatuses")
+    .filter((q) => q.eq(q.field("type"), "default"))
+    .collect();
+
+  return defaultStatuses.sort(sortDefaultStatuses);
 }
 
 export function assertNoDuplicateStatusName(
