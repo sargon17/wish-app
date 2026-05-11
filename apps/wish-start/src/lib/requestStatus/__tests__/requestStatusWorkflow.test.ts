@@ -12,6 +12,7 @@ import {
   getDefaultStatusRank,
   getManagementStatusesForProject,
   getNextWorkflowStatusPosition,
+  getStatusesWithAssignedWorkflowPositions,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
   normalizeStatusDescription,
@@ -195,6 +196,21 @@ describe("requestStatusWorkflow", () => {
       { ...statuses[2], requestCount: 0 },
     ]);
     expect(getNextWorkflowStatusPosition(statuses)).toBe(3);
+  });
+
+  it("reindexes legacy workflow positions before appending a new custom status", () => {
+    const statuses = [
+      { _id: "status-1", type: "default", project: "project-1", position: 0, _creationTime: 1 },
+      { _id: "status-2", type: "custom", project: "project-1", _creationTime: 2 },
+      { _id: "status-3", type: "custom", project: "project-1", _creationTime: 3 },
+    ] as any;
+
+    expect(getStatusesWithAssignedWorkflowPositions(statuses)).toEqual([
+      { ...statuses[0], position: 0 },
+      { ...statuses[1], position: 1 },
+      { ...statuses[2], position: 2 },
+    ]);
+    expect(getNextWorkflowStatusPosition(getStatusesWithAssignedWorkflowPositions(statuses))).toBe(3);
   });
 
   it("returns ordered management statuses with request counts", async () => {

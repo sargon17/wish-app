@@ -212,3 +212,23 @@ export function getNextWorkflowStatusPosition(statuses: Doc<"requestStatuses">[]
     return Math.max(max, status.position ?? -1);
   }, -1) + 1;
 }
+
+export function getStatusesWithAssignedWorkflowPositions(statuses: Doc<"requestStatuses">[]) {
+  let needsReindex = false;
+
+  for (const status of statuses) {
+    if (status.position === undefined || status.position === null) {
+      needsReindex = true;
+      break;
+    }
+  }
+
+  if (!needsReindex) {
+    return statuses;
+  }
+
+  return statuses.map((status, index) => ({
+    ...status,
+    position: index,
+  }));
+}

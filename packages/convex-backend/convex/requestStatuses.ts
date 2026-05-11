@@ -12,6 +12,7 @@ import {
   assertValidStatusName,
   getManagementStatusesForProject,
   getOrderedStatusesForProject,
+  getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
 } from "./lib/requestStatusWorkflow";
@@ -73,9 +74,24 @@ export const create = mutation({
     assertValidStatusColor(args.color);
 
     const statuses = await getOrderedStatusesForProject(ctx, args.project);
+    const normalizedStatuses = getStatusesWithAssignedWorkflowPositions(statuses);
     assertNoDuplicateStatusName(statuses, name);
     const description = normalizeStatusDescription(args.description);
-    const nextPosition = getNextWorkflowStatusPosition(statuses);
+    const nextPosition = getNextWorkflowStatusPosition(normalizedStatuses);
+
+    if (normalizedStatuses !== statuses) {
+      const originalPositions = new Map(statuses.map((status) => [status._id.toString(), status.position]));
+
+      await Promise.all(
+        normalizedStatuses.map((status) => {
+          if (status.position === originalPositions.get(status._id.toString())) {
+            return Promise.resolve();
+          }
+
+          return ctx.db.patch(status._id, { position: status.position });
+        }),
+      );
+    }
 
     await ctx.db.insert("requestStatuses", {
       ...args,
