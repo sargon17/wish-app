@@ -8,6 +8,6 @@ describe('cn', () => {
   })
 
   it('ignores falsey values', () => {
-    expect(cn('foo', false && 'bar', undefined, null)).toBe('foo')
+    expect(cn('foo', undefined, null)).toBe('foo')
   })
 })

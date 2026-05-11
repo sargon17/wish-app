@@ -6,7 +6,7 @@ interface FindNextStatusProps {
 }
 
 export function findNextStatus({ current, statuses }: FindNextStatusProps) {
-  const currentIndex = statuses.indexOf(current);
+  const currentIndex = statuses.findIndex((status) => status._id === current._id);
   if (currentIndex === statuses.length - 1) return current;
 
   return statuses.slice(currentIndex + 1, currentIndex + 2)[0];
