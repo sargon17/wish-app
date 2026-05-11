@@ -30,15 +30,16 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
     );
   }
 
-  const statusesInUse = statuses.filter((status) => status.requestCount > 0).length;
-  const totalRequests = statuses.reduce((sum, status) => sum + status.requestCount, 0);
+  const projectStatuses = statuses ?? [];
+  const statusesInUse = projectStatuses.filter((status) => status.requestCount > 0).length;
+  const totalRequests = projectStatuses.reduce((sum, status) => sum + status.requestCount, 0);
 
   async function moveStatus(statusId: Id<"requestStatuses">, direction: "up" | "down") {
     if (isReordering) {
       return;
     }
 
-    const currentIndex = statuses.findIndex((status) => status._id === statusId);
+    const currentIndex = projectStatuses.findIndex((status) => status._id === statusId);
 
     if (currentIndex < 0) {
       return;
@@ -46,11 +47,11 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
     const nextIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
-    if (nextIndex < 0 || nextIndex >= statuses.length) {
+    if (nextIndex < 0 || nextIndex >= projectStatuses.length) {
       return;
     }
 
-    const nextStatuses = [...statuses];
+    const nextStatuses = [...projectStatuses];
     const [movedStatus] = nextStatuses.splice(currentIndex, 1);
 
     if (!movedStatus) {
@@ -108,7 +109,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
             <CardDescription>All project states shown in workflow order.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold">{statuses.length}</div>
+            <div className="text-3xl font-semibold">{projectStatuses.length}</div>
           </CardContent>
         </Card>
 
@@ -121,7 +122,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
             <CardDescription>Any status can move, while defaults stay locked for edits and removal.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold">{statuses.length}</div>
+            <div className="text-3xl font-semibold">{projectStatuses.length}</div>
           </CardContent>
         </Card>
 
@@ -148,13 +149,13 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {statuses.map((status, index) => (
+          {projectStatuses.map((status, index) => (
             <div key={status._id} className="space-y-3">
               <ProjectStatusCard
                 status={status}
                 requestCount={status.requestCount}
                 canMoveUp={index > 0}
-                canMoveDown={index < statuses.length - 1}
+                canMoveDown={index < projectStatuses.length - 1}
                 isReordering={isReordering}
                 onMoveUp={() => moveStatus(status._id, "up")}
                 onMoveDown={() => moveStatus(status._id, "down")}
