@@ -10,6 +10,7 @@ import {
   assertValidStatusColor,
   assertValidStatusName,
   getDefaultStatusRank,
+  getManagementStatusesForProject,
   getNextCustomStatusPosition,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
@@ -116,14 +117,22 @@ describe("requestStatusWorkflow", () => {
       { _id: "other-project", type: "custom", project: "project-2", position: 0, _creationTime: 5 },
     ] as any;
     const projectId = "project-1" as Id<"projects">;
+    const withIndexArgs: Array<unknown> = [];
 
     const ctx = {
       db: {
         query: () => ({
-          withIndex: () => ({
-            collect: async () =>
-              collected.filter((status: (typeof collected)[number]) => status.project === projectId),
-          }),
+          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+            withIndexArgs.push(indexName);
+            predicate({
+              eq: () => undefined,
+            });
+
+            return {
+              collect: async () =>
+                collected.filter((status: (typeof collected)[number]) => status.project === projectId),
+            };
+          },
         }),
       },
     } as any;
@@ -134,6 +143,48 @@ describe("requestStatusWorkflow", () => {
       collected[1],
       collected[4],
       collected[5],
+    ]);
+
+    expect(withIndexArgs).toEqual(["by_project"]);
+  });
+
+  it("returns ordered management statuses with request counts", async () => {
+    const statuses = [
+      { _id: "status-2", type: "custom", project: "project-1", position: 1, _creationTime: 20 },
+      { _id: "status-1", type: "custom", project: "project-1", position: 0, _creationTime: 10 },
+      { _id: "status-3", type: "custom", project: "project-1", position: 0, _creationTime: 12 },
+    ] as any;
+    const requests = [
+      { _id: "request-1", project: "project-1", status: "status-1" },
+      { _id: "request-2", project: "project-1", status: "status-1" },
+      { _id: "request-3", project: "project-1", status: "status-3" },
+    ] as any;
+    const projectId = "project-1" as Id<"projects">;
+
+    const ctx = {
+      db: {
+        query: (table: string) => {
+          if (table === "requestStatuses") {
+            return {
+              withIndex: () => ({
+                collect: async () => statuses,
+              }),
+            };
+          }
+
+          return {
+            withIndex: () => ({
+              collect: async () => requests,
+            }),
+          };
+        },
+      },
+    } as any;
+
+    await expect(getManagementStatusesForProject(ctx, projectId)).resolves.toEqual([
+      { ...statuses[1], requestCount: 2 },
+      { ...statuses[2], requestCount: 1 },
+      { ...statuses[0], requestCount: 0 },
     ]);
   });
 });
