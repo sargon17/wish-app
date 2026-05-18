@@ -42,9 +42,7 @@ export const requestOverview = query({
         now: Date.now(),
       });
 
-      return {
-        ...overview,
-      };
+      return overview;
     } catch (error) {
       console.error(error);
       throw new Error("Failed to load request stats");

@@ -26,6 +26,12 @@ type RequestOverviewReadModel = {
   lastUpdated: number;
 };
 
+const UNKNOWN_STATUS_NAME = "unknown";
+const UNKNOWN_STATUS_LABEL = "Unknown status";
+const UNKNOWN_PROJECT_LABEL = "Unknown project";
+const WEEKS_IN_TREND = 16;
+const WEEK_MILLIS = 7 * 24 * 60 * 60 * 1000;
+
 export function buildRequestOverviewReadModel({
   requests,
   ownedProjectIds,
@@ -100,8 +106,8 @@ function buildStatusBreakdown(
     const statusId = request.status.toString();
     const existing = counts.get(statusId);
     const statusDoc = statusMap.get(statusId);
-    const name = statusDoc?.name ?? "unknown";
-    const displayName = statusDoc?.displayName ?? "Unknown status";
+    const name = statusDoc?.name ?? UNKNOWN_STATUS_NAME;
+    const displayName = statusDoc?.displayName ?? UNKNOWN_STATUS_LABEL;
     const color = statusDoc?.color ?? null;
 
     if (existing) {
@@ -145,7 +151,7 @@ function buildProjectBreakdown(
 
   for (const [index, request] of requests.entries()) {
     const projectId = request.project.toString();
-    const title = projectLookup.get(projectId) ?? "Unknown project";
+    const title = projectLookup.get(projectId) ?? UNKNOWN_PROJECT_LABEL;
     const existing = counts.get(projectId);
 
     if (existing) {
@@ -175,11 +181,8 @@ function buildWeeklyTrend(
   requests: Doc<"requests">[],
   now: number,
 ): RequestOverviewReadModel["weeklyTrend"] {
-  const weeksBack = 16;
-  const weekMillis = 7 * 24 * 60 * 60 * 1000;
-
-  const bucketStarts = Array.from({ length: weeksBack })
-    .map((_, index) => startOfWeekUTC(now - index * weekMillis))
+  const bucketStarts = Array.from({ length: WEEKS_IN_TREND })
+    .map((_, index) => startOfWeekUTC(now - index * WEEK_MILLIS))
     .reverse();
 
   const counts = new Map<number, RequestOverviewReadModel["weeklyTrend"][number]>(
