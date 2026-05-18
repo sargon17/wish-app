@@ -920,4 +920,33 @@ describe("requestStatusWorkflow", () => {
       "status-custom",
     ]);
   });
+
+  it("keeps the planner stable for an empty project and preserves custom status order", () => {
+    const projectStatuses = [
+      {
+        _id: "status-alpha",
+        _creationTime: 10,
+        name: "alpha",
+        displayName: "Alpha",
+        project: "project-1",
+        type: "custom",
+        position: 2,
+      },
+      {
+        _id: "status-beta",
+        _creationTime: 11,
+        name: "beta",
+        displayName: "Beta",
+        project: "project-1",
+        type: "custom",
+        position: 0,
+      },
+    ] as any;
+
+    const result = buildProjectStatusMigrationOrder(projectStatuses, []);
+
+    expect(result.projectStatusByCanonicalName.size).toBe(2);
+    expect(result.legacyStatusesByCanonicalName.size).toBe(0);
+    expect(result.orderedStatuses.map((status) => status._id)).toEqual(["status-beta", "status-alpha"]);
+  });
 });
