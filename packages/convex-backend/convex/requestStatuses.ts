@@ -28,6 +28,98 @@ export const STARTER_PROJECT_STATUSES = [
   { name: "in-progress", displayName: "In Progress" },
   { name: "done", displayName: "Done" },
 ] as const;
+
+function sortProjectStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
+  return (
+    (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+    a._creationTime - b._creationTime ||
+    a._id.toString().localeCompare(b._id.toString())
+  );
+}
+
+export function buildProjectStatusMigrationOrder(
+  projectStatuses: Doc<"requestStatuses">[],
+  legacyStatuses: Doc<"requestStatuses">[],
+) {
+  const starterNames = new Set(STARTER_PROJECT_STATUSES.map((status) => status.name));
+  const projectStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
+  const projectStatusesById = new Set(projectStatuses.map((status) => status._id.toString()));
+  const legacyStatusesByCanonicalName = new Map<string, Doc<"requestStatuses">>();
+  const orderedStarterStatuses: Doc<"requestStatuses">[] = [];
+  const orderedLegacyStatuses: Doc<"requestStatuses">[] = [];
+  const insertedLegacyStatusIds = new Set<string>();
+
+  for (const status of projectStatuses) {
+    const canonicalName = getCanonicalStatusName(status.name);
+    const current = projectStatusByCanonicalName.get(canonicalName);
+
+    if (
+      !current ||
+      (current.position ?? Number.MAX_SAFE_INTEGER) > (status.position ?? Number.MAX_SAFE_INTEGER) ||
+      ((current.position ?? Number.MAX_SAFE_INTEGER) === (status.position ?? Number.MAX_SAFE_INTEGER) &&
+        current._creationTime > status._creationTime)
+    ) {
+      projectStatusByCanonicalName.set(canonicalName, status);
+    }
+  }
+
+  for (const starterStatus of STARTER_PROJECT_STATUSES) {
+    const existingStarter = projectStatusByCanonicalName.get(starterStatus.name);
+
+    if (existingStarter) {
+      orderedStarterStatuses.push(existingStarter);
+    }
+  }
+
+  const orderedLegacySourceStatuses = [...legacyStatuses].sort((a, b) => {
+    return (
+      getCanonicalStatusName(a.name).localeCompare(getCanonicalStatusName(b.name)) ||
+      a._creationTime - b._creationTime ||
+      a._id.toString().localeCompare(b._id.toString())
+    );
+  });
+
+  for (const legacyStatus of orderedLegacySourceStatuses) {
+    const canonicalName = getCanonicalStatusName(legacyStatus.name);
+    legacyStatusesByCanonicalName.set(canonicalName, legacyStatus);
+
+    if (starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      continue;
+    }
+
+    const existingProjectStatus = projectStatusByCanonicalName.get(canonicalName);
+    if (existingProjectStatus) {
+      orderedLegacyStatuses.push(existingProjectStatus);
+      continue;
+    }
+
+    const insertedLegacyStatus = {
+      ...legacyStatus,
+      name: canonicalName,
+      project: legacyStatus.project,
+    } as Doc<"requestStatuses">;
+
+    orderedLegacyStatuses.push(insertedLegacyStatus);
+    projectStatusByCanonicalName.set(canonicalName, insertedLegacyStatus);
+    insertedLegacyStatusIds.add(insertedLegacyStatus._id.toString());
+  }
+
+  const remainingStatuses = [...projectStatuses]
+    .filter((status) => {
+      const canonicalName = getCanonicalStatusName(status.name);
+      return !starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"]) &&
+        !orderedLegacyStatuses.some((item) => item._id === status._id);
+    })
+    .sort(sortProjectStatuses);
+
+  return {
+    orderedStatuses: [...orderedStarterStatuses, ...orderedLegacyStatuses, ...remainingStatuses],
+    projectStatusByCanonicalName,
+    legacyStatusesByCanonicalName,
+    insertedLegacyStatusIds,
+  };
+}
+
 export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
@@ -85,20 +177,6 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const projectStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
-  const projectOwnedStatuses: Doc<"requestStatuses">[] = [...existingProjectStatuses];
-  const starterNames = new Set(getStarterProjectStatusNames());
-  const legacyStatusById = new Map<string, Doc<"requestStatuses">>();
-
-  for (const status of existingProjectStatuses) {
-    const canonicalName = getCanonicalStatusName(status.name);
-    const current = projectStatusByCanonicalName.get(canonicalName);
-
-    if (!current || (current.position ?? Number.MAX_SAFE_INTEGER) > (status.position ?? Number.MAX_SAFE_INTEGER)) {
-      projectStatusByCanonicalName.set(canonicalName, status);
-    }
-  }
-
   const referencedLegacyIds = getLegacyReferencedStatusesForProject(existingProjectStatuses, projectRequests);
   const legacyStatusesInUse: Doc<"requestStatuses">[] = [];
 
@@ -108,18 +186,10 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       continue;
     }
 
-    legacyStatusById.set(statusId, legacyStatus);
     legacyStatusesInUse.push(legacyStatus);
   }
 
-  legacyStatusesInUse.sort((a, b) => {
-    return (
-      getCanonicalStatusName(a.name).localeCompare(getCanonicalStatusName(b.name)) ||
-      a._creationTime - b._creationTime ||
-      a._id.toString().localeCompare(b._id.toString())
-    );
-  });
-
+  const migrationPlan = buildProjectStatusMigrationOrder(existingProjectStatuses, legacyStatusesInUse);
   const projectStatusIdByCanonicalName = new Map<string, Id<"requestStatuses">>();
   const projectOwnedStatusIds = new Set(existingProjectStatuses.map((status) => status._id.toString()));
   let statusesInserted = 0;
@@ -128,7 +198,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
 
   for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
     const canonicalName = starterStatus.name;
-    const existingStatus = projectStatusByCanonicalName.get(canonicalName);
+    const existingStatus = migrationPlan.projectStatusByCanonicalName.get(canonicalName);
 
     if (existingStatus) {
       if (existingStatus.displayName !== starterStatus.displayName || existingStatus.type !== "default") {
@@ -153,8 +223,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     });
     const insertedStatus = await ctx.db.get(statusId);
     if (insertedStatus) {
-      projectOwnedStatuses.push(insertedStatus);
-      projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+      migrationPlan.projectStatusByCanonicalName.set(canonicalName, insertedStatus);
       projectOwnedStatusIds.add(insertedStatus._id.toString());
     }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
@@ -164,7 +233,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
 
   for (const legacyStatus of legacyStatusesInUse) {
     const canonicalName = getCanonicalStatusName(legacyStatus.name);
-    if (starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+    if (getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
       const replacement = projectStatusIdByCanonicalName.get(canonicalName);
       if (replacement) {
         projectStatusIdByCanonicalName.set(getCanonicalStatusName(legacyStatus.name), replacement);
@@ -172,7 +241,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       continue;
     }
 
-    const existingStatus = projectStatusByCanonicalName.get(canonicalName);
+    const existingStatus = migrationPlan.projectStatusByCanonicalName.get(canonicalName);
     if (existingStatus) {
       projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
       continue;
@@ -189,8 +258,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     });
     const insertedStatus = await ctx.db.get(statusId);
     if (insertedStatus) {
-      projectOwnedStatuses.push(insertedStatus);
-      projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+      migrationPlan.projectStatusByCanonicalName.set(canonicalName, insertedStatus);
       projectOwnedStatusIds.add(insertedStatus._id.toString());
     }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
@@ -221,58 +289,54 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     changed = true;
   }
 
-  const workflowStatuses: Doc<"requestStatuses">[] = [];
+  const finalOrderedStatuses: Doc<"requestStatuses">[] = [];
+  const seen = new Set<string>();
 
   for (const starterStatus of STARTER_PROJECT_STATUSES) {
-    const status = projectStatusByCanonicalName.get(starterStatus.name);
-    if (status) {
-      workflowStatuses.push(status);
-    }
-  }
-
-  const legacyWorkflowStatuses = legacyStatusesInUse
-    .map((legacyStatus) => projectStatusByCanonicalName.get(getCanonicalStatusName(legacyStatus.name)))
-    .filter((status): status is Doc<"requestStatuses"> => Boolean(status))
-    .filter((status) => !starterNames.has(getCanonicalStatusName(status.name) as (typeof STARTER_PROJECT_STATUSES)[number]["name"]));
-
-  for (const status of legacyWorkflowStatuses) {
-    workflowStatuses.push(status);
-  }
-
-  const orderedProjectOwnedStatuses = [...projectOwnedStatuses].sort((a, b) => {
-    return (
-      (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
-      a._creationTime - b._creationTime ||
-      a._id.toString().localeCompare(b._id.toString())
-    );
-  });
-
-  for (const status of orderedProjectOwnedStatuses) {
-    if (status.project !== projectId) {
+    const statusId = projectStatusIdByCanonicalName.get(starterStatus.name);
+    if (!statusId) {
       continue;
     }
 
-    if (!workflowStatuses.some((item) => item._id === status._id)) {
-      workflowStatuses.push(status);
-    }
-  }
-
-  const orderedUniqueStatuses: Doc<"requestStatuses">[] = [];
-  const seen = new Set<string>();
-
-  for (const status of workflowStatuses) {
-    if (seen.has(status._id.toString())) {
+    const status = existingProjectStatuses.find((item) => item._id === statusId) ?? (await ctx.db.get(statusId) ?? undefined);
+    if (!status || seen.has(status._id.toString())) {
       continue;
     }
 
     seen.add(status._id.toString());
-    orderedUniqueStatuses.push(status);
+    finalOrderedStatuses.push(status);
   }
+
+  for (const legacyStatus of legacyStatusesInUse) {
+    const canonicalName = getCanonicalStatusName(legacyStatus.name);
+    if (getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      continue;
+    }
+
+    const statusId = projectStatusIdByCanonicalName.get(canonicalName);
+    if (!statusId) {
+      continue;
+    }
+
+    const status = existingProjectStatuses.find((item) => item._id === statusId) ?? (await ctx.db.get(statusId) ?? undefined);
+    if (!status || seen.has(status._id.toString())) {
+      continue;
+    }
+
+    seen.add(status._id.toString());
+    finalOrderedStatuses.push(status);
+  }
+
+  const remainingStatuses = [...existingProjectStatuses]
+    .sort(sortProjectStatuses)
+    .filter((status) => !seen.has(status._id.toString()));
+
+  finalOrderedStatuses.push(...remainingStatuses);
 
   let statusesReindexed = 0;
 
-  for (const [index, status] of orderedUniqueStatuses.entries()) {
-    const original = projectOwnedStatuses.find((item) => item._id === status._id);
+  for (const [index, status] of finalOrderedStatuses.entries()) {
+    const original = existingProjectStatuses.find((item) => item._id === status._id);
     if (!original || original.position !== index) {
       statusesReindexed += 1;
       await ctx.db.patch(status._id, { position: index });

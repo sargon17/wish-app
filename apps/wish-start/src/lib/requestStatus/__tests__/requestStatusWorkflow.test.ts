@@ -22,6 +22,7 @@ import {
   slugifyStatusName,
   sortDefaultStatuses,
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
+import { buildProjectStatusMigrationOrder } from "../../../../../../packages/convex-backend/convex/requestStatuses";
 
 describe("requestStatusWorkflow", () => {
   it("normalizes and slugifies status names consistently", () => {
@@ -257,5 +258,31 @@ describe("requestStatusWorkflow", () => {
       { ...statuses[2], requestCount: 1 },
       { ...statuses[0], requestCount: 0 },
     ]);
+  });
+
+  it("builds a stable project migration order with starter reuse and legacy copies", () => {
+    const projectStatuses = [
+      { _id: "project-open", name: "Open", displayName: "Open", project: "project-1", type: "custom", position: 9, _creationTime: 9 },
+      { _id: "project-custom", name: "feature-ideas", displayName: "Feature Ideas", project: "project-1", type: "custom", position: 20, _creationTime: 20 },
+    ] as any;
+    const legacyStatuses = [
+      { _id: "legacy-completed", name: "completed", displayName: "Completed", project: undefined, type: "default", position: undefined, _creationTime: 1, color: "#000000" },
+      { _id: "legacy-needs-review", name: "needs_review", displayName: "Needs Review", project: undefined, type: "default", position: undefined, _creationTime: 2, color: "#111111" },
+    ] as any;
+
+    const firstPass = buildProjectStatusMigrationOrder(projectStatuses, legacyStatuses);
+    const secondPass = buildProjectStatusMigrationOrder(projectStatuses, legacyStatuses);
+
+    expect(firstPass.orderedStatuses.map((status) => status._id)).toEqual([
+      "project-open",
+      "legacy-completed",
+      "legacy-needs-review",
+      "project-custom",
+    ]);
+    expect(firstPass.projectStatusByCanonicalName.get("open")).toBe(projectStatuses[0]);
+    expect(firstPass.projectStatusByCanonicalName.get("done")).toMatchObject({ _id: "legacy-completed" });
+    expect(firstPass.projectStatusByCanonicalName.get("needs-review")).toMatchObject({ _id: "legacy-needs-review" });
+    expect(firstPass.insertedLegacyStatusIds.size).toBe(2);
+    expect(secondPass.orderedStatuses.map((status) => status._id)).toEqual(firstPass.orderedStatuses.map((status) => status._id));
   });
 });
