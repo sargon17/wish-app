@@ -180,6 +180,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
   const projectOwnedStatusIds = new Set(existingProjectStatuses.map((status) => status._id.toString()));
   const legacyStatusById = new Map(legacyStatusesInUse.map((status) => [status._id.toString(), status] as const));
   const orderedLegacyCanonicalNames: string[] = [];
+  const duplicateStarterStatuses: Doc<"requestStatuses">[] = [];
   let statusesInserted = 0;
   let statusesReused = 0;
   let changed = false;
@@ -230,6 +231,30 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
     changed = true;
   }
 
+  const selectedStarterStatusIds = new Map(
+    STARTER_PROJECT_STATUSES.map((starterStatus) => {
+      const statusId = projectStatusIdByCanonicalName.get(starterStatus.name);
+
+      return [starterStatus.name, statusId?.toString()] as const;
+    }),
+  );
+
+  for (const status of existingProjectStatuses) {
+    const canonicalName = getCanonicalStatusName(status.name);
+
+    if (!getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      continue;
+    }
+
+    const selectedStarterStatusId = selectedStarterStatusIds.get(canonicalName);
+    if (!selectedStarterStatusId || selectedStarterStatusId === status._id.toString()) {
+      continue;
+    }
+
+    duplicateStarterStatuses.push(status);
+    projectOwnedStatusIds.delete(status._id.toString());
+  }
+
   for (const legacyStatus of sortedLegacyStatusesInUse) {
     const canonicalName = getCanonicalStatusName(legacyStatus.name);
     if (getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
@@ -271,6 +296,19 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
   for (const request of projectRequests) {
     if (projectOwnedStatusIds.has(request.status.toString())) {
+      const duplicateStarter = duplicateStarterStatuses.find((status) => status._id.toString() === request.status.toString());
+      if (!duplicateStarter) {
+        continue;
+      }
+    }
+
+    const duplicateStarter = duplicateStarterStatuses.find((status) => status._id.toString() === request.status.toString());
+    if (duplicateStarter) {
+      const canonicalName = getCanonicalStatusName(duplicateStarter.name);
+      const replacementStatusId = projectStatusIdByCanonicalName.get(canonicalName);
+      if (replacementStatusId && replacementStatusId !== request.status) {
+        requestPatches.push({ id: request._id, status: replacementStatusId });
+      }
       continue;
     }
 
@@ -322,6 +360,43 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
     seen.add(status._id.toString());
     finalOrderedStatuses.push(status);
+  }
+
+  for (const duplicateStarterStatus of duplicateStarterStatuses.sort(sortProjectStatuses)) {
+    const canonicalName = getCanonicalStatusName(duplicateStarterStatus.name);
+    const selectedStarterStatusId = projectStatusIdByCanonicalName.get(canonicalName);
+    const selectedStarterStatus = selectedStarterStatusId
+      ? (existingProjectStatuses.find((item) => item._id === selectedStarterStatusId) ?? (await ctx.db.get(selectedStarterStatusId) ?? undefined))
+      : undefined;
+
+    if (!selectedStarterStatus || duplicateStarterStatus._id === selectedStarterStatus._id) {
+      continue;
+    }
+
+    const suffix = duplicateStarterStatus._id.toString().slice(-6);
+    let renamedName = `${canonicalName}-legacy-${suffix}`;
+    let attempt = 1;
+
+    while (
+      finalOrderedStatuses.some((status) => status.name === renamedName) ||
+      existingProjectStatuses.some((status) => status._id !== duplicateStarterStatus._id && status.name === renamedName)
+    ) {
+      renamedName = `${canonicalName}-legacy-${suffix}-${attempt}`;
+      attempt += 1;
+    }
+
+    if (duplicateStarterStatus.name !== renamedName || duplicateStarterStatus.type !== "custom") {
+      await ctx.db.patch(duplicateStarterStatus._id, {
+        name: renamedName,
+        type: "custom",
+      });
+      duplicateStarterStatus.name = renamedName;
+      duplicateStarterStatus.type = "custom";
+      changed = true;
+    }
+
+    finalOrderedStatuses.push(duplicateStarterStatus);
+    seen.add(duplicateStarterStatus._id.toString());
   }
 
   const remainingStatuses = [...existingProjectStatuses]

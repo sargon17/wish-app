@@ -562,4 +562,151 @@ describe("requestStatusWorkflow", () => {
     ]);
     expect(state.requestStatuses.some((status) => status._id === ids.crossProjectStatus && status.project === otherProjectId)).toBe(true);
   });
+
+  it("collapses duplicate project-owned starter statuses onto the canonical starter", async () => {
+    const projectId = "project-1" as Id<"projects">;
+    const ids = {
+      canonicalDone: "status-done-canonical",
+      duplicateCompleted: "status-completed-duplicate",
+      localCustom: "status-local-custom",
+      requestCanonical: "request-1",
+      requestDuplicate: "request-2",
+    } as const;
+
+    const state = {
+      requestStatuses: [
+        {
+          _id: ids.canonicalDone,
+          _creationTime: 5,
+          name: "done",
+          displayName: "Done",
+          description: "Canonical starter",
+          color: "#444444",
+          project: projectId,
+          type: "default",
+          position: 4,
+        },
+        {
+          _id: ids.duplicateCompleted,
+          _creationTime: 6,
+          name: "completed",
+          displayName: "Completed",
+          description: "Duplicate starter",
+          color: "#555555",
+          project: projectId,
+          type: "custom",
+          position: 5,
+        },
+        {
+          _id: ids.localCustom,
+          _creationTime: 7,
+          name: "triaged",
+          displayName: "Triaged",
+          description: "Local custom status",
+          color: "#666666",
+          project: projectId,
+          type: "custom",
+          position: 6,
+        },
+      ],
+      requests: [
+        { _id: ids.requestCanonical, _creationTime: 10, project: projectId, status: ids.canonicalDone },
+        { _id: ids.requestDuplicate, _creationTime: 11, project: projectId, status: ids.duplicateCompleted },
+      ],
+      inserts: [] as Array<{ table: string; value: any }>,
+      patches: [] as Array<{ table: string; id: string; value: any }>,
+    };
+
+    const ctx = {
+      db: {
+        query: (table: string) => ({
+          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+            expect(indexName).toBe("by_project");
+            predicate({ eq: () => undefined });
+
+            return {
+              collect: async () => {
+                if (table === "requestStatuses") {
+                  return state.requestStatuses.filter((status) => status.project === projectId);
+                }
+
+                if (table === "requests") {
+                  return state.requests.filter((request) => request.project === projectId);
+                }
+
+                return [];
+              },
+              first: async () => undefined,
+            };
+          },
+        }),
+        get: async (id: string) => {
+          return (
+            state.requestStatuses.find((status) => status._id === id) ??
+            state.requests.find((request) => request._id === id)
+          );
+        },
+        insert: async (table: string, value: any) => {
+          const id = `${table}-${state.inserts.length + 1}`;
+          state.inserts.push({ table, value: { ...value, _id: id } });
+          if (table === "requestStatuses") {
+            state.requestStatuses.push({
+              _id: id,
+              _creationTime: 100 + state.inserts.length,
+              ...value,
+            });
+          }
+          return id;
+        },
+        patch: async (id: string, value: any) => {
+          state.patches.push({ table: "unknown", id, value });
+          const status = state.requestStatuses.find((item) => item._id === id);
+          if (status) {
+            Object.assign(status, value);
+          }
+          const request = state.requests.find((item) => item._id === id);
+          if (request) {
+            Object.assign(request, value);
+          }
+        },
+      },
+    } as any;
+
+    const result = await migrateProjectStatuses(ctx, projectId);
+
+    expect(result).toMatchObject({
+      statusesInserted: 4,
+      statusesReused: 1,
+      requestsPatched: 1,
+      changed: true,
+    });
+
+    const projectStatuses = state.requestStatuses
+      .filter((status) => status.project === projectId)
+      .sort((a, b) => a.position - b.position);
+
+    expect(projectStatuses.slice(0, 5).map((status) => status.name)).toEqual([
+      "open",
+      "under-review",
+      "planned",
+      "in-progress",
+      "done",
+    ]);
+    expect(projectStatuses[5].name).toMatch(/^done-legacy-/);
+    expect(projectStatuses[6].name).toBe("triaged");
+    expect(projectStatuses[4]).toMatchObject({
+      name: "done",
+      displayName: "Done",
+      type: "default",
+      position: 4,
+    });
+    expect(projectStatuses[5]).toMatchObject({
+      displayName: "Completed",
+      type: "custom",
+    });
+    expect(state.requests.map((request) => request.status)).toEqual([
+      projectStatuses.find((status) => status.name === "done")?._id,
+      projectStatuses.find((status) => status.name === "done")?._id,
+    ]);
+  });
 });
