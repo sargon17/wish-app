@@ -9,13 +9,16 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  getCanonicalStatusName,
   getDefaultStatusRank,
   getManagementStatusesForProject,
   getNextWorkflowStatusPosition,
+  getStarterProjectStatusNames,
   getStatusesWithAssignedWorkflowPositions,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
   normalizeStatusDescription,
+  normalizeLegacyStatusName,
   slugifyStatusName,
   sortDefaultStatuses,
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
@@ -26,6 +29,9 @@ describe("requestStatusWorkflow", () => {
     expect(normalizeStatusDescription("  Explain workflow stage  ")).toBe("Explain workflow stage");
     expect(normalizeStatusDescription("   ")).toBeUndefined();
     expect(slugifyStatusName("Crème Brûlée")).toBe("creme-brulee");
+    expect(normalizeLegacyStatusName("Under_Review")).toBe("under-review");
+    expect(getCanonicalStatusName("completed")).toBe("done");
+    expect(getStarterProjectStatusNames()).toEqual(["open", "under-review", "planned", "in-progress", "done"]);
     expect(assertValidStatusName("  In Review  ")).toEqual({ displayName: "In Review", name: "in-review" });
   });
 

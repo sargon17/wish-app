@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalQuery, mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   assertCustomStatusEditable,
@@ -10,8 +11,10 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  getCanonicalStatusName,
   getManagementStatusesForProject,
   getOrderedStatusesForProject,
+  getStarterProjectStatusNames,
   getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
@@ -59,63 +62,254 @@ export const getByProjectInternal = internalQuery({
   },
 });
 
+function getLegacyReferencedStatusesForProject(projectStatuses: Doc<"requestStatuses">[], requests: Doc<"requests">[]) {
+  const projectStatusIds = new Set(projectStatuses.map((status) => status._id.toString()));
+  const referencedLegacyIds = new Set<string>();
+
+  for (const request of requests) {
+    if (!projectStatusIds.has(request.status.toString())) {
+      referencedLegacyIds.add(request.status.toString());
+    }
+  }
+
+  return referencedLegacyIds;
+}
+
+async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects">) {
+  const existingProjectStatuses = await ctx.db
+    .query("requestStatuses")
+    .withIndex("by_project", (q) => q.eq("project", projectId))
+    .collect();
+  const projectRequests = await ctx.db
+    .query("requests")
+    .withIndex("by_project", (q) => q.eq("project", projectId))
+    .collect();
+
+  const statusesById = new Map(existingProjectStatuses.map((status) => [status._id.toString(), status]));
+  const projectStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
+  const starterNames = new Set(getStarterProjectStatusNames());
+
+  for (const status of existingProjectStatuses) {
+    const canonicalName = getCanonicalStatusName(status.name);
+    const current = projectStatusByCanonicalName.get(canonicalName);
+
+    if (!current || (current.position ?? Number.MAX_SAFE_INTEGER) > (status.position ?? Number.MAX_SAFE_INTEGER)) {
+      projectStatusByCanonicalName.set(canonicalName, status);
+    }
+  }
+
+  const referencedLegacyIds = getLegacyReferencedStatusesForProject(existingProjectStatuses, projectRequests);
+  const legacyStatusesInUse: Doc<"requestStatuses">[] = [];
+
+  for (const statusId of referencedLegacyIds) {
+    const legacyStatus = statusesById.get(statusId);
+    if (!legacyStatus || legacyStatus.project) {
+      continue;
+    }
+
+    legacyStatusesInUse.push(legacyStatus);
+  }
+
+  legacyStatusesInUse.sort((a, b) => {
+    return (
+      getCanonicalStatusName(a.name).localeCompare(getCanonicalStatusName(b.name)) ||
+      a._creationTime - b._creationTime ||
+      a._id.toString().localeCompare(b._id.toString())
+    );
+  });
+
+  const projectStatusIdByCanonicalName = new Map<string, Id<"requestStatuses">>();
+  const includedStatusIds = new Set<string>();
+  let statusesInserted = 0;
+  let statusesReused = 0;
+  let changed = false;
+
+  for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
+    const canonicalName = starterStatus.name;
+    const existingStatus = projectStatusByCanonicalName.get(canonicalName);
+
+    if (existingStatus) {
+      if (existingStatus.displayName !== starterStatus.displayName || existingStatus.type !== "default") {
+        await ctx.db.patch(existingStatus._id, {
+          displayName: starterStatus.displayName,
+          type: "default",
+        });
+      }
+
+      projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
+      includedStatusIds.add(existingStatus._id.toString());
+      statusesReused += 1;
+      continue;
+    }
+
+    const statusId = await ctx.db.insert("requestStatuses", {
+      name: starterStatus.name,
+      displayName: starterStatus.displayName,
+      project: projectId,
+      type: "default",
+      position,
+    });
+    projectStatusIdByCanonicalName.set(canonicalName, statusId);
+    includedStatusIds.add(statusId.toString());
+    statusesInserted += 1;
+    changed = true;
+  }
+
+  for (const legacyStatus of legacyStatusesInUse) {
+    const canonicalName = getCanonicalStatusName(legacyStatus.name);
+    if (starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      const replacement = projectStatusIdByCanonicalName.get(canonicalName);
+      if (replacement) {
+        projectStatusIdByCanonicalName.set(getCanonicalStatusName(legacyStatus.name), replacement);
+      }
+      continue;
+    }
+
+    const existingStatus = projectStatusByCanonicalName.get(canonicalName);
+    if (existingStatus) {
+      projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
+      includedStatusIds.add(existingStatus._id.toString());
+      continue;
+    }
+
+    const statusId = await ctx.db.insert("requestStatuses", {
+      name: canonicalName,
+      displayName: legacyStatus.displayName,
+      description: legacyStatus.description,
+      project: projectId,
+      type: "custom",
+      color: legacyStatus.color,
+      position: undefined,
+    });
+    projectStatusIdByCanonicalName.set(canonicalName, statusId);
+    includedStatusIds.add(statusId.toString());
+    statusesInserted += 1;
+    changed = true;
+  }
+
+  const requestPatches: Array<{ id: Id<"requests">; status: Id<"requestStatuses"> }> = [];
+
+  for (const request of projectRequests) {
+    if (includedStatusIds.has(request.status.toString())) {
+      continue;
+    }
+
+    const legacyStatus = statusesById.get(request.status.toString());
+    const canonicalName = legacyStatus ? getCanonicalStatusName(legacyStatus.name) : undefined;
+    const replacementStatusId = canonicalName
+      ? projectStatusIdByCanonicalName.get(canonicalName)
+      : projectStatusIdByCanonicalName.get("open") ?? projectStatusIdByCanonicalName.get("done");
+
+    if (replacementStatusId && replacementStatusId !== request.status) {
+      requestPatches.push({ id: request._id, status: replacementStatusId });
+    }
+  }
+
+  await Promise.all(requestPatches.map((patch) => ctx.db.patch(patch.id, { status: patch.status })));
+  if (requestPatches.length > 0) {
+    changed = true;
+  }
+
+  const workflowStatuses: Doc<"requestStatuses">[] = [];
+
+  for (const starterStatus of STARTER_PROJECT_STATUSES) {
+    const status = projectStatusByCanonicalName.get(starterStatus.name);
+    if (status) {
+      workflowStatuses.push(status);
+    }
+  }
+
+  for (const legacyStatus of legacyStatusesInUse) {
+    const status = projectStatusByCanonicalName.get(getCanonicalStatusName(legacyStatus.name));
+    if (status && !starterNames.has(getCanonicalStatusName(status.name) as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      workflowStatuses.push(status);
+    }
+  }
+
+  for (const status of existingProjectStatuses) {
+    if (status.project !== projectId || status.type !== "custom") {
+      continue;
+    }
+
+    const canonicalName = getCanonicalStatusName(status.name);
+    if (starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+      continue;
+    }
+
+    if (!includedStatusIds.has(status._id.toString())) {
+      workflowStatuses.push(status);
+    }
+  }
+
+  const orderedUniqueStatuses: Doc<"requestStatuses">[] = [];
+  const seen = new Set<string>();
+
+  for (const status of workflowStatuses) {
+    if (seen.has(status._id.toString())) {
+      continue;
+    }
+
+    seen.add(status._id.toString());
+    orderedUniqueStatuses.push(status);
+  }
+
+  let statusesReindexed = 0;
+
+  for (const [index, status] of orderedUniqueStatuses.entries()) {
+    const original = existingProjectStatuses.find((item) => item._id === status._id);
+    if (!original || original.position !== index) {
+      statusesReindexed += 1;
+      await ctx.db.patch(status._id, { position: index });
+    }
+  }
+  if (statusesReindexed > 0) {
+    changed = true;
+  }
+
+  return {
+    projectId,
+    statusesInserted,
+    statusesReused,
+    requestsPatched: requestPatches.length,
+    statusesReindexed,
+    changed,
+  };
+}
+
 export const repairProjectDefaults = mutation({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
 
-    const existingProjectStatuses = await ctx.db
-      .query("requestStatuses")
-      .withIndex("by_project", (q) => q.eq("project", args.projectId))
-      .collect();
-    const projectStatusIdByName = new Map(existingProjectStatuses.map((status) => [status.name, status._id]));
-    const existingProjectStatusByName = new Map(existingProjectStatuses.map((status) => [status.name, status]));
+    return await migrateProjectStatuses(ctx, args.projectId);
+  },
+});
 
-    for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
-      const existingStatus = existingProjectStatusByName.get(starterStatus.name);
+export const repairAllProjectDefaultsInternal = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const projects = await ctx.db.query("projects").collect();
+    const summaries: Array<{
+      projectId: Id<"projects">;
+      statusesInserted: number;
+      statusesReused: number;
+      requestsPatched: number;
+      statusesReindexed: number;
+      changed: boolean;
+    }> = [];
 
-      if (existingStatus) {
-        await ctx.db.patch(existingStatus._id, {
-          displayName: starterStatus.displayName,
-          type: "default",
-          position: existingStatus.position ?? position,
-        });
-        continue;
-      }
-
-      const statusId = await ctx.db.insert("requestStatuses", {
-        name: starterStatus.name,
-        displayName: starterStatus.displayName,
-        project: args.projectId,
-        type: "default",
-        position,
-      });
-      projectStatusIdByName.set(starterStatus.name, statusId);
+    for (const project of projects) {
+      summaries.push(await migrateProjectStatuses(ctx, project._id));
     }
 
-    const projectRequests = await ctx.db
-      .query("requests")
-      .withIndex("by_project", (q) => q.eq("project", args.projectId))
-      .collect();
-    const projectStatusIds = new Set(Array.from(projectStatusIdByName.values()).map((statusId) => statusId.toString()));
-    const fallbackStatusId = projectStatusIdByName.get("open") ?? Array.from(projectStatusIdByName.values())[0];
-
-    for (const request of projectRequests) {
-      if (projectStatusIds.has(request.status.toString())) {
-        continue;
-      }
-
-      const legacyStatus = await ctx.db.get(request.status);
-      const legacyStatusName = legacyStatus?.name.replaceAll("_", "-");
-      const replacementStatusId = legacyStatusName
-        ? projectStatusIdByName.get(legacyStatusName) ?? projectStatusIdByName.get(legacyStatusName === "completed" ? "done" : legacyStatusName)
-        : fallbackStatusId;
-
-      if (replacementStatusId) {
-        await ctx.db.patch(request._id, { status: replacementStatusId });
-      }
-    }
+    return {
+      projectsScanned: projects.length,
+      projectsReindexed: summaries.filter((summary) => summary.changed).length,
+      statusesInserted: summaries.reduce((total, summary) => total + summary.statusesInserted, 0),
+      statusesReused: summaries.reduce((total, summary) => total + summary.statusesReused, 0),
+      requestsPatched: summaries.reduce((total, summary) => total + summary.requestsPatched, 0),
+    };
   },
 });
 

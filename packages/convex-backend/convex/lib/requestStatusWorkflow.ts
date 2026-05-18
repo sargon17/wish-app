@@ -44,6 +44,35 @@ export function slugifyStatusName(label: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+export function normalizeLegacyStatusName(name: string) {
+  return slugifyStatusName(name.replaceAll("_", "-"));
+}
+
+export function getCanonicalStatusName(name: string) {
+  const normalized = normalizeLegacyStatusName(name);
+
+  return normalized === "completed" ? "done" : normalized;
+}
+
+export function getStarterProjectStatusNames() {
+  return ["open", "under-review", "planned", "in-progress", "done"] as const;
+}
+
+export function isStarterProjectStatusName(name: string) {
+  return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof getStarterProjectStatusNames)[number]);
+}
+
+export function getDefaultWorkflowStatusRank(name: string) {
+  const canonical = getCanonicalStatusName(name);
+  const starterIndex = getStarterProjectStatusNames().indexOf(canonical as (typeof getStarterProjectStatusNames)[number]);
+
+  if (starterIndex !== -1) {
+    return starterIndex;
+  }
+
+  return getDefaultStatusRank(canonical);
+}
+
 export function assertValidStatusName(displayName: string): { displayName: string; name: string } {
   const normalized = normalizeStatusDisplayName(displayName);
   const slug = slugifyStatusName(normalized);
