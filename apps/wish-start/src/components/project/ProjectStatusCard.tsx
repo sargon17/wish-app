@@ -182,7 +182,9 @@ export default function ProjectStatusCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete {status.displayName}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {requestCount > 0
+                    {isLastStatus
+                      ? "This project must keep at least one status."
+                      : requestCount > 0
                       ? "Requests in this status will move to a replacement status before the workflow status is deleted."
                       : "This removes the workflow status permanently. Unused statuses can be deleted directly as long as the project keeps another status."}
                   </AlertDialogDescription>
@@ -215,7 +217,7 @@ export default function ProjectStatusCard({
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    disabled={requestCount > 0 && !replacementStatusId}
+                    disabled={isLastStatus || (requestCount > 0 && !replacementStatusId)}
                     onClick={(event) => {
                       event.preventDefault();
                       void handleDelete();

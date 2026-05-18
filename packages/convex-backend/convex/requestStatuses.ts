@@ -222,18 +222,23 @@ export const remove = mutation({
     const statuses = await getOrderedStatusesForProject(ctx, projectId);
     assertProjectCanRemoveStatus(statuses);
 
+    const replacementStatus = args.replacementStatusId
+      ? assertProjectStatusEditable(await ctx.db.get(args.replacementStatusId))
+      : null;
+
+    if (replacementStatus) {
+      assertReplacementStatusCanBeUsed(replacementStatus, status, projectId);
+    }
+
     const linkedRequests = await ctx.db
       .query("requests")
       .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.statusId))
       .collect();
 
     if (linkedRequests.length > 0) {
-      if (!args.replacementStatusId) {
+      if (!replacementStatus) {
         throw new Error("Choose a replacement status to delete this status");
       }
-
-      const replacementStatus = assertProjectStatusEditable(await ctx.db.get(args.replacementStatusId));
-      assertReplacementStatusCanBeUsed(replacementStatus, status, projectId);
 
       await Promise.all(linkedRequests.map((request) => ctx.db.patch(request._id, { status: replacementStatus._id })));
     }
