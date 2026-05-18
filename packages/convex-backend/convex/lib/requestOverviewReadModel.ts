@@ -93,7 +93,11 @@ function buildStatusBreakdown(
     });
   }
 
-  return Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  return Array.from(counts.values()).sort((a, b) => {
+    const countDiff = b.count - a.count;
+    if (countDiff !== 0) return countDiff;
+    return a.statusId.toString().localeCompare(b.statusId.toString());
+  });
 }
 
 function buildProjectBreakdown(
@@ -120,7 +124,11 @@ function buildProjectBreakdown(
     });
   }
 
-  return Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  return Array.from(counts.values()).sort((a, b) => {
+    const countDiff = b.count - a.count;
+    if (countDiff !== 0) return countDiff;
+    return a.projectId.toString().localeCompare(b.projectId.toString());
+  });
 }
 
 function buildWeeklyTrend(

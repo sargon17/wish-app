@@ -143,7 +143,7 @@ describe("requestOverviewReadModel", () => {
     expect(overview.projectBreakdown).toEqual([{ projectId: project1, title: "Alpha", count: 1 }]);
   });
 
-  it("sorts breakdowns by descending count and preserves tie order", () => {
+  it("sorts breakdowns by descending count and deterministic tie order", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [
         requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 9, 0, 0)),
