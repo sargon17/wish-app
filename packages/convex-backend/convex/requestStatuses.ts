@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 
-import type { Doc, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
@@ -10,12 +9,12 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  assertReplacementStatusCanBeUsed,
   getManagementStatusesForProject,
   getOrderedStatusesForProject,
   getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
-  assertStatusCanBeRemoved,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
@@ -211,25 +210,40 @@ export const reorder = mutation({
 
 export const remove = mutation({
   args: {
-    id: v.id("requestStatuses"),
+    statusId: v.id("requestStatuses"),
+    replacementStatusId: v.optional(v.id("requestStatuses")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = assertProjectStatusEditable(await ctx.db.get(args.id));
+    const status = assertProjectStatusEditable(await ctx.db.get(args.statusId));
     const projectId = status.project;
 
     await assertProjectOwner(ctx, projectId, user._id);
     const statuses = await getOrderedStatusesForProject(ctx, projectId);
     assertProjectCanRemoveStatus(statuses);
 
-    const linkedRequest = await ctx.db
+    const replacementStatus = args.replacementStatusId
+      ? assertProjectStatusEditable(await ctx.db.get(args.replacementStatusId))
+      : null;
+
+    if (replacementStatus) {
+      assertReplacementStatusCanBeUsed(replacementStatus, status, projectId);
+    }
+
+    const linkedRequests = await ctx.db
       .query("requests")
-      .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.id))
-      .first();
+      .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.statusId))
+      .collect();
 
-    assertStatusCanBeRemoved(linkedRequest);
+    if (linkedRequests.length > 0) {
+      if (!replacementStatus) {
+        throw new Error("Choose a replacement status to delete this status");
+      }
 
-    await ctx.db.delete(args.id);
+      await Promise.all(linkedRequests.map((request) => ctx.db.patch(request._id, { status: replacementStatus._id })));
+    }
+
+    await ctx.db.delete(args.statusId);
   },
 });
 

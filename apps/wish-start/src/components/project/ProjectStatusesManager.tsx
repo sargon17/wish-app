@@ -153,6 +153,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
             <div key={status._id} className="space-y-3">
               <ProjectStatusCard
                 status={status}
+                replacementCandidates={projectStatuses}
                 requestCount={status.requestCount}
                 canMoveUp={index > 0}
                 canMoveDown={index < projectStatuses.length - 1}

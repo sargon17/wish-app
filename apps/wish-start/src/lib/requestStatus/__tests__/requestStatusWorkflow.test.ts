@@ -9,7 +9,7 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
-  assertStatusCanBeRemoved,
+  assertReplacementStatusCanBeUsed,
   getDefaultStatusRank,
   getManagementStatusesForProject,
   getNextWorkflowStatusPosition,
@@ -116,11 +116,27 @@ describe("requestStatusWorkflow", () => {
     expect(getNextWorkflowStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
   });
 
-  it("rejects removing a status that still has linked requests", () => {
-    expect(() => assertStatusCanBeRemoved({ _id: "request-1" } as any)).toThrow(
-      "Statuses in use cannot be removed",
+  it("validates replacement status requirements for in-use status removal", () => {
+    const projectId = "project-1" as Id<"projects">;
+    const deletedStatus = {
+      _id: "status-1",
+      project: projectId,
+    } as any;
+    const replacementStatus = {
+      _id: "status-2",
+      project: projectId,
+    } as any;
+
+    expect(() => assertReplacementStatusCanBeUsed(undefined, deletedStatus, projectId)).toThrow(
+      "Choose a replacement status to delete this status",
     );
-    expect(() => assertStatusCanBeRemoved(undefined)).not.toThrow();
+    expect(() => assertReplacementStatusCanBeUsed(deletedStatus, deletedStatus, projectId)).toThrow(
+      "Replacement status must be different from the status being deleted",
+    );
+    expect(() => assertReplacementStatusCanBeUsed({ ...replacementStatus, project: "project-2" } as any, deletedStatus, projectId)).toThrow(
+      "Replacement status must belong to the same project",
+    );
+    expect(() => assertReplacementStatusCanBeUsed(replacementStatus, deletedStatus, projectId)).not.toThrow();
   });
 
   it("returns only project-owned statuses ordered by workflow position and creation time", async () => {
