@@ -168,7 +168,7 @@ export default function ProjectStatusCard({
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm">
                 <PencilLine className="size-4" />
-                Edit
+                Edit status
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -247,7 +247,7 @@ export default function ProjectStatusCard({
               <AlertDialogTrigger asChild>
                 <Button type="button" variant="outline" size="sm" disabled={isDeleting}>
                   <Trash2 className="size-4" />
-                  Delete
+                  Remove status
                 </Button>
               </AlertDialogTrigger>
             )}
