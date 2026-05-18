@@ -65,14 +65,14 @@ export default function ProjectStatusCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [replacementStatusId, setReplacementStatusId] = useState("");
+  const [replacementStatusId, setReplacementStatusId] = useState<Id<"requestStatuses"> | undefined>();
 
   useEffect(() => {
     setDisplayName(status.displayName);
     setDescription(status.description ?? "");
     setColor(status.color ?? "#f97316");
     setIsDeleteDialogOpen(false);
-    setReplacementStatusId("");
+    setReplacementStatusId(undefined);
   }, [status._id, status.color, status.description, status.displayName]);
 
   const cleanDisplayName = displayName.trim();
@@ -116,10 +116,10 @@ export default function ProjectStatusCard({
     try {
       await removeStatus({
         id: status._id,
-        replacementStatusId: replacementStatusId ? replacementStatusId : undefined,
+        replacementStatusId,
       });
       setIsDeleteDialogOpen(false);
-      setReplacementStatusId("");
+      setReplacementStatusId(undefined);
       toast.success("Status removed");
     } catch (error) {
       console.error(error);
@@ -168,7 +168,7 @@ export default function ProjectStatusCard({
               onOpenChange={(open) => {
                 setIsDeleteDialogOpen(open);
                 if (!open) {
-                  setReplacementStatusId("");
+                  setReplacementStatusId(undefined);
                 }
               }}
             >
@@ -190,7 +190,10 @@ export default function ProjectStatusCard({
                 {requestCount > 0 ? (
                   <div className="grid gap-2">
                     <Label htmlFor={`status-replacement-${status._id}`}>Replacement status</Label>
-                    <Select value={replacementStatusId} onValueChange={setReplacementStatusId}>
+                    <Select
+                      value={replacementStatusId ?? ""}
+                      onValueChange={(value) => setReplacementStatusId(value as Id<"requestStatuses">)}
+                    >
                       <SelectTrigger id={`status-replacement-${status._id}`}>
                         <SelectValue placeholder="Select a status" />
                       </SelectTrigger>
