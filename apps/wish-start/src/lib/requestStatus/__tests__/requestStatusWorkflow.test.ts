@@ -839,7 +839,7 @@ describe("requestStatusWorkflow", () => {
       "in-progress",
       "done",
     ]);
-    expect(projectStatuses[5].name).toBe("completed");
+    expect(projectStatuses[5].name).toMatch(/^done-legacy-/);
     expect(projectStatuses[5]).toMatchObject({
       displayName: "Completed",
       type: "custom",
