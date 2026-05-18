@@ -2,6 +2,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 
 type RequestOverviewReadModelInput = {
   requests: Doc<"requests">[];
+  ownedProjectIds: Id<"projects">[];
   projects: Doc<"projects">[];
   statuses: Doc<"requestStatuses">[];
   now?: number;
@@ -27,11 +28,12 @@ type RequestOverviewReadModel = {
 
 export function buildRequestOverviewReadModel({
   requests,
+  ownedProjectIds,
   projects,
   statuses,
   now = Date.now(),
 }: RequestOverviewReadModelInput): RequestOverviewReadModel {
-  const projectIds = new Set(projects.map((project) => project._id.toString()));
+  const projectIds = new Set(ownedProjectIds.map((projectId) => projectId.toString()));
   const relevantRequests = requests.filter((request) => projectIds.has(request.project.toString()));
   const statusMap = new Map(
     statuses

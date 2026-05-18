@@ -36,6 +36,7 @@ export const requestOverview = query({
       const statuses = await ctx.db.query("requestStatuses").collect();
       const overview = buildRequestOverviewReadModel({
         requests,
+        ownedProjectIds: projects.map((project) => project._id),
         projects,
         statuses,
         now: Date.now(),

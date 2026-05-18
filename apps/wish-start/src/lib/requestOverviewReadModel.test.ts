@@ -18,7 +18,13 @@ const statusUnknown = "status-unknown" as Id<"requestStatuses">;
 
 describe("requestOverviewReadModel", () => {
   it("returns empty breakdowns for empty input", () => {
-    const overview = buildRequestOverviewReadModel({ requests: [], projects: [], statuses: [], now: 0 });
+    const overview = buildRequestOverviewReadModel({
+      requests: [],
+      ownedProjectIds: [],
+      projects: [],
+      statuses: [],
+      now: 0,
+    });
 
     expect(overview).toEqual({
       totalRequests: 0,
@@ -35,6 +41,7 @@ describe("requestOverviewReadModel", () => {
     expect(
       buildRequestOverviewReadModel({
         requests: [],
+        ownedProjectIds: [project1],
         projects: [projectDoc(project1, "Alpha")],
         statuses: [statusDoc(statusOpen, "open", "Open", project1)],
         now: 1_700_000_000_000,
@@ -52,6 +59,7 @@ describe("requestOverviewReadModel", () => {
     expect(
       buildRequestOverviewReadModel({
         requests: [],
+        ownedProjectIds: [project1],
         projects: [projectDoc(project1, "Alpha")],
         statuses: [
           statusDoc(statusOpen, "open", "Open", project1),
@@ -77,6 +85,7 @@ describe("requestOverviewReadModel", () => {
         requestDoc("request-3", project2, statusQueued, Date.UTC(2026, 0, 12, 10, 0, 0)),
         requestDoc("request-4", otherProject, statusUnknown, Date.UTC(2026, 0, 12, 11, 0, 0)),
       ],
+      ownedProjectIds: [project1, project2],
       projects: [projectDoc(project1, "Alpha"), projectDoc(project2, "Beta")],
       statuses: [
         statusDoc(statusOpen, "open", "Open", project1, "#f97316"),
@@ -125,6 +134,7 @@ describe("requestOverviewReadModel", () => {
   it("falls back to unknown status and project labels when metadata is missing", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [requestDoc("request-1", project1, statusUnknown, Date.UTC(2026, 0, 19, 9, 0, 0))],
+      ownedProjectIds: [project1],
       projects: [projectDoc(project1, "Alpha")],
       statuses: [],
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
@@ -143,6 +153,26 @@ describe("requestOverviewReadModel", () => {
     expect(overview.projectBreakdown).toEqual([{ projectId: project1, title: "Alpha", count: 1 }]);
   });
 
+  it("keeps owned requests with missing project documents and falls back to unknown project labels", () => {
+    const overview = buildRequestOverviewReadModel({
+      requests: [requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 9, 0, 0))],
+      ownedProjectIds: [project1],
+      projects: [],
+      statuses: [statusDoc(statusOpen, "open", "Open", project1)],
+      now: Date.UTC(2026, 0, 19, 12, 0, 0),
+    });
+
+    expect(overview.totalRequests).toBe(1);
+    expect(overview.projectBreakdown).toEqual([
+      {
+        projectId: project1,
+        title: "Unknown project",
+        count: 1,
+      },
+    ]);
+    expect(overview.weeklyTrend.at(-1)).toMatchObject({ count: 1 });
+  });
+
   it("sorts breakdowns by descending count and deterministic tie order", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [
@@ -152,6 +182,7 @@ describe("requestOverviewReadModel", () => {
         requestDoc("request-4", project2, statusClosed, Date.UTC(2026, 0, 19, 12, 0, 0)),
         requestDoc("request-5", project2, statusQueued, Date.UTC(2026, 0, 19, 13, 0, 0)),
       ],
+      ownedProjectIds: [project1, project2],
       projects: [projectDoc(project1, "Alpha"), projectDoc(project2, "Beta")],
       statuses: [statusDoc(statusOpen, "open", "Open"), statusDoc(statusClosed, "closed", "Closed")],
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
