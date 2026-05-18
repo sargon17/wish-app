@@ -6,7 +6,7 @@ import { createApiKeyRecord } from "./apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { ensureProjectPublicChangelogSlug } from "./lib/projectChangelog";
 import { toPublicProject } from "./lib/projectPublic";
-import { STARTER_PROJECT_STATUSES } from "./requestStatuses";
+import { STARTER_PROJECT_STATUSES } from "./lib/requestStatusStarterData";
 
 // export const getForCurrentUser = query({
 //   args: {},
