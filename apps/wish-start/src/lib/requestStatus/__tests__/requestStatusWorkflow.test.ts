@@ -411,7 +411,7 @@ describe("requestStatusWorkflow", () => {
       "in-progress",
       "done",
       "needs-review",
-      "feature-ideas",
+      "triaged",
     ]);
     expect(projectStatuses.map((status) => status.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(state.requests.map((request) => request.status)).toEqual([
