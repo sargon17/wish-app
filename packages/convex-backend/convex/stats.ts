@@ -25,16 +25,6 @@ export const requestOverview = query({
         .withIndex("by_user", (q) => q.eq("user", user._id))
         .collect();
 
-      if (projects.length === 0) {
-        return {
-          totalRequests: 0,
-          statusBreakdown: [],
-          projectBreakdown: [],
-          weeklyTrend: [],
-          lastUpdated: Date.now(),
-        };
-      }
-
       const requests = (
         await Promise.all(
           projects.map((project) =>
