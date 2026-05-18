@@ -192,6 +192,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
   const migrationPlan = buildProjectStatusMigrationOrder(existingProjectStatuses, legacyStatusesInUse);
   const projectStatusIdByCanonicalName = new Map<string, Id<"requestStatuses">>();
   const projectOwnedStatusIds = new Set(existingProjectStatuses.map((status) => status._id.toString()));
+  const legacyStatusById = new Map(legacyStatusesInUse.map((status) => [status._id.toString(), status] as const));
   let statusesInserted = 0;
   let statusesReused = 0;
   let changed = false;
