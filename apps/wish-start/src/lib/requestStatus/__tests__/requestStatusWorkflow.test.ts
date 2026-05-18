@@ -24,6 +24,7 @@ import {
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
 import {
   migrateProjectStatuses,
+  buildProjectStatusMigrationOrder,
 } from "../../../../../../packages/convex-backend/convex/requestStatuses";
 
 describe("requestStatusWorkflow", () => {
@@ -854,6 +855,69 @@ describe("requestStatusWorkflow", () => {
     expect(state.requests.map((request) => request.status)).toEqual([
       projectStatuses.find((status) => status.name === "done")?._id,
       projectStatuses.find((status) => status.name === "done")?._id,
+    ]);
+  });
+
+  it("builds a deterministic migration order from project-owned and legacy statuses", () => {
+    const projectId = "project-1" as Id<"projects">;
+    const projectStatuses = [
+      {
+        _id: "status-done-duplicate",
+        _creationTime: 10,
+        name: "completed",
+        displayName: "Completed",
+        project: projectId,
+        type: "custom",
+        position: 5,
+      },
+      {
+        _id: "status-open",
+        _creationTime: 11,
+        name: "open",
+        displayName: "Open",
+        project: projectId,
+        type: "default",
+        position: 0,
+      },
+      {
+        _id: "status-custom",
+        _creationTime: 12,
+        name: "triaged",
+        displayName: "Triaged",
+        project: projectId,
+        type: "custom",
+        position: 6,
+      },
+    ] as any;
+    const legacyStatuses = [
+      {
+        _id: "legacy-needs-review",
+        _creationTime: 1,
+        name: "needs_review",
+        displayName: "Needs Review",
+        project: undefined,
+        type: "default",
+      },
+      {
+        _id: "legacy-unused",
+        _creationTime: 2,
+        name: "unused",
+        displayName: "Unused",
+        project: undefined,
+        type: "default",
+      },
+    ] as any;
+
+    const result = buildProjectStatusMigrationOrder(projectStatuses, legacyStatuses);
+
+    expect(result.projectStatusByCanonicalName.get("open")).toBe(projectStatuses[1]);
+    expect(result.projectStatusByCanonicalName.get("done")).toBe(projectStatuses[0]);
+    expect(result.legacyStatusesByCanonicalName.get("needs-review")).toBe(legacyStatuses[0]);
+    expect(result.legacyStatusesByCanonicalName.get("unused")).toBe(legacyStatuses[1]);
+    expect(result.orderedStatuses.map((status) => status._id)).toEqual([
+      "status-open",
+      "status-done-duplicate",
+      "status-custom",
     ]);
   });
 });
