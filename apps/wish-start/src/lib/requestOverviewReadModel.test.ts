@@ -197,6 +197,30 @@ describe("requestOverviewReadModel", () => {
     expect(startOfWeekUTC(Date.UTC(2026, 0, 19, 0, 0, 0))).toBe(Date.UTC(2026, 0, 19, 0, 0, 0));
     expect(formatWeekLabel(Date.UTC(2026, 0, 19, 0, 0, 0))).toBe("Jan 19");
   });
+
+  it("keeps requests on weekly UTC boundaries in the correct buckets", () => {
+    const now = Date.UTC(2026, 0, 26, 12, 0, 0);
+    const overview = buildRequestOverviewReadModel({
+      requests: [
+        requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 0, 0, 0)),
+        requestDoc("request-2", project1, statusOpen, Date.UTC(2026, 0, 18, 23, 59, 59, 999)),
+      ],
+      ownedProjectIds: [project1],
+      projects: [projectDoc(project1, "Alpha")],
+      statuses: [statusDoc(statusOpen, "open", "Open", project1)],
+      now,
+    });
+
+    expect(overview.weeklyTrend).toHaveLength(16);
+    expect(overview.weeklyTrend.at(-2)).toMatchObject({
+      weekStart: Date.UTC(2026, 0, 19, 0, 0, 0),
+      count: 1,
+    });
+    expect(overview.weeklyTrend.at(-3)).toMatchObject({
+      weekStart: Date.UTC(2026, 0, 12, 0, 0, 0),
+      count: 1,
+    });
+  });
 });
 
 function projectDoc(id: Id<"projects">, title: string): Doc<"projects"> {

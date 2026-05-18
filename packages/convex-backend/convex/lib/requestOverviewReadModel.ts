@@ -33,18 +33,15 @@ export function buildRequestOverviewReadModel({
   statuses,
   now = Date.now(),
 }: RequestOverviewReadModelInput): RequestOverviewReadModel {
-  const projectIds = new Set(ownedProjectIds.map((projectId) => projectId.toString()));
-  const relevantRequests = requests.filter((request) => projectIds.has(request.project.toString()));
-  const statusMap = new Map(
-    statuses
-      .filter((status) => !status.project || projectIds.has(status.project.toString()))
-      .map((status) => [status._id.toString(), status]),
-  );
+  const ownedProjectIdSet = new Set(ownedProjectIds.map((projectId) => projectId.toString()));
+  const relevantRequests = filterOwnedRequests(requests, ownedProjectIdSet);
+  const statusLookup = buildStatusLookup(statuses, ownedProjectIdSet);
+  const projectLookup = buildProjectLookup(projects);
 
   return {
     totalRequests: relevantRequests.length,
-    statusBreakdown: buildStatusBreakdown(relevantRequests, statusMap),
-    projectBreakdown: buildProjectBreakdown(relevantRequests, projects),
+    statusBreakdown: buildStatusBreakdown(relevantRequests, statusLookup),
+    projectBreakdown: buildProjectBreakdown(relevantRequests, projectLookup),
     weeklyTrend: buildWeeklyTrend(relevantRequests, now),
     lastUpdated: now,
   };
@@ -67,11 +64,36 @@ export function formatWeekLabel(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
+function filterOwnedRequests(requests: Doc<"requests">[], ownedProjectIds: Set<string>) {
+  return requests.filter((request) => ownedProjectIds.has(request.project.toString()));
+}
+
+function buildStatusLookup(statuses: Doc<"requestStatuses">[], ownedProjectIds: Set<string>) {
+  return new Map(
+    statuses
+      .filter((status) => !status.project || ownedProjectIds.has(status.project.toString()))
+      .map((status) => [status._id.toString(), status]),
+  );
+}
+
+function buildProjectLookup(projects: Doc<"projects">[]) {
+  return new Map(projects.map((project) => [project._id.toString(), project.title]));
+}
+
 function buildStatusBreakdown(
   requests: Doc<"requests">[],
   statusMap: Map<string, Doc<"requestStatuses">>,
 ): RequestOverviewReadModel["statusBreakdown"] {
-  const counts = new Map<string, RequestOverviewReadModel["statusBreakdown"][number]>();
+  const counts = new Map<
+    string,
+    {
+      statusId: Id<"requestStatuses">;
+      name: string;
+      count: number;
+      color?: string | null;
+      displayName?: string | null;
+    }
+  >();
 
   for (const request of requests) {
     const statusId = request.status.toString();
@@ -104,14 +126,20 @@ function buildStatusBreakdown(
 
 function buildProjectBreakdown(
   requests: Doc<"requests">[],
-  projects: Doc<"projects">[],
+  projectLookup: Map<string, string>,
 ): RequestOverviewReadModel["projectBreakdown"] {
-  const counts = new Map<string, RequestOverviewReadModel["projectBreakdown"][number]>();
-  const projectMap = new Map(projects.map((project) => [project._id.toString(), project.title]));
+  const counts = new Map<
+    string,
+    {
+      projectId: Id<"projects">;
+      title: string;
+      count: number;
+    }
+  >();
 
   for (const request of requests) {
     const projectId = request.project.toString();
-    const title = projectMap.get(projectId) ?? "Unknown project";
+    const title = projectLookup.get(projectId) ?? "Unknown project";
     const existing = counts.get(projectId);
 
     if (existing) {
