@@ -56,7 +56,7 @@ export const requestOverview = query({
 
 async function loadRelevantRequestStatuses(ctx: QueryCtx, ownedProjectIds: Id<"projects">[]) {
   const statuses = await Promise.all([
-    ctx.db.query("requestStatuses").filter((q) => q.eq(q.field("project"), undefined)).collect(),
+    ctx.db.query("requestStatuses").withIndex("by_project", (q) => q.eq("project", undefined)).collect(),
     ...ownedProjectIds.map((projectId) =>
       ctx.db.query("requestStatuses").withIndex("by_project", (q) => q.eq("project", projectId)).collect(),
     ),
