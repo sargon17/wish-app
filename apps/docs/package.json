@@ -8,7 +8,8 @@
     "build": "node ./scripts/build-docs.mjs",
     "preview": "astro preview",
     "check": "astro check",
-    "check-types": "tsc --noEmit",
+    "check-types": "bunx --package typescript tsc --noEmit",
+    "fmt": "echo 'no-op'",
     "astro": "astro"
   },
   "dependencies": {

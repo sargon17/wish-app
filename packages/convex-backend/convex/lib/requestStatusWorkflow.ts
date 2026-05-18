@@ -54,17 +54,19 @@ export function getCanonicalStatusName(name: string) {
   return normalized === "completed" ? "done" : normalized;
 }
 
+export const STARTER_PROJECT_STATUS_NAMES = ["open", "under-review", "planned", "in-progress", "done"] as const;
+
 export function getStarterProjectStatusNames() {
-  return ["open", "under-review", "planned", "in-progress", "done"] as const;
+  return STARTER_PROJECT_STATUS_NAMES;
 }
 
 export function isStarterProjectStatusName(name: string) {
-  return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof getStarterProjectStatusNames)[number]);
+  return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
 }
 
 export function getDefaultWorkflowStatusRank(name: string) {
   const canonical = getCanonicalStatusName(name);
-  const starterIndex = getStarterProjectStatusNames().indexOf(canonical as (typeof getStarterProjectStatusNames)[number]);
+  const starterIndex = getStarterProjectStatusNames().indexOf(canonical as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
 
   if (starterIndex !== -1) {
     return starterIndex;
