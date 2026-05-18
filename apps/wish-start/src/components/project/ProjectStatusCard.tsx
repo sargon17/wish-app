@@ -248,7 +248,7 @@ export default function ProjectStatusCard({
                   {isLastStatus
                     ? "This project must keep at least one status, so the last remaining status cannot be deleted."
                     : requestCount > 0
-                      ? "Requests in this status must be moved to another status before this status can be deleted."
+                      ? "Requests in this status must be reassigned to another status before this status can be deleted."
                       : "This status will be permanently removed."}
                 </AlertDialogDescription>
               </AlertDialogHeader>

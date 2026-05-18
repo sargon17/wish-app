@@ -78,7 +78,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Statuses</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Edit statuses, reorder them to match the workflow, or remove one when it is no longer needed.
+              Statuses can be edited, reordered, and removed.
             </p>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
       <Card className="border-border/70 bg-gradient-to-b from-card to-card/80">
         <CardContent>
-          <CardDescription className="mb-4">One ordered list for every project-owned status.</CardDescription>
+          <CardDescription className="mb-4">Manage one ordered workflow list for this project.</CardDescription>
           <ol className="space-y-3">
             {projectStatuses.map((status, index) => (
               <li key={status._id}>
