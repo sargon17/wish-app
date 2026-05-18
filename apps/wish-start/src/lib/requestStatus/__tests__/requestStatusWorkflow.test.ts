@@ -536,8 +536,8 @@ describe("requestStatusWorkflow", () => {
     const result = await migrateProjectStatuses(ctx, projectId);
 
     expect(result).toMatchObject({
-      statusesInserted: 5,
-      statusesReused: 0,
+      statusesInserted: 4,
+      statusesReused: 1,
       requestsPatched: 2,
       changed: true,
     });
@@ -551,8 +551,8 @@ describe("requestStatusWorkflow", () => {
       "planned",
       "in-progress",
       "done",
-      "done-legacy-pleted",
-      "triaged",
+      "needs-review",
+      "feature-ideas",
     ]);
     expect(projectStatuses[4]).toMatchObject({
       name: "done",

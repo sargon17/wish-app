@@ -174,7 +174,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
   const legacyStatusById = new Map(legacyStatusesInUse.map((status) => [status._id.toString(), status] as const));
   const orderedLegacyCanonicalNames: string[] = [];
   const duplicateStarterStatuses: Doc<"requestStatuses">[] = [];
-  const exactStarterStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
+  const selectedStarterStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
   let statusesInserted = 0;
   let statusesReused = 0;
   let changed = false;
@@ -185,27 +185,22 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
     );
 
     if (exactStarterStatus) {
-      exactStarterStatusByCanonicalName.set(starterStatus.name, exactStarterStatus);
+      selectedStarterStatusByCanonicalName.set(starterStatus.name, exactStarterStatus);
     }
   }
 
   for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
     const canonicalName = starterStatus.name;
-    const existingStatus = exactStarterStatusByCanonicalName.get(canonicalName);
+    const existingStatus = selectedStarterStatusByCanonicalName.get(canonicalName) ?? migrationPlan.projectStatusByCanonicalName.get(canonicalName);
 
     if (existingStatus) {
-      if (
+      const needsNormalization =
         existingStatus.displayName !== starterStatus.displayName ||
         existingStatus.type !== "default" ||
-        existingStatus.name !== starterStatus.name
-      ) {
+        existingStatus.name !== starterStatus.name;
+
+      if (needsNormalization) {
         await ctx.db.patch(existingStatus._id, {
-          name: starterStatus.name,
-          displayName: starterStatus.displayName,
-          type: "default",
-        });
-        migrationPlan.projectStatusByCanonicalName.set(canonicalName, {
-          ...existingStatus,
           name: starterStatus.name,
           displayName: starterStatus.displayName,
           type: "default",
@@ -213,6 +208,17 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
         changed = true;
       }
 
+      const normalizedStarterStatus = needsNormalization
+        ? {
+            ...existingStatus,
+            name: starterStatus.name,
+            displayName: starterStatus.displayName,
+            type: "default" as const,
+          }
+        : existingStatus;
+
+      selectedStarterStatusByCanonicalName.set(canonicalName, normalizedStarterStatus);
+      migrationPlan.projectStatusByCanonicalName.set(canonicalName, normalizedStarterStatus);
       projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
       statusesReused += 1;
       continue;
@@ -227,6 +233,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
     });
     const insertedStatus = await ctx.db.get(statusId);
     if (insertedStatus) {
+      selectedStarterStatusByCanonicalName.set(canonicalName, insertedStatus);
       migrationPlan.projectStatusByCanonicalName.set(canonicalName, insertedStatus);
       projectOwnedStatusIds.add(insertedStatus._id.toString());
     }
