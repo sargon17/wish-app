@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 
@@ -27,15 +26,15 @@ describe("requestOverviewReadModel", () => {
       now: 0,
     });
 
-    assert.deepEqual(overview, {
+    expect(overview).toEqual({
       totalRequests: 0,
       statusBreakdown: [],
       projectBreakdown: [],
       weeklyTrend: overview.weeklyTrend,
       lastUpdated: 0,
     });
-    assert.equal(overview.weeklyTrend.length, 16);
-    assert.equal(overview.weeklyTrend.every((bucket) => bucket.count === 0), true);
+    expect(overview.weeklyTrend).toHaveLength(16);
+    expect(overview.weeklyTrend.every((bucket) => bucket.count === 0)).toBe(true);
   });
 
   it("returns empty breakdowns when the user has no owned projects", () => {
@@ -47,7 +46,7 @@ describe("requestOverviewReadModel", () => {
       now: 1_700_000_000_000,
     });
 
-    assert.deepEqual(overview, {
+    expect(overview).toEqual({
       totalRequests: 0,
       statusBreakdown: [],
       projectBreakdown: [],
@@ -68,7 +67,7 @@ describe("requestOverviewReadModel", () => {
       now: 1_700_000_000_000,
     });
 
-    assert.deepEqual(overview, {
+    expect(overview).toEqual({
       totalRequests: 0,
       statusBreakdown: [],
       projectBreakdown: [],
@@ -97,12 +96,12 @@ describe("requestOverviewReadModel", () => {
       now,
     });
 
-    assert.equal(overview.totalRequests, 3);
-    assert.deepEqual(overview.projectBreakdown, [
+    expect(overview.totalRequests).toBe(3);
+    expect(overview.projectBreakdown).toEqual([
       { projectId: project1, title: "Alpha", count: 2 },
       { projectId: project2, title: "Beta", count: 1 },
     ]);
-    assert.deepEqual(overview.statusBreakdown, [
+    expect(overview.statusBreakdown).toEqual([
       {
         statusId: statusOpen,
         name: "open",
@@ -125,7 +124,7 @@ describe("requestOverviewReadModel", () => {
         displayName: "Queued",
       },
     ]);
-    assert.deepEqual(overview.weeklyTrend.at(-1), {
+    expect(overview.weeklyTrend.at(-1)).toEqual({
       weekStart: Date.UTC(2026, 0, 19, 0, 0, 0),
       label: "Jan 19",
       count: 1,
@@ -141,8 +140,8 @@ describe("requestOverviewReadModel", () => {
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
     });
 
-    assert.equal(overview.totalRequests, 1);
-    assert.deepEqual(overview.statusBreakdown, [
+    expect(overview.totalRequests).toBe(1);
+    expect(overview.statusBreakdown).toEqual([
       {
         statusId: statusUnknown,
         name: "unknown",
@@ -151,7 +150,7 @@ describe("requestOverviewReadModel", () => {
         displayName: "Unknown status",
       },
     ]);
-    assert.deepEqual(overview.projectBreakdown, [{ projectId: project1, title: "Alpha", count: 1 }]);
+    expect(overview.projectBreakdown).toEqual([{ projectId: project1, title: "Alpha", count: 1 }]);
   });
 
   it("keeps owned requests with missing project documents and falls back to unknown project labels", () => {
@@ -163,16 +162,16 @@ describe("requestOverviewReadModel", () => {
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
     });
 
-    assert.equal(overview.totalRequests, 1);
-    assert.deepEqual(overview.projectBreakdown, [
+    expect(overview.totalRequests).toBe(1);
+    expect(overview.projectBreakdown).toEqual([
       {
         projectId: project1,
         title: "Unknown project",
         count: 1,
       },
     ]);
-    assert.notEqual(overview.weeklyTrend.at(-1), undefined);
-    assert.equal(overview.weeklyTrend.at(-1)?.count, 1);
+    expect(overview.weeklyTrend.at(-1)).not.toBeUndefined();
+    expect(overview.weeklyTrend.at(-1)?.count).toBe(1);
   });
 
   it("sorts breakdowns by descending count and deterministic tie order", () => {
@@ -190,14 +189,18 @@ describe("requestOverviewReadModel", () => {
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
     });
 
-    assert.deepEqual(overview.statusBreakdown.map((item) => item.statusId), [statusOpen, statusClosed, statusQueued]);
-    assert.deepEqual(overview.projectBreakdown.map((item) => item.projectId), [project1, project2]);
+    expect(overview.statusBreakdown.map((item) => item.statusId)).toEqual([
+      statusOpen,
+      statusClosed,
+      statusQueued,
+    ]);
+    expect(overview.projectBreakdown.map((item) => item.projectId)).toEqual([project1, project2]);
   });
 
   it("produces UTC Monday week buckets and labels from a fixed clock", () => {
-    assert.equal(startOfWeekUTC(Date.UTC(2026, 0, 21, 15, 0, 0)), Date.UTC(2026, 0, 19, 0, 0, 0));
-    assert.equal(startOfWeekUTC(Date.UTC(2026, 0, 19, 0, 0, 0)), Date.UTC(2026, 0, 19, 0, 0, 0));
-    assert.equal(formatWeekLabel(Date.UTC(2026, 0, 19, 0, 0, 0)), "Jan 19");
+    expect(startOfWeekUTC(Date.UTC(2026, 0, 21, 15, 0, 0))).toBe(Date.UTC(2026, 0, 19, 0, 0, 0));
+    expect(startOfWeekUTC(Date.UTC(2026, 0, 19, 0, 0, 0))).toBe(Date.UTC(2026, 0, 19, 0, 0, 0));
+    expect(formatWeekLabel(Date.UTC(2026, 0, 19, 0, 0, 0))).toBe("Jan 19");
   });
 
   it("keeps requests on weekly UTC boundaries in the correct buckets", () => {
@@ -213,13 +216,13 @@ describe("requestOverviewReadModel", () => {
       now,
     });
 
-    assert.equal(overview.weeklyTrend.length, 16);
-    assert.deepEqual(overview.weeklyTrend.at(-2), {
+    expect(overview.weeklyTrend).toHaveLength(16);
+    expect(overview.weeklyTrend.at(-2)).toEqual({
       weekStart: Date.UTC(2026, 0, 19, 0, 0, 0),
       label: "Jan 19",
       count: 1,
     });
-    assert.deepEqual(overview.weeklyTrend.at(-3), {
+    expect(overview.weeklyTrend.at(-3)).toEqual({
       weekStart: Date.UTC(2026, 0, 12, 0, 0, 0),
       label: "Jan 12",
       count: 1,
