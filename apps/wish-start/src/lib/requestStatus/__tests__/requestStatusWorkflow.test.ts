@@ -411,7 +411,7 @@ describe("requestStatusWorkflow", () => {
       "in-progress",
       "done",
       "needs-review",
-      "triaged",
+      "feature-ideas",
     ]);
     expect(projectStatuses.map((status) => status.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(state.requests.map((request) => request.status)).toEqual([
@@ -538,7 +538,7 @@ describe("requestStatusWorkflow", () => {
     expect(result).toMatchObject({
       statusesInserted: 4,
       statusesReused: 1,
-      requestsPatched: 2,
+      requestsPatched: 1,
       changed: true,
     });
 
@@ -551,8 +551,7 @@ describe("requestStatusWorkflow", () => {
       "planned",
       "in-progress",
       "done",
-      "needs-review",
-      "feature-ideas",
+      "triaged",
     ]);
     expect(projectStatuses[4]).toMatchObject({
       name: "done",
