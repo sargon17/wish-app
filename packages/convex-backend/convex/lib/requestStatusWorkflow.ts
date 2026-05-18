@@ -1,5 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { STARTER_PROJECT_STATUS_NAMES } from "./requestStatusStarterData";
 
 export const DEFAULT_STATUS_ORDER = ["open", "planned", "under-review", "in-progress", "completed", "done", "closed"] as const;
 
@@ -42,6 +43,37 @@ export function slugifyStatusName(label: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+export function normalizeLegacyStatusName(name: string) {
+  return slugifyStatusName(name.replaceAll("_", "-"));
+}
+
+export function getCanonicalStatusName(name: string) {
+  const normalized = normalizeLegacyStatusName(name);
+
+  return normalized === "completed" ? "done" : normalized;
+}
+
+export function getStarterProjectStatusNames() {
+  return STARTER_PROJECT_STATUS_NAMES;
+}
+
+export function isStarterProjectStatusName(
+  name: string,
+): name is (typeof STARTER_PROJECT_STATUS_NAMES)[number] {
+  return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
+}
+
+export function getDefaultWorkflowStatusRank(name: string) {
+  const canonical = getCanonicalStatusName(name);
+  const starterIndex = getStarterProjectStatusNames().indexOf(canonical as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
+
+  if (starterIndex !== -1) {
+    return starterIndex;
+  }
+
+  return getDefaultStatusRank(canonical);
 }
 
 export function assertValidStatusName(displayName: string): { displayName: string; name: string } {
