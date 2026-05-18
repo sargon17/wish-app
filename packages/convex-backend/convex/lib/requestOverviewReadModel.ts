@@ -92,10 +92,11 @@ function buildStatusBreakdown(
       count: number;
       color?: string | null;
       displayName?: string | null;
+      firstSeen: number;
     }
   >();
 
-  for (const request of requests) {
+  for (const [index, request] of requests.entries()) {
     const statusId = request.status.toString();
     const existing = counts.get(statusId);
     const statusDoc = statusMap.get(statusId);
@@ -105,6 +106,7 @@ function buildStatusBreakdown(
 
     if (existing) {
       existing.count += 1;
+      existing.firstSeen = Math.min(existing.firstSeen, index);
       continue;
     }
 
@@ -114,14 +116,17 @@ function buildStatusBreakdown(
       color,
       count: 1,
       displayName,
+      firstSeen: index,
     });
   }
 
-  return Array.from(counts.values()).sort((a, b) => {
-    const countDiff = b.count - a.count;
-    if (countDiff !== 0) return countDiff;
-    return a.statusId.toString().localeCompare(b.statusId.toString());
-  });
+  return Array.from(counts.values())
+    .sort((a, b) => {
+      const countDiff = b.count - a.count;
+      if (countDiff !== 0) return countDiff;
+      return a.firstSeen - b.firstSeen;
+    })
+    .map(({ firstSeen: _firstSeen, ...status }) => status);
 }
 
 function buildProjectBreakdown(
@@ -134,16 +139,18 @@ function buildProjectBreakdown(
       projectId: Id<"projects">;
       title: string;
       count: number;
+      firstSeen: number;
     }
   >();
 
-  for (const request of requests) {
+  for (const [index, request] of requests.entries()) {
     const projectId = request.project.toString();
     const title = projectLookup.get(projectId) ?? "Unknown project";
     const existing = counts.get(projectId);
 
     if (existing) {
       existing.count += 1;
+      existing.firstSeen = Math.min(existing.firstSeen, index);
       continue;
     }
 
@@ -151,14 +158,17 @@ function buildProjectBreakdown(
       projectId: request.project,
       title,
       count: 1,
+      firstSeen: index,
     });
   }
 
-  return Array.from(counts.values()).sort((a, b) => {
-    const countDiff = b.count - a.count;
-    if (countDiff !== 0) return countDiff;
-    return a.projectId.toString().localeCompare(b.projectId.toString());
-  });
+  return Array.from(counts.values())
+    .sort((a, b) => {
+      const countDiff = b.count - a.count;
+      if (countDiff !== 0) return countDiff;
+      return a.firstSeen - b.firstSeen;
+    })
+    .map(({ firstSeen: _firstSeen, ...project }) => project);
 }
 
 function buildWeeklyTrend(
