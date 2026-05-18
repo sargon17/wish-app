@@ -401,7 +401,9 @@ describe("requestStatusWorkflow", () => {
       changed: false,
     });
 
-    const projectStatuses = state.requestStatuses.filter((status) => status.project === projectId);
+    const projectStatuses = state.requestStatuses
+      .filter((status) => status.project === projectId)
+      .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
     expect(projectStatuses.map((status) => status.name)).toEqual([
       "open",
       "under-review",
@@ -534,8 +536,8 @@ describe("requestStatusWorkflow", () => {
     const result = await migrateProjectStatuses(ctx, projectId);
 
     expect(result).toMatchObject({
-      statusesInserted: 4,
-      statusesReused: 1,
+      statusesInserted: 5,
+      statusesReused: 0,
       requestsPatched: 2,
       changed: true,
     });
@@ -549,6 +551,7 @@ describe("requestStatusWorkflow", () => {
       "planned",
       "in-progress",
       "done",
+      "done-legacy-pleted",
       "triaged",
     ]);
     expect(projectStatuses[4]).toMatchObject({

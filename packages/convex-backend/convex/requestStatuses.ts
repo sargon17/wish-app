@@ -15,7 +15,7 @@ import {
   getCanonicalStatusName,
   getManagementStatusesForProject,
   getOrderedStatusesForProject,
-  getStarterProjectStatusNames,
+  isStarterProjectStatusName,
   getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
@@ -191,8 +191,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
   for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
     const canonicalName = starterStatus.name;
-    const existingStatus =
-      exactStarterStatusByCanonicalName.get(canonicalName) ?? migrationPlan.projectStatusByCanonicalName.get(canonicalName);
+    const existingStatus = exactStarterStatusByCanonicalName.get(canonicalName);
 
     if (existingStatus) {
       if (
@@ -247,7 +246,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
   for (const status of existingProjectStatuses) {
     const canonicalName = getCanonicalStatusName(status.name);
 
-    if (!getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+    if (!isStarterProjectStatusName(canonicalName)) {
       continue;
     }
 
@@ -262,7 +261,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
   for (const legacyStatus of sortedLegacyStatusesInUse) {
     const canonicalName = getCanonicalStatusName(legacyStatus.name);
-    if (getStarterProjectStatusNames().includes(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
+    if (isStarterProjectStatusName(canonicalName)) {
       const replacement = projectStatusIdByCanonicalName.get(canonicalName);
       if (replacement) {
         projectStatusIdByCanonicalName.set(getCanonicalStatusName(legacyStatus.name), replacement);
@@ -301,10 +300,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
   for (const request of projectRequests) {
     if (projectOwnedStatusIds.has(request.status.toString())) {
-      const duplicateStarter = duplicateStarterStatuses.find((status) => status._id.toString() === request.status.toString());
-      if (!duplicateStarter) {
-        continue;
-      }
+      continue;
     }
 
     const duplicateStarter = duplicateStarterStatuses.find((status) => status._id.toString() === request.status.toString());

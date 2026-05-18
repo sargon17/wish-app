@@ -59,7 +59,9 @@ export function getStarterProjectStatusNames() {
   return STARTER_PROJECT_STATUS_NAMES;
 }
 
-export function isStarterProjectStatusName(name: string) {
+export function isStarterProjectStatusName(
+  name: string,
+): name is (typeof STARTER_PROJECT_STATUS_NAMES)[number] {
   return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
 }
 
