@@ -121,7 +121,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
   });
 
   const projectStatusIdByCanonicalName = new Map<string, Id<"requestStatuses">>();
-  const includedStatusIds = new Set<string>();
+  const projectOwnedStatusIds = new Set(existingProjectStatuses.map((status) => status._id.toString()));
   let statusesInserted = 0;
   let statusesReused = 0;
   let changed = false;
@@ -140,7 +140,6 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       }
 
       projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
-      includedStatusIds.add(existingStatus._id.toString());
       statusesReused += 1;
       continue;
     }
@@ -156,9 +155,9 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     if (insertedStatus) {
       projectOwnedStatuses.push(insertedStatus);
       projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+      projectOwnedStatusIds.add(insertedStatus._id.toString());
     }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
-    includedStatusIds.add(statusId.toString());
     statusesInserted += 1;
     changed = true;
   }
@@ -176,7 +175,6 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     const existingStatus = projectStatusByCanonicalName.get(canonicalName);
     if (existingStatus) {
       projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
-      includedStatusIds.add(existingStatus._id.toString());
       continue;
     }
 
@@ -193,9 +191,9 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     if (insertedStatus) {
       projectOwnedStatuses.push(insertedStatus);
       projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+      projectOwnedStatusIds.add(insertedStatus._id.toString());
     }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
-    includedStatusIds.add(statusId.toString());
     statusesInserted += 1;
     changed = true;
   }
@@ -203,7 +201,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
   const requestPatches: Array<{ id: Id<"requests">; status: Id<"requestStatuses"> }> = [];
 
   for (const request of projectRequests) {
-    if (includedStatusIds.has(request.status.toString())) {
+    if (projectOwnedStatusIds.has(request.status.toString())) {
       continue;
     }
 
@@ -232,24 +230,29 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     }
   }
 
-  for (const legacyStatus of legacyStatusesInUse) {
-    const status = projectStatusByCanonicalName.get(getCanonicalStatusName(legacyStatus.name));
-    if (status && !starterNames.has(getCanonicalStatusName(status.name) as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
-      workflowStatuses.push(status);
-    }
+  const legacyWorkflowStatuses = legacyStatusesInUse
+    .map((legacyStatus) => projectStatusByCanonicalName.get(getCanonicalStatusName(legacyStatus.name)))
+    .filter((status): status is Doc<"requestStatuses"> => Boolean(status))
+    .filter((status) => !starterNames.has(getCanonicalStatusName(status.name) as (typeof STARTER_PROJECT_STATUSES)[number]["name"]));
+
+  for (const status of legacyWorkflowStatuses) {
+    workflowStatuses.push(status);
   }
 
-  for (const status of projectOwnedStatuses) {
-    if (status.project !== projectId || status.type !== "custom") {
+  const orderedProjectOwnedStatuses = [...projectOwnedStatuses].sort((a, b) => {
+    return (
+      (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+      a._creationTime - b._creationTime ||
+      a._id.toString().localeCompare(b._id.toString())
+    );
+  });
+
+  for (const status of orderedProjectOwnedStatuses) {
+    if (status.project !== projectId) {
       continue;
     }
 
-    const canonicalName = getCanonicalStatusName(status.name);
-    if (starterNames.has(canonicalName as (typeof STARTER_PROJECT_STATUSES)[number]["name"])) {
-      continue;
-    }
-
-    if (!includedStatusIds.has(status._id.toString())) {
+    if (!workflowStatuses.some((item) => item._id === status._id)) {
       workflowStatuses.push(status);
     }
   }
