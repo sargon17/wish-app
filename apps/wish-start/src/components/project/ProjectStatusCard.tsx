@@ -157,18 +157,18 @@ export default function ProjectStatusCard({
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="icon" className="size-8" disabled={!canMoveUp || isReordering} onClick={() => void onMoveUp?.()}>
             <ArrowUp className="size-4" />
-            <span className="sr-only">Move up</span>
+            <span className="sr-only">Move {status.displayName} up</span>
           </Button>
           <Button type="button" variant="outline" size="icon" className="size-8" disabled={!canMoveDown || isReordering} onClick={() => void onMoveDown?.()}>
             <ArrowDown className="size-4" />
-            <span className="sr-only">Move down</span>
+            <span className="sr-only">Move {status.displayName} down</span>
           </Button>
 
           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm">
                 <PencilLine className="size-4" />
-                Edit
+                Edit status
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -235,32 +235,42 @@ export default function ProjectStatusCard({
               }
             }}
           >
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="outline" size="sm" disabled={isDeleting || isLastStatus}>
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
+            {isLastStatus ? (
+              <div className="flex flex-col items-start gap-1">
+                <Button type="button" variant="outline" size="sm" disabled title="This project must keep at least one status.">
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+                <p className="max-w-48 text-left text-xs text-muted-foreground">This project must keep at least one status.</p>
+              </div>
+            ) : (
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm" disabled={isDeleting}>
+                  <Trash2 className="size-4" />
+                  Remove status
+                </Button>
+              </AlertDialogTrigger>
+            )}
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete {status.displayName}?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {isLastStatus
-                    ? "This project must keep at least one status."
+                    ? "This project must keep at least one status, so the last remaining status cannot be deleted."
                     : requestCount > 0
-                      ? "Requests in this status will move to a replacement status before the workflow status is deleted."
-                      : "This removes the status permanently. Unused statuses can be deleted when the project keeps another status."}
+                      ? "Requests in this status must be reassigned to another status before this status can be deleted."
+                      : "This status will be permanently removed."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               {requestCount > 0 ? (
                 <div className="grid gap-2">
-                  <Label htmlFor={`status-replacement-${status._id}`}>Replacement status</Label>
+                  <Label htmlFor={`status-replacement-${status._id}`}>Move requests to</Label>
                   <Select
                     value={replacementStatusId}
                     onValueChange={(value) => setReplacementStatusId(value as Id<"requestStatuses"> | "")}
                   >
                     <SelectTrigger id={`status-replacement-${status._id}`}>
-                      <SelectValue placeholder="Select a status" />
+                      <SelectValue placeholder="Select another status" />
                     </SelectTrigger>
                     <SelectContent>
                       {replacementOptions.map((candidate) => (
