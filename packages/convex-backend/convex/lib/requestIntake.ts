@@ -50,9 +50,9 @@ async function assertRequestBelongsToProject(
   return request._id;
 }
 
-async function getInitialStatusId(c: RequestIntakeContext, projectId: string) {
+async function getInitialStatusId(c: RequestIntakeContext, projectId: Id<"projects">) {
   const statuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
-    id: projectId as Id<"projects">,
+    id: projectId,
   });
   const initialStatus = statuses[0];
 
@@ -77,7 +77,7 @@ export async function createRequest(
     return authorization;
   }
 
-  const status = await getInitialStatusId(c, projectId);
+  const status = await getInitialStatusId(c, authorization.project._id);
 
   await c.env.runMutation(api.requests.create, {
     ...body,

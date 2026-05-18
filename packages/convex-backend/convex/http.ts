@@ -147,6 +147,9 @@ app.post("/api/project/:id/request/", async (c) => {
   try {
     requirePublicId(id);
     const body = await parsePublicBody(c, RequestValidator);
+    if (Object.prototype.hasOwnProperty.call(body, "status")) {
+      throw createPublicError("validation_failed");
+    }
     const result = await createRequest(c, id, {
       text: body.text,
       description: body.description,
