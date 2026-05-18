@@ -419,4 +419,147 @@ describe("requestStatusWorkflow", () => {
     expect(state.requestStatuses.some((status) => status._id === ids.legacyNeedsReview && status.project === undefined)).toBe(true);
     expect(state.requestStatuses.some((status) => status._id === ids.legacyUnused && status.project === undefined)).toBe(true);
   });
+
+  it("normalizes reused starter names and keeps cross-project requests on local statuses", async () => {
+    const projectId = "project-1" as Id<"projects">;
+    const otherProjectId = "project-2" as Id<"projects">;
+    const ids = {
+      completedStarter: "status-project-completed",
+      localCustom: "status-project-custom",
+      crossProjectStatus: "status-other-project",
+      requestCompleted: "request-1",
+      requestCrossProject: "request-2",
+    } as const;
+
+    const state = {
+      requestStatuses: [
+        {
+          _id: ids.completedStarter,
+          _creationTime: 5,
+          name: "completed",
+          displayName: "Completed",
+          description: "Project-owned starter from old data",
+          color: "#444444",
+          project: projectId,
+          type: "custom",
+          position: 4,
+        },
+        {
+          _id: ids.localCustom,
+          _creationTime: 6,
+          name: "triaged",
+          displayName: "Triaged",
+          description: "Local custom status",
+          color: "#555555",
+          project: projectId,
+          type: "custom",
+          position: 5,
+        },
+        {
+          _id: ids.crossProjectStatus,
+          _creationTime: 7,
+          name: "needs-review",
+          displayName: "Needs Review",
+          description: "Other project's status",
+          color: "#666666",
+          project: otherProjectId,
+          type: "custom",
+          position: 0,
+        },
+      ],
+      requests: [
+        { _id: ids.requestCompleted, _creationTime: 10, project: projectId, status: ids.completedStarter },
+        { _id: ids.requestCrossProject, _creationTime: 11, project: projectId, status: ids.crossProjectStatus },
+      ],
+      inserts: [] as Array<{ table: string; value: any }>,
+      patches: [] as Array<{ table: string; id: string; value: any }>,
+    };
+
+    const ctx = {
+      db: {
+        query: (table: string) => ({
+          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+            expect(indexName).toBe("by_project");
+            predicate({ eq: () => undefined });
+
+            return {
+              collect: async () => {
+                if (table === "requestStatuses") {
+                  return state.requestStatuses.filter((status) => status.project === projectId);
+                }
+
+                if (table === "requests") {
+                  return state.requests.filter((request) => request.project === projectId);
+                }
+
+                return [];
+              },
+              first: async () => undefined,
+            };
+          },
+        }),
+        get: async (id: string) => {
+          return (
+            state.requestStatuses.find((status) => status._id === id) ??
+            state.requests.find((request) => request._id === id)
+          );
+        },
+        insert: async (table: string, value: any) => {
+          const id = `${table}-${state.inserts.length + 1}`;
+          state.inserts.push({ table, value: { ...value, _id: id } });
+          if (table === "requestStatuses") {
+            state.requestStatuses.push({
+              _id: id,
+              _creationTime: 100 + state.inserts.length,
+              ...value,
+            });
+          }
+          return id;
+        },
+        patch: async (id: string, value: any) => {
+          state.patches.push({ table: "unknown", id, value });
+          const status = state.requestStatuses.find((item) => item._id === id);
+          if (status) {
+            Object.assign(status, value);
+          }
+          const request = state.requests.find((item) => item._id === id);
+          if (request) {
+            Object.assign(request, value);
+          }
+        },
+      },
+    } as any;
+
+    const result = await migrateProjectStatuses(ctx, projectId);
+
+    expect(result).toMatchObject({
+      statusesInserted: 4,
+      statusesReused: 1,
+      requestsPatched: 2,
+      changed: true,
+    });
+
+    const projectStatuses = state.requestStatuses
+      .filter((status) => status.project === projectId)
+      .sort((a, b) => a.position - b.position);
+    expect(projectStatuses.map((status) => status.name)).toEqual([
+      "open",
+      "under-review",
+      "planned",
+      "in-progress",
+      "done",
+      "triaged",
+    ]);
+    expect(projectStatuses[4]).toMatchObject({
+      name: "done",
+      displayName: "Done",
+      type: "default",
+      position: 4,
+    });
+    expect(state.requests.map((request) => request.status)).toEqual([
+      projectStatuses.find((status) => status.name === "done")?._id,
+      projectStatuses.find((status) => status.name === "open")?._id,
+    ]);
+    expect(state.requestStatuses.some((status) => status._id === ids.crossProjectStatus && status.project === otherProjectId)).toBe(true);
+  });
 });
