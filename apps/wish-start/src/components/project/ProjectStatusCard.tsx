@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { slugifyStatusName } from "@/lib/requestStatus/slugifyStatusName";
 import { api } from "@wish/convex-backend/api";
@@ -28,6 +29,7 @@ import type { Id } from "@wish/convex-backend/data-model";
 
 export default function ProjectStatusCard({
   status,
+  replacementCandidates,
   requestCount,
   canMoveUp = false,
   canMoveDown = false,
@@ -42,6 +44,11 @@ export default function ProjectStatusCard({
     description?: string;
     color?: string | null;
   };
+  replacementCandidates: {
+    _id: Id<"requestStatuses">;
+    displayName: string;
+    color?: string | null;
+  }[];
   requestCount: number;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
@@ -58,12 +65,14 @@ export default function ProjectStatusCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [replacementStatusId, setReplacementStatusId] = useState("");
 
   useEffect(() => {
     setDisplayName(status.displayName);
     setDescription(status.description ?? "");
     setColor(status.color ?? "#f97316");
     setIsDeleteDialogOpen(false);
+    setReplacementStatusId("");
   }, [status._id, status.color, status.description, status.displayName]);
 
   const cleanDisplayName = displayName.trim();
@@ -98,15 +107,19 @@ export default function ProjectStatusCard({
   }
 
   async function handleDelete() {
-    if (isDeleting) {
+    if (isDeleting || isLastStatus || (requestCount > 0 && !replacementStatusId)) {
       return;
     }
 
     setIsDeleting(true);
 
     try {
-      await removeStatus({ id: status._id });
+      await removeStatus({
+        id: status._id,
+        replacementStatusId: replacementStatusId ? replacementStatusId : undefined,
+      });
       setIsDeleteDialogOpen(false);
+      setReplacementStatusId("");
       toast.success("Status removed");
     } catch (error) {
       console.error(error);
@@ -150,9 +163,17 @@ export default function ProjectStatusCard({
               Down
             </Button>
 
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={(open) => {
+                setIsDeleteDialogOpen(open);
+                if (!open) {
+                  setReplacementStatusId("");
+                }
+              }}
+            >
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" disabled={requestCount > 0 || isDeleting || isLastStatus}>
+                <Button type="button" variant="outline" size="sm" disabled={isDeleting || isLastStatus}>
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
@@ -161,13 +182,37 @@ export default function ProjectStatusCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete {status.displayName}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This removes the workflow status permanently. Deletion is only allowed when no requests still reference it
-                    and the project has at least one other status.
+                    {requestCount > 0
+                      ? "Requests in this status will move to a replacement status before the workflow status is deleted."
+                      : "This removes the workflow status permanently. Unused statuses can be deleted directly as long as the project keeps another status."}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {requestCount > 0 ? (
+                  <div className="grid gap-2">
+                    <Label htmlFor={`status-replacement-${status._id}`}>Replacement status</Label>
+                    <Select value={replacementStatusId} onValueChange={setReplacementStatusId}>
+                      <SelectTrigger id={`status-replacement-${status._id}`}>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {replacementCandidates
+                          .filter((candidate) => candidate._id !== status._id)
+                          .map((candidate) => (
+                            <SelectItem key={candidate._id} value={candidate._id}>
+                              <span className="flex items-center gap-2">
+                                <span className="size-2.5 rounded-full" style={{ backgroundColor: candidate.color ?? "#f97316" }} />
+                                {candidate.displayName}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    disabled={requestCount > 0 && !replacementStatusId}
                     onClick={(event) => {
                       event.preventDefault();
                       void handleDelete();
@@ -226,7 +271,7 @@ export default function ProjectStatusCard({
             {isLastStatus
               ? "This project needs at least one status."
               : requestCount > 0
-                ? "Delete is disabled while requests still use this status."
+                ? "Choose a replacement status to remove this one."
                 : "Unused project statuses can be deleted."}
           </p>
 

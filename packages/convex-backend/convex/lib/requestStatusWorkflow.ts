@@ -79,15 +79,27 @@ export function assertProjectStatusEditable(
   return status as Doc<"requestStatuses"> & { project: Id<"projects"> };
 }
 
-export function assertStatusCanBeRemoved(linkedRequest: Doc<"requests"> | null | undefined) {
-  if (linkedRequest) {
-    throw new Error("Statuses in use cannot be removed");
-  }
-}
-
 export function assertProjectCanRemoveStatus(statuses: Doc<"requestStatuses">[]) {
   if (statuses.length <= 1) {
     throw new Error("A project must keep at least one status");
+  }
+}
+
+export function assertReplacementStatusCanBeUsed(
+  replacementStatus: Doc<"requestStatuses"> | null | undefined,
+  deletedStatus: Doc<"requestStatuses">,
+  projectId: Id<"projects">,
+) {
+  if (!replacementStatus) {
+    throw new Error("Choose a replacement status to delete this status");
+  }
+
+  if (replacementStatus._id === deletedStatus._id) {
+    throw new Error("Replacement status must be different from the status being deleted");
+  }
+
+  if (replacementStatus.project !== projectId) {
+    throw new Error("Replacement status must belong to the same project");
   }
 }
 

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
@@ -10,12 +10,12 @@ import {
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  assertReplacementStatusCanBeUsed,
   getManagementStatusesForProject,
   getOrderedStatusesForProject,
   getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
-  assertStatusCanBeRemoved,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
@@ -212,6 +212,7 @@ export const reorder = mutation({
 export const remove = mutation({
   args: {
     id: v.id("requestStatuses"),
+    replacementStatusId: v.optional(v.id("requestStatuses")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -222,12 +223,21 @@ export const remove = mutation({
     const statuses = await getOrderedStatusesForProject(ctx, projectId);
     assertProjectCanRemoveStatus(statuses);
 
-    const linkedRequest = await ctx.db
+    const linkedRequests = await ctx.db
       .query("requests")
       .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.id))
-      .first();
+      .collect();
 
-    assertStatusCanBeRemoved(linkedRequest);
+    if (linkedRequests.length > 0) {
+      if (!args.replacementStatusId) {
+        throw new Error("Choose a replacement status to delete this status");
+      }
+
+      const replacementStatus = assertProjectStatusEditable(await ctx.db.get(args.replacementStatusId));
+      assertReplacementStatusCanBeUsed(replacementStatus, status, projectId);
+
+      await Promise.all(linkedRequests.map((request) => ctx.db.patch(request._id, { status: replacementStatus._id })));
+    }
 
     await ctx.db.delete(args.id);
   },
