@@ -3,13 +3,13 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Id } from "@wish/convex-backend/data-model";
 
 import {
-  assertCustomStatusRemovable,
   assertProjectCanRemoveStatus,
   assertProjectStatusEditable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
   assertValidStatusColor,
   assertValidStatusName,
+  assertStatusCanBeRemoved,
   getDefaultStatusRank,
   getManagementStatusesForProject,
   getNextWorkflowStatusPosition,
@@ -30,7 +30,7 @@ describe("requestStatusWorkflow", () => {
     expect(assertValidStatusName("  In Review  ")).toEqual({ displayName: "In Review", name: "in-review" });
   });
 
-  it("sorts default statuses ahead of custom ones by fixed rank", () => {
+  it("sorts workflow statuses ahead of unknown ones by fixed rank", () => {
     expect(getDefaultStatusRank("open")).toBe(0);
     expect(getDefaultStatusRank("unknown")).toBe(Number.MAX_SAFE_INTEGER);
 
@@ -117,10 +117,10 @@ describe("requestStatusWorkflow", () => {
   });
 
   it("rejects removing a status that still has linked requests", () => {
-    expect(() => assertCustomStatusRemovable({ _id: "request-1" } as any)).toThrow(
+    expect(() => assertStatusCanBeRemoved({ _id: "request-1" } as any)).toThrow(
       "Statuses in use cannot be removed",
     );
-    expect(() => assertCustomStatusRemovable(undefined)).not.toThrow();
+    expect(() => assertStatusCanBeRemoved(undefined)).not.toThrow();
   });
 
   it("returns only project-owned statuses ordered by workflow position and creation time", async () => {
@@ -201,7 +201,7 @@ describe("requestStatusWorkflow", () => {
     expect(getNextWorkflowStatusPosition(statuses)).toBe(3);
   });
 
-  it("reindexes legacy workflow positions before appending a new custom status", () => {
+  it("reindexes legacy workflow positions before appending a new workflow status", () => {
     const statuses = [
       { _id: "status-1", type: "default", project: "project-1", position: 0, _creationTime: 1 },
       { _id: "status-2", type: "custom", project: "project-1", _creationTime: 2 },

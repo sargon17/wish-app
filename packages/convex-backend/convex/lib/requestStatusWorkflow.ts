@@ -79,7 +79,7 @@ export function assertProjectStatusEditable(
   return status as Doc<"requestStatuses"> & { project: Id<"projects"> };
 }
 
-export function assertCustomStatusRemovable(linkedRequest: Doc<"requests"> | null | undefined) {
+export function assertStatusCanBeRemoved(linkedRequest: Doc<"requests"> | null | undefined) {
   if (linkedRequest) {
     throw new Error("Statuses in use cannot be removed");
   }

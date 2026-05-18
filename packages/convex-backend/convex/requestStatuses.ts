@@ -6,7 +6,6 @@ import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   assertProjectCanRemoveStatus,
   assertProjectStatusEditable,
-  assertCustomStatusRemovable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
   assertValidStatusColor,
@@ -16,6 +15,7 @@ import {
   getStatusesWithAssignedWorkflowPositions,
   getNextWorkflowStatusPosition,
   normalizeStatusDescription,
+  assertStatusCanBeRemoved,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
 
@@ -227,7 +227,7 @@ export const remove = mutation({
       .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.id))
       .first();
 
-    assertCustomStatusRemovable(linkedRequest);
+    assertStatusCanBeRemoved(linkedRequest);
 
     await ctx.db.delete(args.id);
   },
