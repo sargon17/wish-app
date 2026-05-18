@@ -4,6 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { STARTER_PROJECT_STATUSES } from "./lib/requestStatusStarterData";
 import {
   assertCustomStatusEditable,
   assertCustomStatusRemovable,
@@ -20,14 +21,6 @@ import {
   normalizeStatusDescription,
 } from "./lib/requestStatusWorkflow";
 import { getStatusById } from "./services/queries/status/getStatusById";
-
-export const STARTER_PROJECT_STATUSES = [
-  { name: "open", displayName: "Open" },
-  { name: "under-review", displayName: "Under Review" },
-  { name: "planned", displayName: "Planned" },
-  { name: "in-progress", displayName: "In Progress" },
-  { name: "done", displayName: "Done" },
-] as const;
 
 function sortProjectStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
   return (

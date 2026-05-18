@@ -15,7 +15,7 @@
   "scripts": {
     "convex:dev": "bunx convex dev",
     "check": "bun run check-types",
-    "check-types": "bunx --package typescript tsc --noEmit -p convex/tsconfig.json"
+    "check-types": "tsc --noEmit -p convex/tsconfig.json"
   },
   "dependencies": {
     "@hono/arktype-validator": "^2.0.1",

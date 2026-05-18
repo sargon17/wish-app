@@ -1,5 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { STARTER_PROJECT_STATUS_NAMES } from "./requestStatusStarterData";
 
 export const DEFAULT_STATUS_ORDER = ["open", "planned", "under-review", "in-progress", "completed", "done", "closed"] as const;
 
@@ -53,8 +54,6 @@ export function getCanonicalStatusName(name: string) {
 
   return normalized === "completed" ? "done" : normalized;
 }
-
-export const STARTER_PROJECT_STATUS_NAMES = ["open", "under-review", "planned", "in-progress", "done"] as const;
 
 export function getStarterProjectStatusNames() {
   return STARTER_PROJECT_STATUS_NAMES;
