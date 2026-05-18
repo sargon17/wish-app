@@ -22,7 +22,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
       <div className="space-y-4">
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Statuses</h3>
-          <p className="text-sm text-muted-foreground">Loading your workflow configuration…</p>
+          <p className="text-sm text-muted-foreground">Loading the ordered workflow list…</p>
         </div>
       </div>
     );
@@ -78,8 +78,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
           <div className="space-y-1">
             <h3 className="text-lg font-semibold">Statuses</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Project statuses control the board and request flow. Reorder them, edit details, change colors, or remove a
-              status when the board rules allow it.
+              Edit statuses, reorder them to match the workflow, or remove one when it is no longer needed.
             </p>
           </div>
         </div>
@@ -94,26 +93,27 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
       <Card className="border-border/70 bg-gradient-to-b from-card to-card/80">
         <CardHeader>
-          <CardTitle>Project statuses</CardTitle>
-          <CardDescription>
-            One ordered list for every project-owned status. Reordering updates the workflow for every status.
-          </CardDescription>
+          <CardTitle>Statuses</CardTitle>
+          <CardDescription>One ordered list for every project-owned status.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {projectStatuses.map((status, index) => (
-            <ProjectStatusCard
-              key={status._id}
-              status={status}
-              replacementCandidates={projectStatuses}
-              requestCount={status.requestCount}
-              canMoveUp={index > 0}
-              canMoveDown={index < projectStatuses.length - 1}
-              isLastStatus={projectStatuses.length <= 1}
-              isReordering={isReordering}
-              onMoveUp={() => moveStatus(status._id, "up")}
-              onMoveDown={() => moveStatus(status._id, "down")}
-            />
-          ))}
+        <CardContent>
+          <ol className="space-y-3">
+            {projectStatuses.map((status, index) => (
+              <li key={status._id}>
+                <ProjectStatusCard
+                  status={status}
+                  replacementCandidates={projectStatuses}
+                  requestCount={status.requestCount}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < projectStatuses.length - 1}
+                  isLastStatus={projectStatuses.length <= 1}
+                  isReordering={isReordering}
+                  onMoveUp={() => moveStatus(status._id, "up")}
+                  onMoveDown={() => moveStatus(status._id, "down")}
+                />
+              </li>
+            ))}
+          </ol>
           {projectStatuses.length === 0 ? <CardDescription>No project statuses found.</CardDescription> : null}
         </CardContent>
       </Card>
