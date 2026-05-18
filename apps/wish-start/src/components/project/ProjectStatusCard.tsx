@@ -235,25 +235,22 @@ export default function ProjectStatusCard({
               }
             }}
           >
-            <AlertDialogTrigger asChild>
+            {isLastStatus ? (
               <div className="flex flex-col items-start gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isDeleting || isLastStatus}
-                  title={isLastStatus ? "This project must keep at least one status." : undefined}
-                >
+                <Button type="button" variant="outline" size="sm" disabled title="This project must keep at least one status.">
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
-                {isLastStatus ? (
-                  <p className="max-w-48 text-left text-xs text-muted-foreground">
-                    This project must keep at least one status.
-                  </p>
-                ) : null}
+                <p className="max-w-48 text-left text-xs text-muted-foreground">This project must keep at least one status.</p>
               </div>
-            </AlertDialogTrigger>
+            ) : (
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm" disabled={isDeleting}>
+                  <Trash2 className="size-4" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+            )}
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete {status.displayName}?</AlertDialogTitle>
