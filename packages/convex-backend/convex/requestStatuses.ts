@@ -174,13 +174,25 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
   const legacyStatusById = new Map(legacyStatusesInUse.map((status) => [status._id.toString(), status] as const));
   const orderedLegacyCanonicalNames: string[] = [];
   const duplicateStarterStatuses: Doc<"requestStatuses">[] = [];
+  const exactStarterStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
   let statusesInserted = 0;
   let statusesReused = 0;
   let changed = false;
 
+  for (const starterStatus of STARTER_PROJECT_STATUSES) {
+    const exactStarterStatus = existingProjectStatuses.find(
+      (status) => status.name === starterStatus.name && status.type === "default",
+    );
+
+    if (exactStarterStatus) {
+      exactStarterStatusByCanonicalName.set(starterStatus.name, exactStarterStatus);
+    }
+  }
+
   for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
     const canonicalName = starterStatus.name;
-    const existingStatus = migrationPlan.projectStatusByCanonicalName.get(canonicalName);
+    const existingStatus =
+      exactStarterStatusByCanonicalName.get(canonicalName) ?? migrationPlan.projectStatusByCanonicalName.get(canonicalName);
 
     if (existingStatus) {
       if (
@@ -448,12 +460,17 @@ export const repairAllProjectDefaultsInternal = internalMutation({
       summaries.push(await migrateProjectStatuses(ctx, project._id));
     }
 
+    const statusesReindexed = summaries.reduce((total, summary) => total + summary.statusesReindexed, 0);
+    const changed = summaries.some((summary) => summary.changed);
+
     return {
       projectsScanned: projects.length,
-      projectsReindexed: summaries.filter((summary) => summary.changed).length,
+      projectsChanged: summaries.filter((summary) => summary.changed).length,
       statusesInserted: summaries.reduce((total, summary) => total + summary.statusesInserted, 0),
       statusesReused: summaries.reduce((total, summary) => total + summary.statusesReused, 0),
       requestsPatched: summaries.reduce((total, summary) => total + summary.requestsPatched, 0),
+      statusesReindexed,
+      changed,
     };
   },
 });
