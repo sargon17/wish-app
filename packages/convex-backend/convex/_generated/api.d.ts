@@ -18,6 +18,7 @@ import type * as lib_projectKeyAuthorization from "../lib/projectKeyAuthorizatio
 import type * as lib_projectPublic from "../lib/projectPublic.js";
 import type * as lib_publicErrors from "../lib/publicErrors.js";
 import type * as lib_requestIntake from "../lib/requestIntake.js";
+import type * as lib_requestStatusStarterData from "../lib/requestStatusStarterData.js";
 import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   "lib/projectPublic": typeof lib_projectPublic;
   "lib/publicErrors": typeof lib_publicErrors;
   "lib/requestIntake": typeof lib_requestIntake;
+  "lib/requestStatusStarterData": typeof lib_requestStatusStarterData;
   "lib/requestStatusWorkflow": typeof lib_requestStatusWorkflow;
   projects: typeof projects;
   rateLimits: typeof rateLimits;

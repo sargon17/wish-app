@@ -1,6 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { STARTER_PROJECT_STATUS_NAMES } from "./requestStatusStarterData";
+import { STARTER_PROJECT_STATUSES, STARTER_PROJECT_STATUS_NAMES } from "./requestStatusStarterData";
 
 export const DEFAULT_STATUS_ORDER = ["open", "planned", "under-review", "in-progress", "completed", "done", "closed"] as const;
 
@@ -57,6 +57,21 @@ export function getCanonicalStatusName(name: string) {
 
 export function getStarterProjectStatusNames() {
   return STARTER_PROJECT_STATUS_NAMES;
+}
+
+export function getStarterProjectStatusColor(name: string) {
+  const canonicalName = getCanonicalStatusName(name);
+  return STARTER_PROJECT_STATUSES.find((status) => status.name === canonicalName)?.color;
+}
+
+function applyDefaultStatusColor(status: Doc<"requestStatuses">) {
+  if (status.color || status.type !== "default") {
+    return status;
+  }
+
+  const color = getStarterProjectStatusColor(status.name);
+
+  return color ? { ...status, color } : status;
 }
 
 export function isStarterProjectStatusName(
@@ -190,7 +205,7 @@ export async function getManagementStatusesForProject(ctx: QueryCtx | MutationCt
   ]);
 
   return statuses.map((status) => ({
-    ...status,
+    ...applyDefaultStatusColor(status),
     requestCount: counts.get(status._id.toString()) ?? 0,
   }));
 }
@@ -219,7 +234,7 @@ export async function getOrderedStatusesForProject(
     .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  return projectStatuses.sort(sortProjectOwnedStatuses);
+  return projectStatuses.sort(sortProjectOwnedStatuses).map(applyDefaultStatusColor);
 }
 
 export function assertNoDuplicateStatusName(

@@ -198,13 +198,15 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       const needsNormalization =
         existingStatus.displayName !== starterStatus.displayName ||
         existingStatus.type !== "default" ||
-        existingStatus.name !== starterStatus.name;
+        existingStatus.name !== starterStatus.name ||
+        existingStatus.color !== starterStatus.color;
 
       if (needsNormalization) {
         await ctx.db.patch(existingStatus._id, {
           name: starterStatus.name,
           displayName: starterStatus.displayName,
           type: "default",
+          color: starterStatus.color,
         });
         changed = true;
       }
@@ -215,6 +217,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
             name: starterStatus.name,
             displayName: starterStatus.displayName,
             type: "default" as const,
+            color: starterStatus.color,
           }
         : existingStatus;
 
@@ -230,6 +233,7 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       displayName: starterStatus.displayName,
       project: projectId,
       type: "default",
+      color: starterStatus.color,
       position,
     });
     const insertedStatus = await ctx.db.get(statusId);

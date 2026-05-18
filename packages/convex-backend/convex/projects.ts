@@ -68,6 +68,7 @@ export const createProject = mutation({
         displayName: status.displayName,
         project: projectId,
         type: "default",
+        color: status.color,
         position,
       });
     }

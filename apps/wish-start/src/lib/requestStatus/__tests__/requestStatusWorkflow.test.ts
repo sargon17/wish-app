@@ -15,6 +15,7 @@ import {
   getManagementStatusesForProject,
   getNextWorkflowStatusPosition,
   getStarterProjectStatusNames,
+  getStarterProjectStatusColor,
   getStatusesWithAssignedWorkflowPositions,
   getOrderedStatusesForProject,
   normalizeStatusDisplayName,
@@ -37,6 +38,7 @@ describe("requestStatusWorkflow", () => {
     expect(normalizeLegacyStatusName("Under_Review")).toBe("under-review");
     expect(getCanonicalStatusName("completed")).toBe("done");
     expect(getStarterProjectStatusNames()).toEqual(["open", "under-review", "planned", "in-progress", "done"]);
+    expect(getStarterProjectStatusColor("completed")).toBe("#22c55e");
     expect(assertValidStatusName("  In Review  ")).toEqual({ displayName: "In Review", name: "in-review" });
   });
 
