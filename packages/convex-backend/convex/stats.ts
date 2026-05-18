@@ -1,3 +1,5 @@
+import type { QueryCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { buildRequestOverviewReadModel } from "./lib/requestOverviewReadModel";
 
@@ -25,18 +27,20 @@ export const requestOverview = query({
         .withIndex("by_user", (q) => q.eq("user", user._id))
         .collect();
 
+      const ownedProjectIds = projects.map((project) => project._id);
+
       const requests = (
         await Promise.all(
-          projects.map((project) =>
-            ctx.db.query("requests").withIndex("by_project", (q) => q.eq("project", project._id)).collect(),
+          ownedProjectIds.map((projectId) =>
+            ctx.db.query("requests").withIndex("by_project", (q) => q.eq("project", projectId)).collect(),
           ),
         )
       ).flat();
 
-      const statuses = await ctx.db.query("requestStatuses").collect();
+      const statuses = await loadRelevantRequestStatuses(ctx, ownedProjectIds);
       const overview = buildRequestOverviewReadModel({
         requests,
-        ownedProjectIds: projects.map((project) => project._id),
+        ownedProjectIds,
         projects,
         statuses,
         now: Date.now(),
@@ -49,3 +53,21 @@ export const requestOverview = query({
     }
   },
 });
+
+async function loadRelevantRequestStatuses(ctx: QueryCtx, ownedProjectIds: Id<"projects">[]) {
+  const statuses = await Promise.all([
+    ctx.db.query("requestStatuses").filter((q) => q.eq(q.field("project"), undefined)).collect(),
+    ...ownedProjectIds.map((projectId) =>
+      ctx.db.query("requestStatuses").withIndex("by_project", (q) => q.eq("project", projectId)).collect(),
+    ),
+  ]);
+
+  const dedupedStatuses = new Map<string, Doc<"requestStatuses">>();
+  for (const statusGroup of statuses) {
+    for (const status of statusGroup) {
+      dedupedStatuses.set(status._id.toString(), status);
+    }
+  }
+
+  return Array.from(dedupedStatuses.values());
+}
