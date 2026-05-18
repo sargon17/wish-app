@@ -65,7 +65,7 @@ Request body:
 Notes:
 - `text` must be at least 4 characters.
 - `project` should match the path `:id`.
-- The API sets the initial status to the project's `open` status.
+- The API sets the initial status to the project's first ordered status.
 
 Response:
 - `200` with `{}` on success.
@@ -75,6 +75,7 @@ Response:
 - `404` with `{ "error": "Not found", "code": "not_found" }` when the project or request cannot be used from this route, including hidden existence cases.
 - `429` with `{ "error": "Too many requests", "code": "rate_limited", "retryAfterMs": number }` when throttled.
 - Malformed JSON bodies also return `400 validation_failed` rather than a framework/default error response.
+- Explicit `status` fields are rejected with `400 validation_failed`.
 - For the complete stable contract, see [Errors & Status Codes](/reference/errors/).
 
 ## Delete request
