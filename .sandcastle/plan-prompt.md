@@ -4,7 +4,7 @@ Here are the open issues in the repo:
 
 <issues-json>
 
-!`gh issue list --state open --limit 200 --json number,title,body,labels,comments --jq '[.[] | select(([.labels[].name] | index("ready-for-agents")) or ([.labels[].name] | index("ready-for-agent"))) | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
+!`gh api 'repos/sargon17/wish-app/issues?state=open&per_page=100' --paginate --jq '[.[] | select(.pull_request|not) | select(([.labels[].name] | index("ready-for-agents")) or ([.labels[].name] | index("ready-for-agent"))) | {number, title, body, labels: [.labels[].name], comments: []}]'`
 
 </issues-json>
 

@@ -59,6 +59,66 @@ export const getByProjectInternal = internalQuery({
   },
 });
 
+export const repairProjectDefaults = mutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    await assertProjectOwner(ctx, args.projectId, user._id);
+
+    const existingProjectStatuses = await ctx.db
+      .query("requestStatuses")
+      .withIndex("by_project", (q) => q.eq("project", args.projectId))
+      .collect();
+    const projectStatusIdByName = new Map(existingProjectStatuses.map((status) => [status.name, status._id]));
+    const existingProjectStatusByName = new Map(existingProjectStatuses.map((status) => [status.name, status]));
+
+    for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
+      const existingStatus = existingProjectStatusByName.get(starterStatus.name);
+
+      if (existingStatus) {
+        await ctx.db.patch(existingStatus._id, {
+          displayName: starterStatus.displayName,
+          type: "default",
+          position: existingStatus.position ?? position,
+        });
+        continue;
+      }
+
+      const statusId = await ctx.db.insert("requestStatuses", {
+        name: starterStatus.name,
+        displayName: starterStatus.displayName,
+        project: args.projectId,
+        type: "default",
+        position,
+      });
+      projectStatusIdByName.set(starterStatus.name, statusId);
+    }
+
+    const projectRequests = await ctx.db
+      .query("requests")
+      .withIndex("by_project", (q) => q.eq("project", args.projectId))
+      .collect();
+    const projectStatusIds = new Set(Array.from(projectStatusIdByName.values()).map((statusId) => statusId.toString()));
+    const fallbackStatusId = projectStatusIdByName.get("open") ?? Array.from(projectStatusIdByName.values())[0];
+
+    for (const request of projectRequests) {
+      if (projectStatusIds.has(request.status.toString())) {
+        continue;
+      }
+
+      const legacyStatus = await ctx.db.get(request.status);
+      const legacyStatusName = legacyStatus?.name.replaceAll("_", "-");
+      const replacementStatusId = legacyStatusName
+        ? projectStatusIdByName.get(legacyStatusName) ?? projectStatusIdByName.get(legacyStatusName === "completed" ? "done" : legacyStatusName)
+        : fallbackStatusId;
+
+      if (replacementStatusId) {
+        await ctx.db.patch(request._id, { status: replacementStatusId });
+      }
+    }
+  },
+});
+
 export const create = mutation({
   args: {
     displayName: v.string(),
