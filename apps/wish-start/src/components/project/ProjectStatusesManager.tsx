@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import StatusCreationView from "../Status/StatusCreationView";
 import ProjectStatusCard from "./ProjectStatusCard";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, CardDescription } from "../ui/card";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 
@@ -92,11 +92,8 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
       </div>
 
       <Card className="border-border/70 bg-gradient-to-b from-card to-card/80">
-        <CardHeader>
-          <CardTitle>Statuses</CardTitle>
-          <CardDescription>One ordered list for every project-owned status.</CardDescription>
-        </CardHeader>
         <CardContent>
+          <CardDescription className="mb-4">One ordered list for every project-owned status.</CardDescription>
           <ol className="space-y-3">
             {projectStatuses.map((status, index) => (
               <li key={status._id}>
