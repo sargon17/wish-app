@@ -85,9 +85,10 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const statusesById = new Map(existingProjectStatuses.map((status) => [status._id.toString(), status]));
   const projectStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
+  const projectOwnedStatuses: Doc<"requestStatuses">[] = [...existingProjectStatuses];
   const starterNames = new Set(getStarterProjectStatusNames());
+  const legacyStatusById = new Map<string, Doc<"requestStatuses">>();
 
   for (const status of existingProjectStatuses) {
     const canonicalName = getCanonicalStatusName(status.name);
@@ -102,11 +103,12 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
   const legacyStatusesInUse: Doc<"requestStatuses">[] = [];
 
   for (const statusId of referencedLegacyIds) {
-    const legacyStatus = statusesById.get(statusId);
+    const legacyStatus = await ctx.db.get(statusId as Id<"requestStatuses">);
     if (!legacyStatus || legacyStatus.project) {
       continue;
     }
 
+    legacyStatusById.set(statusId, legacyStatus);
     legacyStatusesInUse.push(legacyStatus);
   }
 
@@ -134,6 +136,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
           displayName: starterStatus.displayName,
           type: "default",
         });
+        changed = true;
       }
 
       projectStatusIdByCanonicalName.set(canonicalName, existingStatus._id);
@@ -149,6 +152,11 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       type: "default",
       position,
     });
+    const insertedStatus = await ctx.db.get(statusId);
+    if (insertedStatus) {
+      projectOwnedStatuses.push(insertedStatus);
+      projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+    }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
     includedStatusIds.add(statusId.toString());
     statusesInserted += 1;
@@ -181,6 +189,11 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       color: legacyStatus.color,
       position: undefined,
     });
+    const insertedStatus = await ctx.db.get(statusId);
+    if (insertedStatus) {
+      projectOwnedStatuses.push(insertedStatus);
+      projectStatusByCanonicalName.set(canonicalName, insertedStatus);
+    }
     projectStatusIdByCanonicalName.set(canonicalName, statusId);
     includedStatusIds.add(statusId.toString());
     statusesInserted += 1;
@@ -194,7 +207,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
       continue;
     }
 
-    const legacyStatus = statusesById.get(request.status.toString());
+    const legacyStatus = legacyStatusById.get(request.status.toString()) ?? await ctx.db.get(request.status);
     const canonicalName = legacyStatus ? getCanonicalStatusName(legacyStatus.name) : undefined;
     const replacementStatusId = canonicalName
       ? projectStatusIdByCanonicalName.get(canonicalName)
@@ -226,7 +239,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
     }
   }
 
-  for (const status of existingProjectStatuses) {
+  for (const status of projectOwnedStatuses) {
     if (status.project !== projectId || status.type !== "custom") {
       continue;
     }
@@ -256,7 +269,7 @@ async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"projects"
   let statusesReindexed = 0;
 
   for (const [index, status] of orderedUniqueStatuses.entries()) {
-    const original = existingProjectStatuses.find((item) => item._id === status._id);
+    const original = projectOwnedStatuses.find((item) => item._id === status._id);
     if (!original || original.position !== index) {
       statusesReindexed += 1;
       await ctx.db.patch(status._id, { position: index });
