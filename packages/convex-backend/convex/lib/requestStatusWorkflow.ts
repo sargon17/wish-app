@@ -65,15 +65,11 @@ export function assertValidStatusColor(color?: string) {
   }
 }
 
-export function assertCustomStatusEditable(
+export function assertProjectStatusEditable(
   status: Doc<"requestStatuses"> | null | undefined,
 ): Doc<"requestStatuses"> & { project: Id<"projects"> } {
   if (!status) {
     throw new Error("Status not found");
-  }
-
-  if (status.type === "default") {
-    throw new Error("Default statuses cannot be updated");
   }
 
   if (!status.project) {
@@ -86,6 +82,12 @@ export function assertCustomStatusEditable(
 export function assertCustomStatusRemovable(linkedRequest: Doc<"requests"> | null | undefined) {
   if (linkedRequest) {
     throw new Error("Statuses in use cannot be removed");
+  }
+}
+
+export function assertProjectCanRemoveStatus(statuses: Doc<"requestStatuses">[]) {
+  if (statuses.length <= 1) {
+    throw new Error("A project must keep at least one status");
   }
 }
 

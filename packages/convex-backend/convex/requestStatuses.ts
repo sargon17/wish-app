@@ -4,7 +4,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
-  assertCustomStatusEditable,
+  assertProjectCanRemoveStatus,
+  assertProjectStatusEditable,
   assertCustomStatusRemovable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
@@ -173,7 +174,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = assertCustomStatusEditable(await ctx.db.get(args.id));
+    const status = assertProjectStatusEditable(await ctx.db.get(args.id));
 
     await assertProjectOwner(ctx, status.project, user._id);
 
@@ -214,10 +215,12 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = assertCustomStatusEditable(await ctx.db.get(args.id));
+    const status = assertProjectStatusEditable(await ctx.db.get(args.id));
     const projectId = status.project;
 
     await assertProjectOwner(ctx, projectId, user._id);
+    const statuses = await getOrderedStatusesForProject(ctx, projectId);
+    assertProjectCanRemoveStatus(statuses);
 
     const linkedRequest = await ctx.db
       .query("requests")
@@ -237,7 +240,7 @@ export const updateColor = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = assertCustomStatusEditable(await ctx.db.get(args.id));
+    const status = assertProjectStatusEditable(await ctx.db.get(args.id));
     const projectId = status.project;
 
     await assertProjectOwner(ctx, projectId, user._id);

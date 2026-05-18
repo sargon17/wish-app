@@ -96,7 +96,7 @@ export default function StatusCreationView({
         <DialogHeader>
           <DialogTitle>Create a new status</DialogTitle>
           <DialogDescription>
-            Add a custom workflow stage for this project. It will appear after the default statuses.
+            Add a workflow stage for this project. It will appear at the end of the ordered project statuses.
           </DialogDescription>
         </DialogHeader>
 

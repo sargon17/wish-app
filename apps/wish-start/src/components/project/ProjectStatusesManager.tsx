@@ -119,7 +119,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
               <ListOrdered className="size-4 text-orange-300" />
               Workflow order
             </CardTitle>
-            <CardDescription>Any status can move, while defaults stay locked for edits and removal.</CardDescription>
+            <CardDescription>Any project status can move, edit, recolor, and be removed when board rules allow it.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-semibold">{projectStatuses.length}</div>
@@ -145,7 +145,7 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
         <CardHeader>
           <CardTitle>Project statuses</CardTitle>
           <CardDescription>
-            Shared system statuses stay locked for edits and removal. Reordering updates the project workflow for every status.
+            Project workflow statuses share one ordered list. Reordering updates the workflow for every status.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -156,11 +156,12 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
                 requestCount={status.requestCount}
                 canMoveUp={index > 0}
                 canMoveDown={index < projectStatuses.length - 1}
+                isLastStatus={projectStatuses.length <= 1}
                 isReordering={isReordering}
                 onMoveUp={() => moveStatus(status._id, "up")}
                 onMoveDown={() => moveStatus(status._id, "down")}
               />
-              {index < statuses.length - 1 ? <Separator /> : null}
+              {index < projectStatuses.length - 1 ? <Separator /> : null}
             </div>
           ))}
         </CardContent>

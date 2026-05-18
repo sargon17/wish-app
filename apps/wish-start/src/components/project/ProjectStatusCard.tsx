@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Lock, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Save, Trash2 } from "lucide-react";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
 
@@ -31,13 +31,13 @@ export default function ProjectStatusCard({
   requestCount,
   canMoveUp = false,
   canMoveDown = false,
+  isLastStatus = false,
   isReordering = false,
   onMoveUp,
   onMoveDown,
 }: {
   status: {
     _id: Id<"requestStatuses">;
-    type: "custom" | "default";
     displayName: string;
     description?: string;
     color?: string | null;
@@ -45,6 +45,7 @@ export default function ProjectStatusCard({
   requestCount: number;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  isLastStatus?: boolean;
   isReordering?: boolean;
   onMoveUp?: () => Promise<void> | void;
   onMoveDown?: () => Promise<void> | void;
@@ -57,7 +58,6 @@ export default function ProjectStatusCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const isDefault = status.type === "default";
 
   useEffect(() => {
     setDisplayName(status.displayName);
@@ -75,7 +75,7 @@ export default function ProjectStatusCard({
   }, [cleanDescription, cleanDisplayName, color, status.color, status.description, status.displayName]);
 
   async function handleSave() {
-    if (isDefault || isSaving || isInvalidName || !isDirty) {
+    if (isSaving || isInvalidName || !isDirty) {
       return;
     }
 
@@ -98,7 +98,7 @@ export default function ProjectStatusCard({
   }
 
   async function handleDelete() {
-    if (isDefault || isDeleting) {
+    if (isDeleting) {
       return;
     }
 
@@ -122,43 +122,6 @@ export default function ProjectStatusCard({
     setColor(status.color ?? "#f97316");
   }
 
-  if (isDefault) {
-    return (
-      <Card size="sm" className="border-border/70 bg-muted/20">
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1 text-sm font-medium">
-                  <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />
-                  {status.displayName}
-                </span>
-                <Badge variant="secondary">{requestCount} requests</Badge>
-                <Badge variant="outline" className="gap-1 text-muted-foreground">
-                  <Lock className="size-3" />
-                  Locked default
-                </Badge>
-              </div>
-              <p className="max-w-2xl text-sm text-muted-foreground">
-                {status.description ?? "This system status is shared across projects and cannot be renamed or removed here."}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={!canMoveUp || isReordering} onClick={() => void onMoveUp?.()}>
-                <ArrowUp className="size-4" />
-                Up
-              </Button>
-              <Button type="button" variant="outline" size="sm" disabled={!canMoveDown || isReordering} onClick={() => void onMoveDown?.()}>
-                <ArrowDown className="size-4" />
-                Down
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card size="sm" className="border-border/70 bg-background/60 backdrop-blur-sm">
       <CardContent className="space-y-4">
@@ -170,11 +133,10 @@ export default function ProjectStatusCard({
                 {previewName}
               </span>
               <Badge variant="secondary">{requestCount} requests</Badge>
-              <Badge variant="outline">Custom</Badge>
             </div>
 
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Custom statuses can be renamed, recolored, described, and reordered for this project.
+              Project workflow statuses can be renamed, recolored, described, and reordered.
             </p>
           </div>
 
@@ -190,7 +152,7 @@ export default function ProjectStatusCard({
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" disabled={requestCount > 0 || isDeleting}>
+                <Button type="button" variant="outline" size="sm" disabled={requestCount > 0 || isDeleting || isLastStatus}>
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
@@ -199,7 +161,8 @@ export default function ProjectStatusCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete {status.displayName}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This removes the custom status permanently. Deletion is only allowed when no requests still reference it.
+                    This removes the workflow status permanently. Deletion is only allowed when no requests still reference it
+                    and the project has at least one other status.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -225,11 +188,10 @@ export default function ProjectStatusCard({
               id={`status-name-${status._id}`}
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              disabled={isDefault}
-              aria-invalid={!isDefault && isInvalidName}
+              aria-invalid={isInvalidName}
               placeholder="In review"
             />
-            {!isDefault && isInvalidName ? (
+            {isInvalidName ? (
               <p className="text-xs text-destructive">Use at least 2 readable characters.</p>
             ) : null}
           </div>
@@ -242,7 +204,6 @@ export default function ProjectStatusCard({
                 type="color"
                 value={color}
                 onChange={(event) => setColor(event.target.value)}
-                disabled={isDefault}
                 className="h-9 w-11 cursor-pointer rounded border-0 bg-transparent p-0 disabled:cursor-not-allowed"
               />
               <span className="font-mono text-xs text-muted-foreground">{color.toLowerCase()}</span>
@@ -256,14 +217,17 @@ export default function ProjectStatusCard({
             id={`status-description-${status._id}`}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            disabled={isDefault}
             placeholder="Explain when requests should move into this status."
           />
         </div>
 
         <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            {requestCount > 0 ? "Delete is disabled while requests still use this status." : "Unused custom statuses can be deleted."}
+            {isLastStatus
+              ? "This project needs at least one status."
+              : requestCount > 0
+                ? "Delete is disabled while requests still use this status."
+                : "Unused project statuses can be deleted."}
           </p>
 
           <div className="flex items-center gap-2">

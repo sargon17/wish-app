@@ -3,8 +3,9 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Id } from "@wish/convex-backend/data-model";
 
 import {
-  assertCustomStatusEditable,
   assertCustomStatusRemovable,
+  assertProjectCanRemoveStatus,
+  assertProjectStatusEditable,
   assertNoDuplicateStatusName,
   assertValidCustomOrderPayload,
   assertValidStatusColor,
@@ -61,19 +62,17 @@ describe("requestStatusWorkflow", () => {
     );
   });
 
-  it("validates workflow reorder payloads and editable status constraints", () => {
+  it("validates workflow reorder payloads and editable project status constraints", () => {
     const projectId = "project-1" as Id<"projects">;
     const status = {
       _id: "status-1",
-      type: "custom",
+      type: "default",
       project: projectId,
       position: 0,
     } as any;
 
-    expect(assertCustomStatusEditable(status)).toBe(status);
-    expect(() => assertCustomStatusEditable({ _id: "status-2", type: "default" } as any)).toThrow(
-      "Default statuses cannot be updated",
-    );
+    expect(assertProjectStatusEditable(status)).toBe(status);
+    expect(() => assertProjectStatusEditable({ _id: "status-2" } as any)).toThrow("Status is not linked to a project");
 
     const statuses = [
       { _id: "status-0", type: "default", project: projectId },
@@ -110,6 +109,10 @@ describe("requestStatusWorkflow", () => {
       ),
     ).toThrow("Invalid status order payload");
 
+    expect(() => assertProjectCanRemoveStatus([{ _id: "status-1" } as any])).toThrow(
+      "A project must keep at least one status",
+    );
+    expect(() => assertProjectCanRemoveStatus([{ _id: "status-1" } as any, { _id: "status-2" } as any])).not.toThrow();
     expect(getNextWorkflowStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
   });
 

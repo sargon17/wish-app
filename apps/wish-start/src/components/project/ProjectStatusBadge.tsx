@@ -25,7 +25,6 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
   const initialColor = status.color ?? "#fff";
   const [color, setColor] = useState(initialColor);
   const [isSaving, setIsSaving] = useState(false);
-  const isDefault = status.type === "default";
   const isChanging = color !== initialColor;
   const updateStatusColor = useMutation(api.requestStatuses.updateColor);
 
@@ -50,10 +49,10 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
 
     try {
       await updateStatusColor({ color, id: status._id });
+      toast.info("Color updated");
     } catch {
       toast.error("Could not update color");
     } finally {
-      toast.info("Color updated")
       setIsSaving(false);
     }
   }, [color, isChanging, isSaving, status._id, updateStatusColor]);
@@ -63,19 +62,8 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
     <Badge variant="secondary" className="flex items-center gap-2 pr-3">
       <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
       <span>{status.displayName}</span>
-      {isDefault && (
-        <span className="text-[10px] text-muted-foreground uppercase">Default</span>
-      )}
     </Badge>
   );
-
-  if (isDefault) {
-    return (
-      <li key={status._id} className="cursor-not-allowed opacity-80">
-        {badge}
-      </li>
-    );
-  }
 
   return (
     <li key={status._id}>
