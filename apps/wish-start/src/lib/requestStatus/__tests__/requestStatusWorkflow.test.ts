@@ -22,7 +22,9 @@ import {
   slugifyStatusName,
   sortDefaultStatuses,
 } from "../../../../../../packages/convex-backend/convex/lib/requestStatusWorkflow";
-import { buildProjectStatusMigrationOrder } from "../../../../../../packages/convex-backend/convex/requestStatuses";
+import {
+  migrateProjectStatuses,
+} from "../../../../../../packages/convex-backend/convex/requestStatuses";
 
 describe("requestStatusWorkflow", () => {
   it("normalizes and slugifies status names consistently", () => {
@@ -260,29 +262,161 @@ describe("requestStatusWorkflow", () => {
     ]);
   });
 
-  it("builds a stable project migration order with starter reuse and legacy copies", () => {
-    const projectStatuses = [
-      { _id: "project-open", name: "Open", displayName: "Open", project: "project-1", type: "custom", position: 9, _creationTime: 9 },
-      { _id: "project-custom", name: "feature-ideas", displayName: "Feature Ideas", project: "project-1", type: "custom", position: 20, _creationTime: 20 },
-    ] as any;
-    const legacyStatuses = [
-      { _id: "legacy-completed", name: "completed", displayName: "Completed", project: undefined, type: "default", position: undefined, _creationTime: 1, color: "#000000" },
-      { _id: "legacy-needs-review", name: "needs_review", displayName: "Needs Review", project: undefined, type: "default", position: undefined, _creationTime: 2, color: "#111111" },
-    ] as any;
+  it("migrates legacy default request statuses onto project-owned copies without duplicating work", async () => {
+    const projectId = "project-1" as Id<"projects">;
+    const ids = {
+      projectCustom: "status-project-custom",
+      legacyCompleted: "status-legacy-completed",
+      legacyNeedsReview: "status-legacy-needs-review",
+      legacyUnused: "status-legacy-unused",
+      requestDone: "request-1",
+      requestNeedsReview: "request-2",
+    } as const;
 
-    const firstPass = buildProjectStatusMigrationOrder(projectStatuses, legacyStatuses);
-    const secondPass = buildProjectStatusMigrationOrder(projectStatuses, legacyStatuses);
+    const state = {
+      requestStatuses: [
+        {
+          _id: ids.projectCustom,
+          _creationTime: 50,
+          name: "feature-ideas",
+          displayName: "Feature Ideas",
+          description: "Project-owned custom status",
+          color: "#123456",
+          project: projectId,
+          type: "custom",
+          position: 0,
+        },
+        {
+          _id: ids.legacyCompleted,
+          _creationTime: 1,
+          name: "completed",
+          displayName: "Completed",
+          description: "Legacy done bucket",
+          color: "#111111",
+          project: undefined,
+          type: "default",
+          position: undefined,
+        },
+        {
+          _id: ids.legacyNeedsReview,
+          _creationTime: 2,
+          name: "needs_review",
+          displayName: "Needs Review",
+          description: "Legacy non-starter bucket",
+          color: "#222222",
+          project: undefined,
+          type: "default",
+          position: undefined,
+        },
+        {
+          _id: ids.legacyUnused,
+          _creationTime: 3,
+          name: "unused",
+          displayName: "Unused",
+          description: "Should stay global",
+          color: "#333333",
+          project: undefined,
+          type: "default",
+          position: undefined,
+        },
+      ],
+      requests: [
+        { _id: ids.requestDone, _creationTime: 10, project: projectId, status: ids.legacyCompleted },
+        { _id: ids.requestNeedsReview, _creationTime: 11, project: projectId, status: ids.legacyNeedsReview },
+      ],
+      inserts: [] as Array<{ table: string; value: any }>,
+      patches: [] as Array<{ table: string; id: string; value: any }>,
+    };
 
-    expect(firstPass.orderedStatuses.map((status) => status._id)).toEqual([
-      "project-open",
-      "legacy-completed",
-      "legacy-needs-review",
-      "project-custom",
+    const ctx = {
+      db: {
+        query: (table: string) => ({
+          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+            expect(indexName).toBe("by_project");
+            predicate({ eq: () => undefined });
+
+            return {
+              collect: async () => {
+                if (table === "requestStatuses") {
+                  return state.requestStatuses.filter((status) => status.project === projectId);
+                }
+
+                if (table === "requests") {
+                  return state.requests.filter((request) => request.project === projectId);
+                }
+
+                return [];
+              },
+              first: async () => undefined,
+            };
+          },
+        }),
+        get: async (id: string) => {
+          return (
+            state.requestStatuses.find((status) => status._id === id) ??
+            state.requests.find((request) => request._id === id)
+          );
+        },
+        insert: async (table: string, value: any) => {
+          const id = `${table}-${state.inserts.length + 1}`;
+          state.inserts.push({ table, value: { ...value, _id: id } });
+          if (table === "requestStatuses") {
+            state.requestStatuses.push({
+              _id: id,
+              _creationTime: 100 + state.inserts.length,
+              ...value,
+            });
+          }
+          return id;
+        },
+        patch: async (id: string, value: any) => {
+          state.patches.push({ table: "unknown", id, value });
+          const status = state.requestStatuses.find((item) => item._id === id);
+          if (status) {
+            Object.assign(status, value);
+          }
+          const request = state.requests.find((item) => item._id === id);
+          if (request) {
+            Object.assign(request, value);
+          }
+        },
+      },
+    } as any;
+
+    const firstPass = await migrateProjectStatuses(ctx, projectId);
+    const secondPass = await migrateProjectStatuses(ctx, projectId);
+
+    expect(firstPass).toMatchObject({
+      projectId,
+      statusesInserted: 6,
+      statusesReused: 0,
+      requestsPatched: 2,
+      statusesReindexed: expect.any(Number),
+      changed: true,
+    });
+    expect(secondPass).toMatchObject({
+      statusesInserted: 0,
+      requestsPatched: 0,
+      changed: false,
+    });
+
+    const projectStatuses = state.requestStatuses.filter((status) => status.project === projectId);
+    expect(projectStatuses.map((status) => status.name)).toEqual([
+      "open",
+      "under-review",
+      "planned",
+      "in-progress",
+      "done",
+      "needs-review",
+      "feature-ideas",
     ]);
-    expect(firstPass.projectStatusByCanonicalName.get("open")).toBe(projectStatuses[0]);
-    expect(firstPass.projectStatusByCanonicalName.get("done")).toMatchObject({ _id: "legacy-completed" });
-    expect(firstPass.projectStatusByCanonicalName.get("needs-review")).toMatchObject({ _id: "legacy-needs-review" });
-    expect(firstPass.insertedLegacyStatusIds.size).toBe(2);
-    expect(secondPass.orderedStatuses.map((status) => status._id)).toEqual(firstPass.orderedStatuses.map((status) => status._id));
+    expect(projectStatuses.map((status) => status.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(state.requests.map((request) => request.status)).toEqual([
+      projectStatuses.find((status) => status.name === "done")?._id,
+      projectStatuses.find((status) => status.name === "needs-review")?._id,
+    ]);
+    expect(state.requestStatuses.some((status) => status._id === ids.legacyCompleted && status.project === undefined)).toBe(true);
+    expect(state.requestStatuses.some((status) => status._id === ids.legacyNeedsReview && status.project === undefined)).toBe(true);
+    expect(state.requestStatuses.some((status) => status._id === ids.legacyUnused && status.project === undefined)).toBe(true);
   });
 });
