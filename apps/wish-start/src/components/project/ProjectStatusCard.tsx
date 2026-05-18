@@ -115,7 +115,7 @@ export default function ProjectStatusCard({
 
     try {
       await removeStatus({
-        id: status._id,
+        statusId: status._id,
         replacementStatusId,
       });
       setIsDeleteDialogOpen(false);

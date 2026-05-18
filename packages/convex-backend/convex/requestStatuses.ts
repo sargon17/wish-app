@@ -211,12 +211,12 @@ export const reorder = mutation({
 
 export const remove = mutation({
   args: {
-    id: v.id("requestStatuses"),
+    statusId: v.id("requestStatuses"),
     replacementStatusId: v.optional(v.id("requestStatuses")),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const status = assertProjectStatusEditable(await ctx.db.get(args.id));
+    const status = assertProjectStatusEditable(await ctx.db.get(args.statusId));
     const projectId = status.project;
 
     await assertProjectOwner(ctx, projectId, user._id);
@@ -225,7 +225,7 @@ export const remove = mutation({
 
     const linkedRequests = await ctx.db
       .query("requests")
-      .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.id))
+      .withIndex("by_project_status", (q) => q.eq("project", projectId).eq("status", args.statusId))
       .collect();
 
     if (linkedRequests.length > 0) {
@@ -239,7 +239,7 @@ export const remove = mutation({
       await Promise.all(linkedRequests.map((request) => ctx.db.patch(request._id, { status: replacementStatus._id })));
     }
 
-    await ctx.db.delete(args.id);
+    await ctx.db.delete(args.statusId);
   },
 });
 
