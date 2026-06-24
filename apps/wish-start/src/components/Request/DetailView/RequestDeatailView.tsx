@@ -26,12 +26,14 @@ interface Props {
   children: ReactNode;
   request: Doc<"requests">;
   upvotedSet: Set<Doc<"requests">["_id"]>;
+  showUpvoteButton?: boolean;
 }
 
 export default function RequestDetailView({
   children,
   request,
   upvotedSet,
+  showUpvoteButton = true,
 }: Props) {
   const [activeRequestId, setActiveRequestId] = useState(request._id);
 
@@ -88,13 +90,15 @@ export default function RequestDetailView({
             <DialogHeader>
               <div className="flex flex-wrap items-center gap-3">
                 <DialogTitle className="capitalize">{activeRequest.text}</DialogTitle>
-                <RequestUpvoteButton
-                  requestId={activeRequest._id}
-                  projectId={activeRequest.project}
-                  upvoteCount={activeUpvoteCount}
-                  isUpvoted={activeIsUpvoted}
-                  size="default"
-                />
+                {showUpvoteButton ? (
+                  <RequestUpvoteButton
+                    requestId={activeRequest._id}
+                    projectId={activeRequest.project}
+                    upvoteCount={activeUpvoteCount}
+                    isUpvoted={activeIsUpvoted}
+                    size="default"
+                  />
+                ) : null}
                 {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
               </div>
               <div>

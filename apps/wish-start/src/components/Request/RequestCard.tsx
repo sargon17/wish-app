@@ -12,9 +12,10 @@ import RequestUpvoteButton from "./RequestUpvoteButton";
 interface Props {
   request: Doc<"requests">;
   upvotedSet: Set<Doc<"requests">["_id"]>;
+  showUpvoteButton?: boolean;
 }
 
-export default function RequestCard({ request, upvotedSet }: Props) {
+export default function RequestCard({ request, upvotedSet, showUpvoteButton = true }: Props) {
   const upvoteCount = request.upvoteCount ?? 0;
   const isUpvoted = upvotedSet.has(request._id);
 
@@ -22,6 +23,7 @@ export default function RequestCard({ request, upvotedSet }: Props) {
     <RequestDetailView
       request={request}
       upvotedSet={upvotedSet}
+      showUpvoteButton={showUpvoteButton}
     >
       <Card
         draggable
@@ -40,12 +42,14 @@ export default function RequestCard({ request, upvotedSet }: Props) {
           <CardTitle className=" capitalize">{request.text}</CardTitle>
           <CardAction className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <RequestCardActions request={request} />
-            <RequestUpvoteButton
-              requestId={request._id}
-              projectId={request.project}
-              upvoteCount={upvoteCount}
-              isUpvoted={isUpvoted}
-            />
+            {showUpvoteButton ? (
+              <RequestUpvoteButton
+                requestId={request._id}
+                projectId={request.project}
+                upvoteCount={upvoteCount}
+                isUpvoted={isUpvoted}
+              />
+            ) : null}
           </CardAction>
         </CardHeader>
         {request.description && (
