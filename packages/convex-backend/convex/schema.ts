@@ -42,6 +42,7 @@ export default defineSchema({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
+    kind: v.optional(v.union(v.literal("request"), v.literal("complaint"))),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
     upvoteCount: v.optional(v.number()),

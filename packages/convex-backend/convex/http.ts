@@ -105,6 +105,7 @@ app.get("/api/project/:id/upvotes", async (c) => {
 const RequestValidator = type({
   text: "string > 3",
   "description?": "string | undefined",
+  "kind?": "\"request\" | \"complaint\" | undefined",
   project: "string",
   clientId: "string",
 });
@@ -168,6 +169,7 @@ app.post("/api/project/:id/request/", async (c) => {
       text: body.text,
       description: body.description,
       clientId: body.clientId,
+      kind: body.kind,
     });
     if (!result.ok) {
       return publicErrorJson(c, result.error);

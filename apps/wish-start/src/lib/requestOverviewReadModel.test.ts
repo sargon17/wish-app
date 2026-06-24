@@ -131,6 +131,35 @@ describe("requestOverviewReadModel", () => {
     });
   });
 
+  it("excludes complaints from request overview totals while keeping legacy requests", () => {
+    const now = Date.UTC(2026, 0, 19, 12, 0, 0);
+    const overview = buildRequestOverviewReadModel({
+      requests: [
+        requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 9, 0, 0)),
+        requestDoc("complaint-1", project1, statusClosed, Date.UTC(2026, 0, 19, 10, 0, 0), "complaint"),
+      ],
+      ownedProjectIds: [project1],
+      projects: [projectDoc(project1, "Alpha")],
+      statuses: [
+        statusDoc(statusOpen, "open", "Open", project1),
+        statusDoc(statusClosed, "closed", "Closed", project1),
+      ],
+      now,
+    });
+
+    expect(overview.totalRequests).toBe(1);
+    expect(overview.statusBreakdown).toEqual([
+      {
+        statusId: statusOpen,
+        name: "open",
+        count: 1,
+        color: null,
+        displayName: "Open",
+      },
+    ]);
+    expect(overview.weeklyTrend.at(-1)?.count).toBe(1);
+  });
+
   it("falls back to unknown status and project labels when metadata is missing", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [requestDoc("request-1", project1, statusUnknown, Date.UTC(2026, 0, 19, 9, 0, 0))],
@@ -264,6 +293,7 @@ function requestDoc(
   project: Id<"projects">,
   status: Id<"requestStatuses">,
   creationTime: number,
+  kind?: "request" | "complaint",
 ): Doc<"requests"> {
   return {
     _id: id as Id<"requests">,
@@ -271,6 +301,7 @@ function requestDoc(
     text: id,
     description: undefined,
     clientId: id,
+    kind,
     status,
     project,
     upvoteCount: 0,

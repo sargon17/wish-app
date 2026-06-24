@@ -1,10 +1,16 @@
 import { v } from "convex/values";
 
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
+
+const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
+
+function requestKind(request: Doc<"requests">) {
+  return request.kind ?? "request";
+}
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   const request = await ctx.db.get(id);
@@ -29,17 +35,18 @@ async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
 }
 
 export const getByProject = query({
-  args: { id: v.id("projects") },
+  args: { id: v.id("projects"), kind: v.optional(requestKindValidator) },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.id, user._id);
+    const kind = args.kind ?? "request";
 
     const requests = await ctx.db
       .query("requests")
       .withIndex("by_project", (q) => q.eq("project", args.id))
       .collect();
 
-    return requests;
+    return requests.filter((request) => requestKind(request) === kind);
   },
 });
 
@@ -62,6 +69,7 @@ export const getByClientId = query({
         .collect();
 
       const filtered = requests
+        .filter((request) => requestKind(request) === "request")
         .filter((request) => request._id !== args.excludeId)
         .sort((a, b) => b._creationTime - a._creationTime);
 
@@ -82,12 +90,15 @@ export const getRequestByIdInternal = internalQuery({
 });
 
 export const getByProjectInternal = internalQuery({
-  args: { id: v.id("projects") },
+  args: { id: v.id("projects"), kind: v.optional(requestKindValidator) },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const kind = args.kind ?? "request";
+    const requests = await ctx.db
       .query("requests")
       .withIndex("by_project", (q) => q.eq("project", args.id))
       .collect();
+
+    return requests.filter((request) => requestKind(request) === kind);
   },
 });
 
@@ -118,12 +129,13 @@ export const create = mutation({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
+    kind: v.optional(requestKindValidator),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
     await assertStatusBelongsToProject(ctx, args.status, args.project);
-    await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
+    await ctx.db.insert("requests", { ...args, kind: args.kind ?? "request", upvoteCount: 0 });
   },
 });
 

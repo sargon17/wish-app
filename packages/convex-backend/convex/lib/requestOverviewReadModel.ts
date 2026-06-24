@@ -71,7 +71,9 @@ export function formatWeekLabel(timestamp: number): string {
 }
 
 function filterOwnedRequests(requests: Doc<"requests">[], ownedProjectIds: Set<string>) {
-  return requests.filter((request) => ownedProjectIds.has(request.project.toString()));
+  return requests.filter(
+    (request) => ownedProjectIds.has(request.project.toString()) && (request.kind ?? "request") === "request",
+  );
 }
 
 function buildStatusLookup(statuses: Doc<"requestStatuses">[], ownedProjectIds: Set<string>) {

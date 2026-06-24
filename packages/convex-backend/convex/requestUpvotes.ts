@@ -21,6 +21,10 @@ export const toggle = mutation({
         throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
+      if ((request.kind ?? "request") === "complaint") {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
+      }
+
       const user = await getCurrentUserOrNull(ctx);
       let userId: Id<"users"> | undefined;
 
