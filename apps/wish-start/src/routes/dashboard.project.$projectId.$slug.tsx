@@ -1,5 +1,5 @@
 import { Link, Outlet, createFileRoute, useLocation } from '@tanstack/react-router'
-import { Cog, Newspaper, Plus } from 'lucide-react'
+import { AlertTriangle, Cog, Newspaper, Plus } from 'lucide-react'
 
 import DashboardBoard from '@/components/dashboard/DashboardBoard'
 import DashboardHeading from '@/components/dashboard/DashboardHeading'
@@ -18,7 +18,7 @@ function ProjectDetails() {
   const { projectId, slug } = Route.useParams()
   const { isLoading, isAuthenticated } = useStoreUserEffect()
   const location = useLocation()
-  const isChangelogView = location.pathname.endsWith('/changelog')
+  const isChildView = location.pathname.endsWith('/changelog') || location.pathname.endsWith('/complaints')
 
   if (isLoading) {
     return (
@@ -36,7 +36,7 @@ function ProjectDetails() {
     )
   }
 
-  if (isChangelogView) {
+  if (isChildView) {
     return <Outlet />
   }
 
@@ -62,6 +62,13 @@ function ProjectDetails() {
                 <Link to="/dashboard/project/$projectId/$slug/changelog" params={{ projectId, slug }}>
                   <Newspaper />
                   Changelog
+                </Link>
+              </Button>
+
+              <Button className="shrink-0" variant="outline" asChild>
+                <Link to="/dashboard/project/$projectId/$slug/complaints" params={{ projectId, slug }}>
+                  <AlertTriangle />
+                  Complaints
                 </Link>
               </Button>
 
