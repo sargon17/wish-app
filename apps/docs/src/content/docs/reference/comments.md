@@ -1,6 +1,6 @@
 ---
 title: Comments API
-description: List and create comments on a request.
+description: List, create, and delete comments on a request.
 ---
 
 ## List comments
@@ -53,6 +53,24 @@ Response:
 - `200` with `{}` on success.
 - Public failures use the stable error contract documented in [Errors & Status Codes](/reference/errors/).
 - Common responses include `400 validation_failed`, `401 missing_api_key` or `invalid_api_key`, `403 insufficient_scope` or `forbidden`, `404 not_found`, and `429 rate_limited`.
+- Hidden-existence checks keep request, project, and comment mismatches on `404 not_found` rather than exposing ownership details.
+
+## Delete comment
+
+`DELETE /api/project/:id/request/:reqID/comment/:commentId?clientId=<clientId>`
+
+Auth:
+- Public callers must send the same `clientId` that created the comment.
+
+Notes:
+- Public deletion only works for comments stored as `authorType: client`.
+- A public caller cannot delete Project Owner comments or comments created by another `clientId`.
+- Project Owner dashboard deletion uses the authenticated app flow, not API-key access.
+
+Response:
+- `200` with `{}` on success.
+- Public failures use the stable error contract documented in [Errors & Status Codes](/reference/errors/).
+- Common responses include `400 validation_failed`, `403 forbidden`, and `404 not_found`.
 - Hidden-existence checks keep request, project, and comment mismatches on `404 not_found` rather than exposing ownership details.
 
 ## Comment object shape

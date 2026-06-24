@@ -6,6 +6,7 @@ import { createApiKeyRecord } from "./apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { ensureProjectPublicChangelogSlug } from "./lib/projectChangelog";
 import { toPublicProject } from "./lib/projectPublic";
+import { createUniqueProjectSlug } from "./lib/projectSlug";
 import { STARTER_PROJECT_STATUSES } from "./lib/requestStatusStarterData";
 
 // export const getForCurrentUser = query({
@@ -56,10 +57,18 @@ export const createProject = mutation({
   args: { title: v.string() },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
+    const title = args.title.trim();
+
+    if (title.length < 3) {
+      throw new Error("Project title must be at least 3 characters long");
+    }
+
+    const projectSlug = await createUniqueProjectSlug(ctx, title);
 
     const projectId = await ctx.db.insert("projects", {
-      title: args.title,
+      title,
       user: user._id,
+      projectSlug,
     });
 
     for (const [position, status] of STARTER_PROJECT_STATUSES.entries()) {
@@ -83,6 +92,44 @@ export const createProject = mutation({
     });
 
     return { projectId, apiKey };
+  },
+});
+
+export const publishSuggestionPortal = mutation({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const project = await assertProjectOwner(ctx, args.id, user._id);
+    const projectSlug = project.projectSlug ?? await createUniqueProjectSlug(ctx, project.title);
+    const suggestionPortalPublishedAt = project.suggestionPortalPublishedAt ?? Date.now();
+
+    await ctx.db.patch(project._id, {
+      projectSlug,
+      suggestionPortalPublishedAt,
+    });
+
+    return toPublicProject({
+      ...project,
+      projectSlug,
+      suggestionPortalPublishedAt,
+    });
+  },
+});
+
+export const unpublishSuggestionPortal = mutation({
+  args: { id: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const project = await assertProjectOwner(ctx, args.id, user._id);
+
+    await ctx.db.patch(project._id, {
+      suggestionPortalPublishedAt: undefined,
+    });
+
+    return toPublicProject({
+      ...project,
+      suggestionPortalPublishedAt: undefined,
+    });
   },
 });
 
@@ -131,6 +178,32 @@ export const getProjectByPublicChangelogSlugInternal = internalQuery({
       .query("projects")
       .withIndex("by_public_changelog_slug", (q) => q.eq("publicChangelogSlug", args.slug))
       .unique();
+  },
+});
+
+export const backfillMissingProjectSlugs = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_user", (q) => q.eq("user", user._id))
+      .collect();
+
+    let updated = 0;
+
+    for (const project of projects) {
+      if (project.projectSlug) {
+        continue;
+      }
+
+      await ctx.db.patch(project._id, {
+        projectSlug: await createUniqueProjectSlug(ctx, project.title),
+      });
+      updated += 1;
+    }
+
+    return { updated };
   },
 });
 

@@ -75,6 +75,7 @@ Protected endpoints require an API key:
 
 Public endpoint:
 - `GET /api/project/:id/upvotes?clientId=<clientId>`
+- `DELETE /api/project/:id/request/:reqID/comment/:commentId?clientId=<clientId>`
 
 ## Correct request handling
 

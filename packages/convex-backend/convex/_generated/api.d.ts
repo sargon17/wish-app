@@ -16,6 +16,7 @@ import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_projectChangelog from "../lib/projectChangelog.js";
 import type * as lib_projectKeyAuthorization from "../lib/projectKeyAuthorization.js";
 import type * as lib_projectPublic from "../lib/projectPublic.js";
+import type * as lib_projectSlug from "../lib/projectSlug.js";
 import type * as lib_publicErrors from "../lib/publicErrors.js";
 import type * as lib_requestIntake from "../lib/requestIntake.js";
 import type * as lib_requestKind from "../lib/requestKind.js";
@@ -31,6 +32,7 @@ import type * as requests from "../requests.js";
 import type * as services_queries_projects_getProjectById from "../services/queries/projects/getProjectById.js";
 import type * as services_queries_status_getStatusById from "../services/queries/status/getStatusById.js";
 import type * as stats from "../stats.js";
+import type * as suggestionPortals from "../suggestionPortals.js";
 import type * as users from "../users.js";
 import type * as waitlist from "../waitlist.js";
 
@@ -49,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   "lib/projectChangelog": typeof lib_projectChangelog;
   "lib/projectKeyAuthorization": typeof lib_projectKeyAuthorization;
   "lib/projectPublic": typeof lib_projectPublic;
+  "lib/projectSlug": typeof lib_projectSlug;
   "lib/publicErrors": typeof lib_publicErrors;
   "lib/requestIntake": typeof lib_requestIntake;
   "lib/requestKind": typeof lib_requestKind;
@@ -64,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   "services/queries/projects/getProjectById": typeof services_queries_projects_getProjectById;
   "services/queries/status/getStatusById": typeof services_queries_status_getStatusById;
   stats: typeof stats;
+  suggestionPortals: typeof suggestionPortals;
   users: typeof users;
   waitlist: typeof waitlist;
 }>;

@@ -5,6 +5,7 @@ import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getRequestKind } from "./lib/requestKind";
+import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
@@ -127,12 +128,28 @@ export const create = mutation({
     description: v.optional(v.string()),
     clientId: v.string(),
     kind: v.optional(requestKindValidator),
+    requesterEmail: v.optional(v.string()),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
     await assertStatusBelongsToProject(ctx, args.status, args.project);
-    await ctx.db.insert("requests", { ...args, kind: args.kind ?? "request", upvoteCount: 0 });
+    const normalized = normalizeRequestInput({
+      text: args.text,
+      description: args.description,
+      requesterEmail: args.requesterEmail,
+    });
+    if (!normalized.ok) {
+      throw new Error(requestInputErrorMessage(normalized.error));
+    }
+    await ctx.db.insert("requests", {
+      ...normalized.value,
+      kind: args.kind ?? "request",
+      status: args.status,
+      project: args.project,
+      clientId: args.clientId,
+      upvoteCount: 0,
+    });
   },
 });
 

@@ -71,6 +71,7 @@ export async function createRequest(
     description?: string;
     clientId: string;
     kind?: "request" | "complaint";
+    requesterEmail?: string;
   },
 ) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "write");

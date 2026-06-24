@@ -103,9 +103,10 @@ app.get("/api/project/:id/upvotes", async (c) => {
 });
 
 const RequestValidator = type({
-  text: "string > 3",
+  text: "string > 2",
   "description?": "string | undefined",
   "kind?": "\"request\" | \"complaint\" | undefined",
+  "requesterEmail?": "string | undefined",
   project: "string",
   clientId: "string",
 });
@@ -168,6 +169,7 @@ app.post("/api/project/:id/request/", async (c) => {
     const result = await createRequest(c, id, {
       text: body.text,
       description: body.description,
+      requesterEmail: body.requesterEmail,
       clientId: body.clientId,
       kind: body.kind,
     });
