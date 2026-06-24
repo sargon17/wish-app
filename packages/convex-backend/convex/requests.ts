@@ -4,13 +4,10 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { getRequestKind } from "./lib/requestKind";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
-
-function requestKind(request: Doc<"requests">) {
-  return request.kind ?? "request";
-}
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   const request = await ctx.db.get(id);
@@ -46,7 +43,7 @@ export const getByProject = query({
       .withIndex("by_project", (q) => q.eq("project", args.id))
       .collect();
 
-    return requests.filter((request) => requestKind(request) === kind);
+    return requests.filter((request) => getRequestKind(request) === kind);
   },
 });
 
@@ -69,7 +66,7 @@ export const getByClientId = query({
         .collect();
 
       const filtered = requests
-        .filter((request) => requestKind(request) === "request")
+        .filter((request) => getRequestKind(request) === "request")
         .filter((request) => request._id !== args.excludeId)
         .sort((a, b) => b._creationTime - a._creationTime);
 
@@ -98,7 +95,7 @@ export const getByProjectInternal = internalQuery({
       .withIndex("by_project", (q) => q.eq("project", args.id))
       .collect();
 
-    return requests.filter((request) => requestKind(request) === kind);
+    return requests.filter((request) => getRequestKind(request) === kind);
   },
 });
 

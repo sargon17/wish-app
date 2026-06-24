@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserOrNull } from "./lib/authorization";
+import { getRequestKind } from "./lib/requestKind";
 
 export const toggle = mutation({
   args: {
@@ -21,7 +22,7 @@ export const toggle = mutation({
         throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 
-      if ((request.kind ?? "request") === "complaint") {
+      if (getRequestKind(request) === "complaint") {
         throw new ConvexError({ code: "NOT_FOUND", message: "Request not found" });
       }
 

@@ -160,6 +160,42 @@ describe("requestOverviewReadModel", () => {
     expect(overview.weeklyTrend.at(-1)?.count).toBe(1);
   });
 
+  it("excludes legacy review feedback complaints without a stored kind", () => {
+    const now = Date.UTC(2026, 0, 19, 12, 0, 0);
+    const overview = buildRequestOverviewReadModel({
+      requests: [
+        requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 9, 0, 0)),
+        requestDoc(
+          "legacy-complaint-1",
+          project1,
+          statusClosed,
+          Date.UTC(2026, 0, 19, 10, 0, 0),
+          undefined,
+          "User feedback\n\nSource: in-app satisfaction prompt after a positive app event.\nUser selected: No.",
+        ),
+      ],
+      ownedProjectIds: [project1],
+      projects: [projectDoc(project1, "Alpha")],
+      statuses: [
+        statusDoc(statusOpen, "open", "Open", project1),
+        statusDoc(statusClosed, "closed", "Closed", project1),
+      ],
+      now,
+    });
+
+    expect(overview.totalRequests).toBe(1);
+    expect(overview.statusBreakdown).toEqual([
+      {
+        statusId: statusOpen,
+        name: "open",
+        count: 1,
+        color: null,
+        displayName: "Open",
+      },
+    ]);
+    expect(overview.weeklyTrend.at(-1)?.count).toBe(1);
+  });
+
   it("falls back to unknown status and project labels when metadata is missing", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [requestDoc("request-1", project1, statusUnknown, Date.UTC(2026, 0, 19, 9, 0, 0))],
@@ -294,12 +330,13 @@ function requestDoc(
   status: Id<"requestStatuses">,
   creationTime: number,
   kind?: "request" | "complaint",
+  description?: string,
 ): Doc<"requests"> {
   return {
     _id: id as Id<"requests">,
     _creationTime: creationTime,
     text: id,
-    description: undefined,
+    description,
     clientId: id,
     kind,
     status,

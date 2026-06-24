@@ -1,4 +1,5 @@
 import type { Doc, Id } from "../_generated/dataModel";
+import { getRequestKind } from "./requestKind";
 
 type RequestOverviewReadModelInput = {
   requests: Doc<"requests">[];
@@ -72,7 +73,7 @@ export function formatWeekLabel(timestamp: number): string {
 
 function filterOwnedRequests(requests: Doc<"requests">[], ownedProjectIds: Set<string>) {
   return requests.filter(
-    (request) => ownedProjectIds.has(request.project.toString()) && (request.kind ?? "request") === "request",
+    (request) => ownedProjectIds.has(request.project.toString()) && getRequestKind(request) === "request",
   );
 }
 
