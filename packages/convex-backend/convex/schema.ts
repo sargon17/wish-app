@@ -12,9 +12,12 @@ export default defineSchema({
     user: v.id("users"),
     apiKeyHash: v.optional(v.string()),
     publicChangelogSlug: v.optional(v.string()),
+    projectSlug: v.optional(v.string()),
+    suggestionPortalPublishedAt: v.optional(v.number()),
   })
     .index("by_user", ["user"])
-    .index("by_public_changelog_slug", ["publicChangelogSlug"]),
+    .index("by_public_changelog_slug", ["publicChangelogSlug"])
+    .index("by_project_slug", ["projectSlug"]),
 
   apiKeys: defineTable({
     projectId: v.id("projects"),
@@ -42,6 +45,7 @@ export default defineSchema({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
+    requesterEmail: v.optional(v.string()),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
     upvoteCount: v.optional(v.number()),

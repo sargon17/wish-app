@@ -69,7 +69,7 @@ function applyDefaultStatusColor(status: Doc<"requestStatuses">) {
     return status;
   }
 
-  const color = getStarterProjectStatusColor(status.name);
+  const color = getStarterProjectStatusColor(status.name ?? status.displayName ?? "");
 
   return color ? { ...status, color } : status;
 }

@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
@@ -118,12 +119,17 @@ export const create = mutation({
     text: v.string(),
     description: v.optional(v.string()),
     clientId: v.string(),
+    requesterEmail: v.optional(v.string()),
     status: v.id("requestStatuses"),
     project: v.id("projects"),
   },
   handler: async (ctx, args) => {
     await assertStatusBelongsToProject(ctx, args.status, args.project);
-    await ctx.db.insert("requests", { ...args, upvoteCount: 0 });
+    const normalized = normalizeRequestInput(args);
+    if (!normalized.ok) {
+      throw new Error(requestInputErrorMessage(normalized.error));
+    }
+    await ctx.db.insert("requests", { ...args, ...normalized.value, upvoteCount: 0 });
   },
 });
 

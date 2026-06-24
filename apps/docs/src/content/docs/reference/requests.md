@@ -28,6 +28,7 @@ Response example:
       "text": "Add export",
       "description": "CSV and JSON",
       "clientId": "client-42",
+      "requesterEmail": "person@example.com",
       "status": "requestStatuses:open123",
       "project": "projects:abc123",
       "upvoteCount": 2,
@@ -55,15 +56,17 @@ Auth:
 Request body:
 ```json
 {
-  "text": "string (min 4 chars)",
+  "text": "string (min 3 chars)",
   "description": "string (optional)",
+  "requesterEmail": "string (optional)",
   "project": "<projectId>",
   "clientId": "string"
 }
 ```
 
 Notes:
-- `text` must be at least 4 characters.
+- `text` must be at least 3 characters.
+- `requesterEmail` is optional, must be a valid email address when provided, and is stored for manual follow-up.
 - `project` should match the path `:id`.
 - The API sets the initial status to the project's first ordered status.
 
@@ -104,6 +107,7 @@ Response:
   "text": "Add export",
   "description": "CSV and JSON",
   "clientId": "client-42",
+  "requesterEmail": "person@example.com",
   "status": "requestStatuses:open123",
   "project": "projects:abc123",
   "upvoteCount": 2,

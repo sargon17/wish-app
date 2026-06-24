@@ -1,4 +1,4 @@
-import { ChevronUp, User } from "lucide-react";
+import { ChevronUp, Mail, User } from "lucide-react";
 import { useQuery } from "convex/react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -98,7 +98,18 @@ export default function RequestDetailView({
                 {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
               </div>
               <div>
-                <div className="*:flex *:gap-2 *:items-center flex gap-2 text-foreground/50 text-sm mb-8">
+                <div className="mb-8 flex flex-wrap gap-3 text-sm text-foreground/50 *:flex *:items-center *:gap-2">
+                  {activeRequest.requesterEmail ? (
+                    <>
+                      <div>
+                        <Mail size={16} />
+                        <a className="hover:text-foreground" href={`mailto:${activeRequest.requesterEmail}`}>
+                          {activeRequest.requesterEmail}
+                        </a>
+                      </div>
+                      <div className="text-foreground/20">/</div>
+                    </>
+                  ) : null}
                   <div>
                     <User size={16} />
                     {activeRequest.clientId}

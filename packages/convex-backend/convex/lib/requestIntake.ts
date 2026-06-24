@@ -70,6 +70,7 @@ export async function createRequest(
     text: string;
     description?: string;
     clientId: string;
+    requesterEmail?: string;
   },
 ) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "write");

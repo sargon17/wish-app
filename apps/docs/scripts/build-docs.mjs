@@ -1,4 +1,8 @@
 import { spawnSync } from 'node:child_process';
+import { rmSync } from 'node:fs';
+
+rmSync('.astro', { recursive: true, force: true });
+rmSync('node_modules/.astro', { recursive: true, force: true });
 
 const result = spawnSync('node', ['./node_modules/.bin/astro', 'build'], {
   env: {

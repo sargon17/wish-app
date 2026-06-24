@@ -47,6 +47,7 @@ Response example:
       "text": "Add export",
       "description": "CSV and JSON",
       "clientId": "client-42",
+      "requesterEmail": "person@example.com",
       "status": "requestStatuses:open123",
       "project": "projects:abc123",
       "upvoteCount": 2,
@@ -72,6 +73,7 @@ curl -s -X POST \
   -d '{
     "text": "Add CSV export",
     "description": "Allow CSV + JSON",
+    "requesterEmail": "person@example.com",
     "project": "'"$WISH_PROJECT_ID"'",
     "clientId": "client-42"
   }'

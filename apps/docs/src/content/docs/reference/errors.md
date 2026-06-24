@@ -33,9 +33,10 @@ The `retryAfterMs` field is only present for rate limiting. Successful mutations
 ## Validation errors
 
 Common validation checks enforced by the API:
-- Request text must be at least 4 characters.
+- Request text must be at least 3 characters.
+- Requester email must be a valid email address when provided.
 - Comment body must be non-empty and up to 1000 characters.
-- `clientId` is required for public comments and upvotes.
+- `clientId` is required for public comments, public comment deletion, and upvotes.
 - Project and request ids must be valid and consistent.
 
 ## Existence hiding

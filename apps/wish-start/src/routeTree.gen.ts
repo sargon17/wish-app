@@ -13,10 +13,12 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as PProjectSlugRouteImport } from './routes/p.$projectSlug'
 import { Route as DashboardWaitlistRouteImport } from './routes/dashboard.waitlist'
 import { Route as DashboardStatsRouteImport } from './routes/dashboard.stats'
 import { Route as ChangelogSlugRouteImport } from './routes/changelog.$slug'
 import { Route as DashboardProjectProjectIdSlugRouteImport } from './routes/dashboard.project.$projectId.$slug'
+import { Route as PProjectSlugRRequestIdRequestSlugRouteImport } from './routes/p.$projectSlug.r.$requestId.$requestSlug'
 import { Route as DashboardProjectProjectIdSlugChangelogRouteImport } from './routes/dashboard.project.$projectId.$slug.changelog'
 
 const DashboardRoute = DashboardRouteImport.update({
@@ -39,6 +41,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const PProjectSlugRoute = PProjectSlugRouteImport.update({
+  id: '/p/$projectSlug',
+  path: '/p/$projectSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardWaitlistRoute = DashboardWaitlistRouteImport.update({
   id: '/waitlist',
   path: '/waitlist',
@@ -60,6 +67,12 @@ const DashboardProjectProjectIdSlugRoute =
     path: '/project/$projectId/$slug',
     getParentRoute: () => DashboardRoute,
   } as any)
+const PProjectSlugRRequestIdRequestSlugRoute =
+  PProjectSlugRRequestIdRequestSlugRouteImport.update({
+    id: '/r/$requestId/$requestSlug',
+    path: '/r/$requestId/$requestSlug',
+    getParentRoute: () => PProjectSlugRoute,
+  } as any)
 const DashboardProjectProjectIdSlugChangelogRoute =
   DashboardProjectProjectIdSlugChangelogRouteImport.update({
     id: '/changelog',
@@ -74,9 +87,11 @@ export interface FileRoutesByFullPath {
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRouteWithChildren
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
+  '/p/$projectSlug/r/$requestId/$requestSlug': typeof PProjectSlugRRequestIdRequestSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,9 +99,11 @@ export interface FileRoutesByTo {
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRouteWithChildren
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
+  '/p/$projectSlug/r/$requestId/$requestSlug': typeof PProjectSlugRRequestIdRequestSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,9 +113,11 @@ export interface FileRoutesById {
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
+  '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRouteWithChildren
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
+  '/p/$projectSlug/r/$requestId/$requestSlug': typeof PProjectSlugRRequestIdRequestSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,9 +128,11 @@ export interface FileRouteTypes {
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/p/$projectSlug'
     | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
     | '/dashboard/project/$projectId/$slug/changelog'
+    | '/p/$projectSlug/r/$requestId/$requestSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -119,9 +140,11 @@ export interface FileRouteTypes {
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/p/$projectSlug'
     | '/dashboard'
     | '/dashboard/project/$projectId/$slug'
     | '/dashboard/project/$projectId/$slug/changelog'
+    | '/p/$projectSlug/r/$requestId/$requestSlug'
   id:
     | '__root__'
     | '/'
@@ -130,9 +153,11 @@ export interface FileRouteTypes {
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
+    | '/p/$projectSlug'
     | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
     | '/dashboard/project/$projectId/$slug/changelog'
+    | '/p/$projectSlug/r/$requestId/$requestSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -140,6 +165,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   ChangelogSlugRoute: typeof ChangelogSlugRoute
+  PProjectSlugRoute: typeof PProjectSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/p/$projectSlug': {
+      id: '/p/$projectSlug'
+      path: '/p/$projectSlug'
+      fullPath: '/p/$projectSlug'
+      preLoaderRoute: typeof PProjectSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/waitlist': {
       id: '/dashboard/waitlist'
       path: '/waitlist'
@@ -199,6 +232,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/project/$projectId/$slug'
       preLoaderRoute: typeof DashboardProjectProjectIdSlugRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/p/$projectSlug/r/$requestId/$requestSlug': {
+      id: '/p/$projectSlug/r/$requestId/$requestSlug'
+      path: '/r/$requestId/$requestSlug'
+      fullPath: '/p/$projectSlug/r/$requestId/$requestSlug'
+      preLoaderRoute: typeof PProjectSlugRRequestIdRequestSlugRouteImport
+      parentRoute: typeof PProjectSlugRoute
     }
     '/dashboard/project/$projectId/$slug/changelog': {
       id: '/dashboard/project/$projectId/$slug/changelog'
@@ -244,11 +284,25 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface PProjectSlugRouteChildren {
+  PProjectSlugRRequestIdRequestSlugRoute: typeof PProjectSlugRRequestIdRequestSlugRoute
+}
+
+const PProjectSlugRouteChildren: PProjectSlugRouteChildren = {
+  PProjectSlugRRequestIdRequestSlugRoute:
+    PProjectSlugRRequestIdRequestSlugRoute,
+}
+
+const PProjectSlugRouteWithChildren = PProjectSlugRoute._addFileChildren(
+  PProjectSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DashboardRoute: DashboardRouteWithChildren,
   ChangelogSlugRoute: ChangelogSlugRoute,
+  PProjectSlugRoute: PProjectSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
