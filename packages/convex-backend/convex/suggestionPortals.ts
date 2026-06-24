@@ -5,6 +5,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { isRequesterClientId } from "./lib/requesterIdentity";
+import { getRequestKind } from "./lib/requestKind";
 import {
   getPortalPage,
   normalizePortalQuery,
@@ -136,6 +137,7 @@ export const getPublishedPortal = query({
       .collect();
     const visibleRequests = sortPortalRequests(
       requests
+        .filter((request) => getRequestKind(request) === "request")
         .filter((request) => !statusId || request.status.toString() === statusId)
         .filter((request) => portalRequestMatchesSearch(request, search)),
       sort,
@@ -187,10 +189,10 @@ export const getSimilarSuggestions = query({
       .withIndex("by_project", (q) => q.eq("project", project._id))
       .collect();
     const statusMap = new Map(statuses.map((status) => [status._id.toString(), status]));
-    const requests = await ctx.db
+    const requests = (await ctx.db
       .query("requests")
       .withIndex("by_project", (q) => q.eq("project", project._id))
-      .collect();
+      .collect()).filter((request) => getRequestKind(request) === "request");
 
     return requests
       .map((request) => ({
@@ -232,7 +234,7 @@ export const getPublishedRequest = query({
       .withIndex("by_project", (q) => q.eq("project", project._id))
       .collect();
     const request = requests.find((item) => item._id.toString() === args.requestId);
-    if (!request) {
+    if (!request || getRequestKind(request) !== "request") {
       return null;
     }
 
@@ -302,6 +304,7 @@ export const createRequest = mutation({
       clientId: args.clientId,
       project: project._id,
       status: startingStatus._id,
+      kind: "request",
       upvoteCount: 1,
     });
 
