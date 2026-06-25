@@ -50,9 +50,46 @@ export default defineSchema({
     status: v.id("requestStatuses"),
     project: v.id("projects"),
     upvoteCount: v.optional(v.number()),
+    complaintStage: v.optional(v.union(
+      v.literal("new"),
+      v.literal("triaged"),
+      v.literal("in_progress"),
+      v.literal("awaiting_user"),
+      v.literal("closed"),
+      v.literal("rejected"),
+      v.literal("duplicate"),
+    )),
+    complaintSeverity: v.optional(v.union(v.literal("S1"), v.literal("S2"), v.literal("S3"))),
+    complaintCategory: v.optional(v.string()),
+    complaintOwnerUserId: v.optional(v.id("users")),
+    complaintFirstResponseDueAt: v.optional(v.number()),
+    complaintOutcome: v.optional(v.union(
+      v.literal("resolved"),
+      v.literal("cannot_fix"),
+      v.literal("rejected"),
+      v.literal("customer_issue"),
+      v.literal("duplicate"),
+    )),
+    complaintOutcomeSummary: v.optional(v.string()),
+    complaintClosedAt: v.optional(v.number()),
   })
     .index("by_project", ["project"])
     .index("by_project_status", ["project", "status"]),
+
+  complaintCaseEvents: defineTable({
+    requestId: v.id("requests"),
+    projectId: v.id("projects"),
+    type: v.union(v.literal("triage"), v.literal("stage"), v.literal("owner"), v.literal("closure")),
+    fromOwnerUserId: v.optional(v.id("users")),
+    toOwnerUserId: v.optional(v.id("users")),
+    fromStage: v.optional(v.string()),
+    toStage: v.optional(v.string()),
+    reason: v.optional(v.string()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_request", ["requestId"])
+    .index("by_project", ["projectId"]),
 
   requestUpvotes: defineTable({
     requestId: v.id("requests"),

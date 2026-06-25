@@ -10,6 +10,7 @@
 
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
+import type * as complaintCases from "../complaintCases.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
@@ -18,11 +19,14 @@ import type * as lib_projectKeyAuthorization from "../lib/projectKeyAuthorizatio
 import type * as lib_projectPublic from "../lib/projectPublic.js";
 import type * as lib_projectSlug from "../lib/projectSlug.js";
 import type * as lib_publicErrors from "../lib/publicErrors.js";
+import type * as lib_requestInput from "../lib/requestInput.js";
 import type * as lib_requestIntake from "../lib/requestIntake.js";
 import type * as lib_requestKind from "../lib/requestKind.js";
 import type * as lib_requestOverviewReadModel from "../lib/requestOverviewReadModel.js";
 import type * as lib_requestStatusStarterData from "../lib/requestStatusStarterData.js";
 import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js";
+import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
+import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as requestComments from "../requestComments.js";
@@ -45,6 +49,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
+  complaintCases: typeof complaintCases;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
@@ -53,11 +58,14 @@ declare const fullApi: ApiFromModules<{
   "lib/projectPublic": typeof lib_projectPublic;
   "lib/projectSlug": typeof lib_projectSlug;
   "lib/publicErrors": typeof lib_publicErrors;
+  "lib/requestInput": typeof lib_requestInput;
   "lib/requestIntake": typeof lib_requestIntake;
   "lib/requestKind": typeof lib_requestKind;
   "lib/requestOverviewReadModel": typeof lib_requestOverviewReadModel;
   "lib/requestStatusStarterData": typeof lib_requestStatusStarterData;
   "lib/requestStatusWorkflow": typeof lib_requestStatusWorkflow;
+  "lib/requesterIdentity": typeof lib_requesterIdentity;
+  "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
   projects: typeof projects;
   rateLimits: typeof rateLimits;
   requestComments: typeof requestComments;

@@ -29,8 +29,10 @@ import RequestCreateEditDialog from "./RequestCreateEditDialog";
 
 interface Props {
   request: Doc<"requests">;
+  alwaysVisible?: boolean;
+  label?: string;
 }
-export default function RequestCardActions({ request }: Props) {
+export default function RequestCardActions({ request, alwaysVisible = false, label = "Request" }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const deleteProject = useMutation(api.requests.deleteRequest);
@@ -47,7 +49,7 @@ export default function RequestCardActions({ request }: Props) {
           <Button
             variant="ghost"
             size="icon"
-            className="opacity-0 group-hover/request-card:opacity-100 transition-all"
+            className={alwaysVisible ? undefined : "opacity-0 group-hover/request-card:opacity-100 transition-all"}
           >
             <Ellipsis />
           </Button>
@@ -85,7 +87,7 @@ export default function RequestCardActions({ request }: Props) {
         <DialogContent className="sm:max-w-[425px]">
           <form action={handleSubmit} className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Delete Request</DialogTitle>
+              <DialogTitle>Delete {label}</DialogTitle>
               <DialogDescription>This action is final and irreversible</DialogDescription>
             </DialogHeader>
             <DialogFooter>
