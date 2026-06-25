@@ -80,7 +80,7 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
 
   if (!data) {
     return (
-      <div className="flex h-full items-center justify-center px-6">
+      <div className="flex h-full items-center justify-center px-6 sidebar-offset-pl">
         <Spinner />
       </div>
     );
@@ -90,7 +90,7 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
 
   if (complaints.length === 0) {
     return (
-      <div className="h-full overflow-y-auto px-4 py-4 md:px-6">
+      <div className="h-full overflow-y-auto px-4 py-4 sidebar-offset-pl md:px-6">
         <Empty className="mx-auto min-h-80 max-w-5xl border border-dashed bg-muted/20">
           <EmptyHeader>
             <Inbox className="mx-auto size-8 text-muted-foreground" />
@@ -105,7 +105,7 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden px-4 py-4 md:px-6">
+    <div className="flex h-full flex-col overflow-hidden px-4 py-4 sidebar-offset-pl md:px-6">
       <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
