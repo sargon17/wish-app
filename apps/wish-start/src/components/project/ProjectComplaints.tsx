@@ -80,8 +80,10 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
 
   if (!data) {
     return (
-      <div className="flex h-full items-center justify-center px-6 sidebar-offset-pl">
-        <Spinner />
+      <div className="h-full sidebar-offset-pl">
+        <div className="flex h-full items-center justify-center px-6">
+          <Spinner />
+        </div>
       </div>
     );
   }
@@ -90,82 +92,86 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
 
   if (complaints.length === 0) {
     return (
-      <div className="h-full overflow-y-auto px-4 py-4 sidebar-offset-pl md:px-6">
-        <Empty className="mx-auto min-h-80 max-w-5xl border border-dashed bg-muted/20">
-          <EmptyHeader>
-            <Inbox className="mx-auto size-8 text-muted-foreground" />
-            <EmptyTitle>No complaints yet</EmptyTitle>
-            <EmptyDescription>
-              Negative review feedback will appear here without entering the public request board.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+      <div className="h-full sidebar-offset-pl">
+        <div className="h-full overflow-y-auto px-4 py-4 md:px-6">
+          <Empty className="mx-auto min-h-80 max-w-5xl border border-dashed bg-muted/20">
+            <EmptyHeader>
+              <Inbox className="mx-auto size-8 text-muted-foreground" />
+              <EmptyTitle>No complaints yet</EmptyTitle>
+              <EmptyDescription>
+                Negative review feedback will appear here without entering the public request board.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden px-4 py-4 sidebar-offset-pl md:px-6">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">Complaint cases</h2>
-            <p className="text-sm text-muted-foreground">
-              Triage customer harm, assign custody, track SLA risk, and require evidence before closure.
-            </p>
-          </div>
-          {counts?.overdue ? (
-            <div className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              <AlertTriangle className="size-4" />
-              {counts.overdue} overdue
+    <div className="h-full sidebar-offset-pl">
+      <div className="flex h-full flex-col overflow-hidden px-4 py-4 md:px-6">
+        <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
+          <header className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Complaint cases</h2>
+              <p className="text-sm text-muted-foreground">
+                Triage customer harm, assign custody, track SLA risk, and require evidence before closure.
+              </p>
             </div>
-          ) : null}
-        </header>
-
-        <section className="grid gap-3 lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-          <div className="grid gap-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search complaints"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filters.map((item) => (
-                <Button
-                  key={item}
-                  type="button"
-                  variant={filter === item ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilter(item)}
-                >
-                  {filterLabels[item]}
-                  {counts ? <span className="text-xs opacity-70">{counts[item]}</span> : null}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-          <div className="min-h-0 overflow-y-auto pr-1">
-            {visibleComplaints.length > 0 ? (
-              <ComplaintCaseList
-                complaints={visibleComplaints}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No complaints match this view.
+            {counts?.overdue ? (
+              <div className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <AlertTriangle className="size-4" />
+                {counts.overdue} overdue
               </div>
-            )}
-          </div>
+            ) : null}
+          </header>
 
-          <ComplaintCaseDetail complaint={selectedComplaint} currentUser={data.currentUser} />
+          <section className="grid gap-3 lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+            <div className="grid gap-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search complaints"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {filters.map((item) => (
+                  <Button
+                    key={item}
+                    type="button"
+                    variant={filter === item ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilter(item)}
+                  >
+                    {filterLabels[item]}
+                    {counts ? <span className="text-xs opacity-70">{counts[item]}</span> : null}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+            <div className="min-h-0 overflow-y-auto pr-1">
+              {visibleComplaints.length > 0 ? (
+                <ComplaintCaseList
+                  complaints={visibleComplaints}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                />
+              ) : (
+                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  No complaints match this view.
+                </div>
+              )}
+            </div>
+
+            <ComplaintCaseDetail complaint={selectedComplaint} currentUser={data.currentUser} />
+          </div>
         </div>
       </div>
     </div>
