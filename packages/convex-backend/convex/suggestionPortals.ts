@@ -6,6 +6,7 @@ import { mutation, query } from "./_generated/server";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { isRequesterClientId } from "./lib/requesterIdentity";
 import { getRequestKind } from "./lib/requestKind";
+import { emitNotificationEvent } from "./notificationEvents";
 import {
   getPortalPage,
   normalizePortalQuery,
@@ -313,6 +314,12 @@ export const createRequest = mutation({
       projectId: project._id,
       clientId: args.clientId,
       createdAt: Date.now(),
+    });
+
+    await emitNotificationEvent(ctx, {
+      projectId: project._id,
+      type: "request.created",
+      requestId,
     });
 
     return { requestId };

@@ -18,8 +18,8 @@ import { Route as DashboardWaitlistRouteImport } from './routes/dashboard.waitli
 import { Route as DashboardStatsRouteImport } from './routes/dashboard.stats'
 import { Route as ChangelogSlugRouteImport } from './routes/changelog.$slug'
 import { Route as DashboardProjectProjectIdSlugRouteImport } from './routes/dashboard.project.$projectId.$slug'
-import { Route as DashboardProjectProjectIdSlugComplaintsRouteImport } from './routes/dashboard.project.$projectId.$slug.complaints'
 import { Route as PProjectSlugRRequestIdRequestSlugRouteImport } from './routes/p.$projectSlug.r.$requestId.$requestSlug'
+import { Route as DashboardProjectProjectIdSlugComplaintsRouteImport } from './routes/dashboard.project.$projectId.$slug.complaints'
 import { Route as DashboardProjectProjectIdSlugChangelogRouteImport } from './routes/dashboard.project.$projectId.$slug.changelog'
 
 const DashboardRoute = DashboardRouteImport.update({
@@ -68,18 +68,17 @@ const DashboardProjectProjectIdSlugRoute =
     path: '/project/$projectId/$slug',
     getParentRoute: () => DashboardRoute,
   } as any)
-const DashboardProjectProjectIdSlugComplaintsRoute =
-  DashboardProjectProjectIdSlugComplaintsRouteImport.update({
-    id: '/complaints',
-    path: '/complaints',
-    getParentRoute: () => DashboardProjectProjectIdSlugRoute,
-  } as any)
-
 const PProjectSlugRRequestIdRequestSlugRoute =
   PProjectSlugRRequestIdRequestSlugRouteImport.update({
     id: '/r/$requestId/$requestSlug',
     path: '/r/$requestId/$requestSlug',
     getParentRoute: () => PProjectSlugRoute,
+  } as any)
+const DashboardProjectProjectIdSlugComplaintsRoute =
+  DashboardProjectProjectIdSlugComplaintsRouteImport.update({
+    id: '/complaints',
+    path: '/complaints',
+    getParentRoute: () => DashboardProjectProjectIdSlugRoute,
   } as any)
 const DashboardProjectProjectIdSlugChangelogRoute =
   DashboardProjectProjectIdSlugChangelogRouteImport.update({
@@ -247,19 +246,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProjectProjectIdSlugRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/project/$projectId/$slug/complaints': {
-      id: '/dashboard/project/$projectId/$slug/complaints'
-      path: '/complaints'
-      fullPath: '/dashboard/project/$projectId/$slug/complaints'
-      preLoaderRoute: typeof DashboardProjectProjectIdSlugComplaintsRouteImport
-      parentRoute: typeof DashboardProjectProjectIdSlugRoute
-    },
     '/p/$projectSlug/r/$requestId/$requestSlug': {
       id: '/p/$projectSlug/r/$requestId/$requestSlug'
       path: '/r/$requestId/$requestSlug'
       fullPath: '/p/$projectSlug/r/$requestId/$requestSlug'
       preLoaderRoute: typeof PProjectSlugRRequestIdRequestSlugRouteImport
       parentRoute: typeof PProjectSlugRoute
+    }
+    '/dashboard/project/$projectId/$slug/complaints': {
+      id: '/dashboard/project/$projectId/$slug/complaints'
+      path: '/complaints'
+      fullPath: '/dashboard/project/$projectId/$slug/complaints'
+      preLoaderRoute: typeof DashboardProjectProjectIdSlugComplaintsRouteImport
+      parentRoute: typeof DashboardProjectProjectIdSlugRoute
     }
     '/dashboard/project/$projectId/$slug/changelog': {
       id: '/dashboard/project/$projectId/$slug/changelog'

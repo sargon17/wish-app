@@ -11,9 +11,12 @@
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
 import type * as complaintCases from "../complaintCases.js";
+import type * as emailNotifications from "../emailNotifications.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_notificationTokens from "../lib/notificationTokens.js";
+import type * as lib_notificationTypes from "../lib/notificationTypes.js";
 import type * as lib_projectChangelog from "../lib/projectChangelog.js";
 import type * as lib_projectKeyAuthorization from "../lib/projectKeyAuthorization.js";
 import type * as lib_projectPublic from "../lib/projectPublic.js";
@@ -27,6 +30,8 @@ import type * as lib_requestStatusStarterData from "../lib/requestStatusStarterD
 import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js";
 import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
 import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
+import type * as notificationConnectors from "../notificationConnectors.js";
+import type * as notificationEvents from "../notificationEvents.js";
 import type * as projects from "../projects.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as requestComments from "../requestComments.js";
@@ -37,6 +42,8 @@ import type * as services_queries_projects_getProjectById from "../services/quer
 import type * as services_queries_status_getStatusById from "../services/queries/status/getStatusById.js";
 import type * as stats from "../stats.js";
 import type * as suggestionPortals from "../suggestionPortals.js";
+import type * as telegramBot from "../telegramBot.js";
+import type * as telegramNotifications from "../telegramNotifications.js";
 import type * as users from "../users.js";
 import type * as waitlist from "../waitlist.js";
 
@@ -50,9 +57,12 @@ declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
   complaintCases: typeof complaintCases;
+  emailNotifications: typeof emailNotifications;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
+  "lib/notificationTokens": typeof lib_notificationTokens;
+  "lib/notificationTypes": typeof lib_notificationTypes;
   "lib/projectChangelog": typeof lib_projectChangelog;
   "lib/projectKeyAuthorization": typeof lib_projectKeyAuthorization;
   "lib/projectPublic": typeof lib_projectPublic;
@@ -66,6 +76,8 @@ declare const fullApi: ApiFromModules<{
   "lib/requestStatusWorkflow": typeof lib_requestStatusWorkflow;
   "lib/requesterIdentity": typeof lib_requesterIdentity;
   "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
+  notificationConnectors: typeof notificationConnectors;
+  notificationEvents: typeof notificationEvents;
   projects: typeof projects;
   rateLimits: typeof rateLimits;
   requestComments: typeof requestComments;
@@ -76,6 +88,8 @@ declare const fullApi: ApiFromModules<{
   "services/queries/status/getStatusById": typeof services_queries_status_getStatusById;
   stats: typeof stats;
   suggestionPortals: typeof suggestionPortals;
+  telegramBot: typeof telegramBot;
+  telegramNotifications: typeof telegramNotifications;
   users: typeof users;
   waitlist: typeof waitlist;
 }>;
