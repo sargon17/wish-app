@@ -1,6 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+import { notificationConnectorKindValidator, notificationEventTypeValidator } from "./lib/notificationTypes";
+
 export default defineSchema({
   users: defineTable({
     name: v.string(),
@@ -40,6 +42,63 @@ export default defineSchema({
     windowStartedAt: v.number(),
     count: v.number(),
   }).index("by_bucket", ["bucket"]),
+
+  notificationConnectors: defineTable({
+    projectId: v.id("projects"),
+    kind: notificationConnectorKindValidator,
+    enabled: v.boolean(),
+    eventTypes: v.array(notificationEventTypeValidator),
+    telegramChatId: v.optional(v.string()),
+    telegramChatTitle: v.optional(v.string()),
+    telegramMessageThreadId: v.optional(v.number()),
+    telegramConnectedByUserId: v.optional(v.number()),
+    emailRecipients: v.optional(v.array(v.string())),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_kind", ["projectId", "kind"]),
+
+  notificationConnectionTokens: defineTable({
+    projectId: v.id("projects"),
+    kind: v.literal("telegram"),
+    tokenPrefix: v.string(),
+    tokenHash: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_token_prefix", ["tokenPrefix"]),
+
+  notificationEvents: defineTable({
+    projectId: v.id("projects"),
+    type: notificationEventTypeValidator,
+    requestId: v.optional(v.id("requests")),
+    commentId: v.optional(v.id("requestComments")),
+    complaintCaseEventId: v.optional(v.id("complaintCaseEvents")),
+    createdAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_type", ["projectId", "type"]),
+
+  notificationDeliveries: defineTable({
+    eventId: v.id("notificationEvents"),
+    projectId: v.id("projects"),
+    connectorId: v.id("notificationConnectors"),
+    connectorKind: notificationConnectorKindValidator,
+    status: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed")),
+    attemptCount: v.number(),
+    lastError: v.optional(v.string()),
+    sentAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_status", ["status"])
+    .index("by_project", ["projectId"]),
 
   requests: defineTable({
     text: v.string(),
