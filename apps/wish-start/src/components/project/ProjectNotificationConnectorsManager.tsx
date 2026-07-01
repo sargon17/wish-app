@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { Bell, Bot, ExternalLink, Send, Unplug } from "lucide-react";
+import { Bot, ExternalLink, Send, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useAsyncAction } from "#/hooks/useAsyncAction";
+
 import CopyButton from "@/components/Organisms/CopyButton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
@@ -24,34 +25,53 @@ const EVENT_LABELS = {
   "complaint.case_event_created": "Complaint case updates",
 };
 
+const strings = {
+  toast: {
+    tokenCreated: "Telegram connection token created",
+    tokenError: "Failed to create Telegram connection token",
+    connectionTokenCopied: "Telegram connection token copied to clipboard",
+    notificationEnabled: "Notifications enabled",
+    notificationDisabled: "Notifications disabled",
+    notificationError: "Failed to update notifications",
+  },
+};
+
+
+
 export default function ProjectNotificationConnectorsManager({
   projectId,
 }: {
   projectId: Id<"projects">;
 }) {
   const connectors = useQuery(api.notificationConnectors.listByProject, { projectId });
+
   const createTelegramConnectionToken = useMutation(api.notificationConnectors.createTelegramConnectionToken);
   const setTelegramEnabled = useMutation(api.notificationConnectors.setTelegramEnabled);
+
+
   const [connectionToken, setConnectionToken] = useState<Awaited<
     ReturnType<typeof createTelegramConnectionToken>
   > | null>(null);
-  const [isCreatingToken, setIsCreatingToken] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+
   const telegramConnector = connectors?.find((connector) => connector.kind === "telegram");
   const eventTypes = telegramConnector?.eventTypes ?? Object.keys(EVENT_LABELS);
 
+
+  const telegramCreateTokenAction = useAsyncAction();
+  const toggleTelegramAction = useAsyncAction();
+
   async function handleCreateTelegramConnectionToken() {
-    try {
-      setIsCreatingToken(true);
-      const result = await createTelegramConnectionToken({ projectId });
-      setConnectionToken(result);
-      toast.success("Telegram connection token created");
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to create Telegram connection token");
-    } finally {
-      setIsCreatingToken(false);
-    }
+    await telegramCreateTokenAction.execute(
+      () => createTelegramConnectionToken({ projectId }),
+      {
+        onSuccess:
+          (data) => {
+            setConnectionToken(data)
+            toast.success(strings.toast.tokenCreated);
+          },
+        onError:
+          () => toast.error(strings.toast.tokenError),
+      });
   }
 
   async function handleEnabledChange(enabled: boolean) {
@@ -59,16 +79,15 @@ export default function ProjectNotificationConnectorsManager({
       return;
     }
 
-    try {
-      setIsUpdating(true);
-      await setTelegramEnabled({ projectId, enabled });
-      toast.success(enabled ? "Telegram notifications enabled" : "Telegram notifications paused");
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to update Telegram notifications");
-    } finally {
-      setIsUpdating(false);
-    }
+    await toggleTelegramAction.execute(
+      () => setTelegramEnabled({ projectId, enabled }),
+      {
+        onSuccess:
+          () => toast.success(enabled ? strings.toast.notificationEnabled : strings.toast.notificationDisabled),
+        onError:
+          () => toast.error(strings.toast.notificationError),
+      }
+    )
   }
 
   return (
@@ -80,20 +99,11 @@ export default function ProjectNotificationConnectorsManager({
             Connect the official Wish bot to receive project notifications in Telegram.
           </p>
         </div>
-        <Button type="button" disabled={isCreatingToken} onClick={handleCreateTelegramConnectionToken}>
+        <Button type="button" disabled={telegramCreateTokenAction.isLoading} onClick={handleCreateTelegramConnectionToken}>
           <Bot />
           {telegramConnector ? "Reconnect Telegram" : "Connect Telegram"}
         </Button>
       </div>
-
-      <Alert>
-        <Bell className="size-4" />
-        <AlertTitle>Fixed v1 notification set</AlertTitle>
-        <AlertDescription>
-          Telegram sends the default project activity feed for now. Choosing individual notification types inside the bot
-          is intentionally deferred to the next phase.
-        </AlertDescription>
-      </Alert>
 
       <div className="rounded-xl border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -117,7 +127,7 @@ export default function ProjectNotificationConnectorsManager({
             <Switch
               id="telegram-notifications-enabled"
               checked={telegramConnector?.enabled === true}
-              disabled={!telegramConnector || isUpdating}
+              disabled={!telegramConnector || toggleTelegramAction.isLoading}
               onCheckedChange={(checked) => void handleEnabledChange(checked)}
             />
           </div>
@@ -169,19 +179,6 @@ export default function ProjectNotificationConnectorsManager({
             </div>
           </div>
         ) : null}
-      </div>
-
-      <div className="rounded-xl border border-dashed p-4">
-        <div className="flex items-start gap-3">
-          <Send className="mt-0.5 size-4 text-muted-foreground" />
-          <div className="space-y-1">
-            <h4 className="font-medium">Email adapter</h4>
-            <p className="text-sm text-muted-foreground">
-              The backend stores notification connectors generically, so email can use the same event and delivery
-              pipeline once sender, recipient, unsubscribe, and provider decisions are approved.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
