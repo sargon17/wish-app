@@ -3,7 +3,7 @@ import { cva } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { Slot } from "@radix-ui/react-slot";
+import { Slot } from "radix-ui";
 
 const chipVariants = cva(
   "inline-flex items-center gap-2 rounded-full border font-medium w-fit whitespace-nowrap shrink-0 transition-colors shadow-xs backdrop-blur outline-none [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
@@ -32,7 +32,7 @@ type ChipProps = React.ComponentProps<"span"> &
   VariantProps<typeof chipVariants> & { asChild?: boolean };
 
 function Chip({ className, color, size, asChild = false, ...props }: ChipProps) {
-  const Comp = asChild ? Slot : "span";
+  const Comp = asChild ? Slot.Root : "span";
 
   return (
     <Comp data-slot="chip" className={cn(chipVariants({ color, size }), className)} {...props} />

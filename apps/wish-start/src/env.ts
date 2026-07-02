@@ -1,11 +1,8 @@
-import { z } from 'zod'
+import { type } from 'arktype'
 
-const envClientSchema = z.object({
-  VITE_CONVEX_URL: z.string().url().optional(),
-  VITE_CLERK_PUBLISHABLE_KEY: z
-    .string()
-    .startsWith('pk_', { message: 'Must start with pk_' })
-    .optional(),
+const envClientSchema = type({
+  VITE_CONVEX_URL: 'string.url | undefined',
+  VITE_CLERK_PUBLISHABLE_KEY: type(/^pk_/).describe('Must start with pk_').or('undefined'),
 })
 
 const raw = {
@@ -14,6 +11,6 @@ const raw = {
     import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? undefined,
 }
 
-const env = envClientSchema.parse(raw)
+const env = envClientSchema.assert(raw)
 
 export default env

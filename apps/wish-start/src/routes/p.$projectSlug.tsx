@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
-import { requestSlug } from "@/lib/requestSlug";
+import { requestSlug } from "@/lib/slug";
 import { formatDate } from "@/lib/time";
 import { api } from "@wish/convex-backend/api";
 
