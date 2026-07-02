@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
-import { requestSlug } from "@/lib/requestSlug";
+import { requestSlug } from "@/lib/slug";
 import { api } from "@wish/convex-backend/api";
 
 export function PublicRequestSubmitDialog({

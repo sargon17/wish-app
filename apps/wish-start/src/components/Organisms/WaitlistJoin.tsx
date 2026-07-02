@@ -4,32 +4,20 @@ import { useMutation } from "convex/react";
 import { useForm } from "react-hook-form";
 import type { FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
-import * as v from "valibot";
+import { type } from "arktype";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { api } from "@wish/convex-backend/api";
 import { cn } from "@/lib/utils";
-import { valibotResolver } from "@hookform/resolvers/valibot";
+import { arktypeResolver } from "@hookform/resolvers/arktype";
 
-// const waitlistSchema = z.object({
-//   email: z
-//     .string()
-//     .trim()
-//     .min(3, 'Email is required')
-//     .pipe(z.email('Enter a valid email')),
-// })
-//
-const waitlistSchema = v.object({
-  email: v.pipe(
-    v.string(),
-    v.email("Use a valid email address"),
-    v.minLength(3, "Email is required"),
-  ),
+const waitlistSchema = type({
+  email: type("string.email").configure({ message: "Use a valid email address" }),
 });
 
-type WaitlistFormValues = v.InferInput<typeof waitlistSchema>;
+type WaitlistFormValues = typeof waitlistSchema.infer;
 
 interface WaitlistJoinProps extends React.ComponentProps<"div"> {
   buttonLabel?: string;
@@ -51,7 +39,7 @@ export function WaitlistJoin({
   const joinWaitlist = useMutation(api.waitlist.join);
 
   const form = useForm<WaitlistFormValues>({
-    resolver: valibotResolver(waitlistSchema),
+    resolver: arktypeResolver(waitlistSchema),
     defaultValues: { email: "" },
     mode: "onTouched",
   });
@@ -68,9 +56,8 @@ export function WaitlistJoin({
     } catch (error) {
       console.error(error);
       const fallbackMessage = "Unable to join the waitlist right now. Please try again.";
-      const messageFromValidation = error instanceof v.ValiError ? error.issues[0]?.message : null;
       const messageFromError = error instanceof Error && error.message ? error.message : null;
-      const message = messageFromValidation || messageFromError || fallbackMessage;
+      const message = messageFromError || fallbackMessage;
 
       toast.error(message);
       form.setError("email", { type: "manual", message });

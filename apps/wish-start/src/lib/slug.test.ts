@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { requestSlug } from "./requestSlug";
+import { requestSlug } from "./slug";
 
 describe("requestSlug", () => {
   it("normalizes request titles for cosmetic URLs", () => {
