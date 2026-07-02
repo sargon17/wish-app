@@ -1,36 +1,22 @@
 import { useRef, useState } from "react";
 
-
-interface ExecuteCallbacks<T> {
-  onSuccess: (data: T) => void;
-  onError: (error: any) => void;
-}
-
+// Guards against double-submit (the disabled state has a render-cycle gap) and tracks loading.
 export function useAsyncAction() {
-  const isRunning = useRef(false)
+  const isRunning = useRef(false);
   const [isLoading, setLoading] = useState(false);
 
-  const execute = async <T>(
-    action: () => Promise<T>,
-    callbacks: ExecuteCallbacks<T>
-  ) => {
+  async function execute(action: () => Promise<void>) {
     if (isRunning.current) return;
     isRunning.current = true;
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const result = await action();
-      callbacks.onSuccess(result);
-    } catch (err: any) {
-      callbacks.onError(err);
+      await action();
     } finally {
       isRunning.current = false;
       setLoading(false);
     }
   }
 
-  return {
-    isLoading,
-    execute,
-  }
+  return { isLoading, execute };
 }

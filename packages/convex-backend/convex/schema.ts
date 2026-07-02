@@ -52,7 +52,6 @@ export default defineSchema({
     telegramChatTitle: v.optional(v.string()),
     telegramMessageThreadId: v.optional(v.number()),
     telegramConnectedByUserId: v.optional(v.number()),
-    emailRecipients: v.optional(v.array(v.string())),
     createdBy: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),

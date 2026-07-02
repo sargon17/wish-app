@@ -39,12 +39,7 @@ export async function emitNotificationEvent(
       updatedAt: now,
     });
 
-    if (connector.kind === "telegram") {
-      await ctx.scheduler.runAfter(0, internal.telegramNotifications.dispatchInternal, { deliveryId });
-      continue;
-    }
-
-    await ctx.scheduler.runAfter(0, internal.emailNotifications.dispatchInternal, { deliveryId });
+    await ctx.scheduler.runAfter(0, internal.telegramNotifications.dispatchInternal, { deliveryId });
   }
 
   return eventId;

@@ -56,17 +56,15 @@ export default function ProjectNotificationConnectorsManager({
   const toggleTelegramAction = useAsyncAction();
 
   async function handleCreateTelegramConnectionToken() {
-    await telegramCreateTokenAction.execute(
-      () => createTelegramConnectionToken({ projectId }),
-      {
-        onSuccess:
-          (data) => {
-            setConnectionToken(data)
-            toast.success(strings.toast.tokenCreated);
-          },
-        onError:
-          () => toast.error(strings.toast.tokenError),
-      });
+    await telegramCreateTokenAction.execute(async () => {
+      try {
+        const data = await createTelegramConnectionToken({ projectId });
+        setConnectionToken(data);
+        toast.success(strings.toast.tokenCreated);
+      } catch {
+        toast.error(strings.toast.tokenError);
+      }
+    });
   }
 
   async function handleEnabledChange(enabled: boolean) {
@@ -74,15 +72,14 @@ export default function ProjectNotificationConnectorsManager({
       return;
     }
 
-    await toggleTelegramAction.execute(
-      () => setTelegramEnabled({ projectId, enabled }),
-      {
-        onSuccess:
-          () => toast.success(enabled ? strings.toast.notificationEnabled : strings.toast.notificationDisabled),
-        onError:
-          () => toast.error(strings.toast.notificationError),
+    await toggleTelegramAction.execute(async () => {
+      try {
+        await setTelegramEnabled({ projectId, enabled });
+        toast.success(enabled ? strings.toast.notificationEnabled : strings.toast.notificationDisabled);
+      } catch {
+        toast.error(strings.toast.notificationError);
       }
-    )
+    });
   }
 
   return (

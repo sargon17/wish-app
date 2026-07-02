@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import { internalMutation } from "./_generated/server";
-import { DEFAULT_NOTIFICATION_EVENT_TYPES } from "./lib/notificationTypes";
+import { DEFAULT_NOTIFICATION_EVENT_TYPES } from "./lib/notificationEventTypes";
 import {
   getTelegramConnectionTokenPrefix,
   verifyTelegramConnectionTokenHash,

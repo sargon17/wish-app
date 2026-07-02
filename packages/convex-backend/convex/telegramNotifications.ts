@@ -12,25 +12,14 @@ function truncate(value: string | undefined, maxLength: number) {
   return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}…` : normalized;
 }
 
-function requestSlug(text: string | undefined) {
-  const slug = text
-    ?.toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "request";
-}
-
-function formatRequestUrl(args: { projectSlug?: string; requestId?: string; requestText?: string }) {
+function formatRequestUrl(args: { projectSlug?: string; requestId?: string }) {
   const baseUrl = process.env.WISH_APP_BASE_URL?.replace(/\/$/, "");
   if (!baseUrl || !args.projectSlug || !args.requestId) {
     return "";
   }
 
-  return `${baseUrl}/p/${args.projectSlug}/r/${args.requestId}/${requestSlug(args.requestText)}`;
+  // ponytail: the route ignores the trailing slug segment (reads projectSlug + requestId only).
+  return `${baseUrl}/p/${args.projectSlug}/r/${args.requestId}/request`;
 }
 
 function compactLines(lines: string[]) {
@@ -66,7 +55,6 @@ export const buildMessageInternal = internalQuery({
     const requestUrl = formatRequestUrl({
       projectSlug: project.projectSlug,
       requestId: request?._id.toString(),
-      requestText: request?.text,
     });
 
     const requestTitle = truncate(request?.text, 180);

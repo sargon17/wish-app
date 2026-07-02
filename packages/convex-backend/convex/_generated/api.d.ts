@@ -11,7 +11,6 @@
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
 import type * as complaintCases from "../complaintCases.js";
-import type * as emailNotifications from "../emailNotifications.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
@@ -58,7 +57,6 @@ declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
   complaintCases: typeof complaintCases;
-  emailNotifications: typeof emailNotifications;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
