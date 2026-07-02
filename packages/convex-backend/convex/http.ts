@@ -120,6 +120,53 @@ const CommentValidator = type({
   body: "string > 0",
 });
 
+function getTelegramCommandToken(text: unknown) {
+  if (typeof text !== "string") {
+    return null;
+  }
+
+  const [command, token] = text.trim().split(/\s+/, 2);
+  if (!/^\/(?:start|connect)(?:@\w+)?$/.test(command) || !token) {
+    return null;
+  }
+
+  return token;
+}
+
+function getTelegramChatTitle(chat: any) {
+  if (typeof chat.title === "string" && chat.title.trim()) {
+    return chat.title.trim();
+  }
+
+  if (typeof chat.username === "string" && chat.username.trim()) {
+    return `@${chat.username.trim()}`;
+  }
+
+  const name = [chat.first_name, chat.last_name]
+    .filter((value) => typeof value === "string" && value.trim())
+    .join(" ")
+    .trim();
+
+  return name || "Telegram chat";
+}
+
+async function sendTelegramMessage(chatId: string, text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return;
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text }),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) {
+    throw new Error(`Telegram sendMessage failed: ${response.status}`);
+  }
+}
+
 function isPublicId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -141,6 +188,46 @@ async function parsePublicBody(c: any, validator: { assert(value: unknown): any 
 
 app.onError((error, c) => {
   return publicErrorJson(c, toPublicErrorResponse(error));
+});
+
+app.post("/api/telegram/webhook", async (c) => {
+  const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  const providedSecret = c.req.header("X-Telegram-Bot-Api-Secret-Token");
+
+  if (!expectedSecret || providedSecret !== expectedSecret) {
+    return c.json({}, 401);
+  }
+
+  try {
+    const update = await c.req.json();
+    const message = update?.message;
+    const chat = message?.chat;
+    const chatId = chat?.id;
+    const token = getTelegramCommandToken(message?.text);
+
+    if (!chat || chatId === undefined || chatId === null || !token) {
+      return c.json({}, 200);
+    }
+
+    const result = await c.env.runMutation(internal.telegramBot.consumeConnectionTokenInternal, {
+      token,
+      chatId: String(chatId),
+      chatTitle: getTelegramChatTitle(chat),
+      messageThreadId: typeof message.message_thread_id === "number" ? message.message_thread_id : undefined,
+      telegramUserId: typeof message.from?.id === "number" ? message.from.id : undefined,
+    });
+
+    await sendTelegramMessage(
+      String(chatId),
+      result.ok
+        ? `Connected to ${result.projectTitle}. You will receive project notifications here.`
+        : "This connection token is invalid or expired. Generate a new Telegram connection token from project settings.",
+    );
+  } catch (error) {
+    console.error(error);
+  }
+
+  return c.json({}, 200);
 });
 
 app.post("/api/project/:id/request/", async (c) => {

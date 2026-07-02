@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser, getCurrentUserOrNull } from "./lib/authorization";
+import { emitNotificationEvent } from "./notificationEvents";
 
 async function listCommentsByRequestId(ctx: QueryCtx, requestId: Id<"requests">) {
   return await ctx.db
@@ -67,8 +68,9 @@ export const create = mutation({
       }
 
       const user = await getCurrentUserOrNull(ctx);
+      let commentId: Id<"requestComments">;
       if (user) {
-        return await ctx.db.insert("requestComments", {
+        commentId = await ctx.db.insert("requestComments", {
           requestId: args.requestId,
           projectId: args.projectId,
           authorType: "developer",
@@ -76,23 +78,32 @@ export const create = mutation({
           body: trimmed,
           createdAt: Date.now(),
         });
-      }
+      } else {
+        if (!args.clientId) {
+          throw new ConvexError({
+            code: "BAD_REQUEST",
+            message: "Client id is required for public comments",
+          });
+        }
 
-      if (!args.clientId) {
-        throw new ConvexError({
-          code: "BAD_REQUEST",
-          message: "Client id is required for public comments",
+        commentId = await ctx.db.insert("requestComments", {
+          requestId: args.requestId,
+          projectId: args.projectId,
+          authorType: "client",
+          authorClientId: args.clientId,
+          body: trimmed,
+          createdAt: Date.now(),
         });
       }
 
-      return await ctx.db.insert("requestComments", {
-        requestId: args.requestId,
+      await emitNotificationEvent(ctx, {
         projectId: args.projectId,
-        authorType: "client",
-        authorClientId: args.clientId,
-        body: trimmed,
-        createdAt: Date.now(),
+        type: "request.comment_created",
+        requestId: args.requestId,
+        commentId,
       });
+
+      return commentId;
     } catch (error) {
       if (error instanceof ConvexError) throw error;
       console.error(error);

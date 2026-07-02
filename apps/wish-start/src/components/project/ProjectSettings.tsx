@@ -4,6 +4,7 @@ import type { Id } from "@wish/convex-backend/data-model";
 
 import ProjectApiKeysManager from "./ProjectApiKeysManager";
 import ProjectGeneralSettings from "./ProjectGeneralSettings";
+import ProjectNotificationConnectorsManager from "./ProjectNotificationConnectorsManager";
 import ProjectStatusesManager from "./ProjectStatusesManager";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { SettingsView, SettingsContent } from "../settings/SettingsView";
@@ -31,6 +32,11 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
       label: "API Keys",
       content: <ProjectApiKeysManager projectId={projectID} />,
     },
+    {
+      key: "connectors",
+      label: "Connectors",
+      content: <ProjectNotificationConnectorsManager projectId={projectID} />,
+    },
   ];
 
   return (
@@ -40,7 +46,7 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
       <DialogContent className="max-h-[88vh] w-[96vw] overflow-y-auto sm:max-w-none sm:w-[92vw] lg:w-295 xl:w-330">
         <DialogTitle className="sr-only">Project settings</DialogTitle>
         <DialogDescription className="sr-only">
-          Manage the project name, statuses, and API keys.
+          Manage the project name, statuses, API keys, and notification connectors.
         </DialogDescription>
 
         <SettingsView navigation={sections.map(({ key, label }) => ({ key, label }))}>

@@ -10,6 +10,10 @@
     "./data-model": {
       "types": "./convex/_generated/dataModel.d.ts",
       "default": "./data-model.js"
+    },
+    "./notification-event-types": {
+      "types": "./convex/lib/notificationEventTypes.ts",
+      "default": "./convex/lib/notificationEventTypes.ts"
     }
   },
   "scripts": {

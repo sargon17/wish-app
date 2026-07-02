@@ -4,6 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getRequestKind } from "./lib/requestKind";
+import { emitNotificationEvent } from "./notificationEvents";
 
 const complaintStageValidator = v.union(
   v.literal("new"),
@@ -209,9 +210,12 @@ export const update = mutation({
       createdBy: user._id,
       createdAt: now,
     };
+    const createdCaseEventIds: Array<Id<"complaintCaseEvents">> = [];
+
+    const isReopened = wasTerminal && !isTerminal;
 
     if ((request.complaintStage ?? "new") !== args.stage) {
-      await ctx.db.insert("complaintCaseEvents", {
+      const eventId = await ctx.db.insert("complaintCaseEvents", {
         ...baseEvent,
         type: isTerminal
           ? "closure"
@@ -220,27 +224,28 @@ export const update = mutation({
             : "stage",
         fromStage: request.complaintStage ?? "new",
         toStage: args.stage,
-        reason: isTerminal ? outcomeSummary : undefined,
+        reason: isTerminal ? outcomeSummary : isReopened ? "Reopened" : undefined,
       });
+      createdCaseEventIds.push(eventId);
     }
 
     if (request.complaintOwnerUserId !== args.ownerUserId) {
-      await ctx.db.insert("complaintCaseEvents", {
+      const eventId = await ctx.db.insert("complaintCaseEvents", {
         ...baseEvent,
         type: "owner",
         fromOwnerUserId: request.complaintOwnerUserId,
         toOwnerUserId: args.ownerUserId,
         reason: handoffReason,
       });
+      createdCaseEventIds.push(eventId);
     }
 
-    if (wasTerminal && !isTerminal) {
-      await ctx.db.insert("complaintCaseEvents", {
-        ...baseEvent,
-        type: "stage",
-        fromStage: request.complaintStage,
-        toStage: args.stage,
-        reason: "Reopened",
+    for (const complaintCaseEventId of createdCaseEventIds) {
+      await emitNotificationEvent(ctx, {
+        projectId: request.project,
+        type: "complaint.case_event_created",
+        requestId: request._id,
+        complaintCaseEventId,
       });
     }
   },

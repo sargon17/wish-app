@@ -7,6 +7,7 @@ import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { getRequestKind } from "./lib/requestKind";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
+import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
 
@@ -142,13 +143,20 @@ export const create = mutation({
     if (!normalized.ok) {
       throw new Error(requestInputErrorMessage(normalized.error));
     }
-    await ctx.db.insert("requests", {
+    const kind = args.kind ?? "request";
+    const requestId = await ctx.db.insert("requests", {
       ...normalized.value,
-      kind: args.kind ?? "request",
+      kind,
       status: args.status,
       project: args.project,
       clientId: args.clientId,
       upvoteCount: 0,
+    });
+
+    await emitNotificationEvent(ctx, {
+      projectId: args.project,
+      type: kind === "complaint" ? "complaint.created" : "request.created",
+      requestId,
     });
   },
 });
