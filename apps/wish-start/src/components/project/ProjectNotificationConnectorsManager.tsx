@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { Bot, ExternalLink, Send, Unplug } from "lucide-react";
+import { Bot, ExternalLink, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -17,13 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/lib/time";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
+import { EVENT_LABELS, NOTIFICATION_EVENTS } from "@wish/convex-backend/notification-event-types";
 
-const EVENT_LABELS = {
-  "request.created": "New requests",
-  "complaint.created": "New complaints",
-  "request.comment_created": "New comments",
-  "complaint.case_event_created": "Complaint case updates",
-};
 
 const strings = {
   toast: {
@@ -54,7 +49,7 @@ export default function ProjectNotificationConnectorsManager({
   > | null>(null);
 
   const telegramConnector = connectors?.find((connector) => connector.kind === "telegram");
-  const eventTypes = telegramConnector?.eventTypes ?? Object.keys(EVENT_LABELS);
+  const eventTypes = telegramConnector?.eventTypes ?? NOTIFICATION_EVENTS.map((event) => event.type);
 
 
   const telegramCreateTokenAction = useAsyncAction();

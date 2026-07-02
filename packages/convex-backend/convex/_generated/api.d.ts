@@ -15,6 +15,7 @@ import type * as emailNotifications from "../emailNotifications.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_notificationEventTypes from "../lib/notificationEventTypes.js";
 import type * as lib_notificationTokens from "../lib/notificationTokens.js";
 import type * as lib_notificationTypes from "../lib/notificationTypes.js";
 import type * as lib_projectChangelog from "../lib/projectChangelog.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
+  "lib/notificationEventTypes": typeof lib_notificationEventTypes;
   "lib/notificationTokens": typeof lib_notificationTokens;
   "lib/notificationTypes": typeof lib_notificationTypes;
   "lib/projectChangelog": typeof lib_projectChangelog;

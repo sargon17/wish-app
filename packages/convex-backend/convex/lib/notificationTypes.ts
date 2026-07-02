@@ -1,20 +1,15 @@
 import { v } from "convex/values";
 
+import { DEFAULT_NOTIFICATION_EVENT_TYPES, NOTIFICATION_EVENTS } from "./notificationEventTypes";
+
+export { DEFAULT_NOTIFICATION_EVENT_TYPES, EVENT_LABELS, NOTIFICATION_EVENTS } from "./notificationEventTypes";
+
 export const notificationEventTypeValidator = v.union(
-  v.literal("request.created"),
-  v.literal("complaint.created"),
-  v.literal("request.comment_created"),
-  v.literal("complaint.case_event_created"),
+  ...NOTIFICATION_EVENTS.map((event) => v.literal(event.type)),
 );
 
 export const notificationConnectorKindValidator = v.union(v.literal("telegram"), v.literal("email"));
 
-export const DEFAULT_NOTIFICATION_EVENT_TYPES = [
-  "request.created",
-  "complaint.created",
-  "request.comment_created",
-  "complaint.case_event_created",
-] as const;
 
 export function normalizeNotificationEventTypes(values: Array<(typeof DEFAULT_NOTIFICATION_EVENT_TYPES)[number]>) {
   const allowed = new Set(DEFAULT_NOTIFICATION_EVENT_TYPES);
