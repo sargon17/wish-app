@@ -44,6 +44,11 @@ export const buildMessageInternal = internalQuery({
       return null;
     }
 
+    // Never route one project's event into another project's chat.
+    if (connector.projectId !== event.projectId || delivery.projectId !== event.projectId) {
+      return null;
+    }
+
     const project = await ctx.db.get(event.projectId);
     if (!project) {
       return null;
@@ -103,6 +108,8 @@ export const buildMessageInternal = internalQuery({
 
 export const dispatchInternal = internalAction({
   args: { deliveryId: v.id("notificationDeliveries") },
+  // ponytail: no pending->sending claim; Convex doesn't auto-retry actions and each delivery
+  // is scheduled exactly once. Add an atomic status claim if retries/re-enqueue are ever enabled.
   handler: async (ctx, args) => {
     const payload = await ctx.runQuery(internal.telegramNotifications.buildMessageInternal, {
       deliveryId: args.deliveryId,

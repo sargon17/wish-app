@@ -50,6 +50,7 @@ export default function ProjectNotificationConnectorsManager({
 
   const telegramConnector = connectors?.find((connector) => connector.kind === "telegram");
   const eventTypes = telegramConnector?.eventTypes ?? NOTIFICATION_EVENTS.map((event) => event.type);
+  const telegramLinked = Boolean(telegramConnector?.telegramChatTitle);
 
 
   const telegramCreateTokenAction = useAsyncAction();
@@ -102,13 +103,13 @@ export default function ProjectNotificationConnectorsManager({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="font-medium">Telegram</h4>
-              <Badge variant={telegramConnector?.enabled ? "default" : "outline"}>
-                {telegramConnector?.enabled ? "Connected" : "Not connected"}
+              <Badge variant={telegramConnector?.enabled ? "default" : telegramLinked ? "secondary" : "outline"}>
+                {telegramConnector?.enabled ? "Connected" : telegramLinked ? "Paused" : "Not connected"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {telegramConnector?.telegramChatTitle
-                ? `Delivering to ${telegramConnector.telegramChatTitle}.`
+              {telegramLinked
+                ? `${telegramConnector?.enabled ? "Delivering to" : "Paused — linked to"} ${telegramConnector?.telegramChatTitle}.`
                 : "Generate a token, open the official bot, and send the token to connect this project."}
             </p>
           </div>

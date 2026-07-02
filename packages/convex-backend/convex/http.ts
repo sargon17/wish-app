@@ -156,11 +156,15 @@ async function sendTelegramMessage(chatId: string, text: string) {
     return;
   }
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text }),
+    signal: AbortSignal.timeout(5000),
   });
+  if (!response.ok) {
+    throw new Error(`Telegram sendMessage failed: ${response.status}`);
+  }
 }
 
 function isPublicId(value: unknown): value is string {

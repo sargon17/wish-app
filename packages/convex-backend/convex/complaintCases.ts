@@ -212,6 +212,8 @@ export const update = mutation({
     };
     const createdCaseEventIds: Array<Id<"complaintCaseEvents">> = [];
 
+    const isReopened = wasTerminal && !isTerminal;
+
     if ((request.complaintStage ?? "new") !== args.stage) {
       const eventId = await ctx.db.insert("complaintCaseEvents", {
         ...baseEvent,
@@ -222,7 +224,7 @@ export const update = mutation({
             : "stage",
         fromStage: request.complaintStage ?? "new",
         toStage: args.stage,
-        reason: isTerminal ? outcomeSummary : undefined,
+        reason: isTerminal ? outcomeSummary : isReopened ? "Reopened" : undefined,
       });
       createdCaseEventIds.push(eventId);
     }
@@ -234,17 +236,6 @@ export const update = mutation({
         fromOwnerUserId: request.complaintOwnerUserId,
         toOwnerUserId: args.ownerUserId,
         reason: handoffReason,
-      });
-      createdCaseEventIds.push(eventId);
-    }
-
-    if (wasTerminal && !isTerminal) {
-      const eventId = await ctx.db.insert("complaintCaseEvents", {
-        ...baseEvent,
-        type: "stage",
-        fromStage: request.complaintStage,
-        toStage: args.stage,
-        reason: "Reopened",
       });
       createdCaseEventIds.push(eventId);
     }

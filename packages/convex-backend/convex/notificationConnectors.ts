@@ -35,6 +35,17 @@ export const createTelegramConnectionToken = mutation({
     const now = Date.now();
     const expiresAt = now + TELEGRAM_CONNECTION_TOKEN_TTL_MS;
 
+    // Invalidate prior unredeemed telegram tokens so only the newest one can bind the connector.
+    const priorTokens = await ctx.db
+      .query("notificationConnectionTokens")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+    for (const prior of priorTokens) {
+      if (prior.kind === "telegram" && !prior.consumedAt) {
+        await ctx.db.patch(prior._id, { consumedAt: now });
+      }
+    }
+
     await ctx.db.insert("notificationConnectionTokens", {
       projectId: args.projectId,
       kind: "telegram",
