@@ -9,7 +9,6 @@
     "convex:dev": "vp run -r convex:dev",
     "dev": "vp run wish-start#dev",
     "dev:all": "vp run -r dev",
-    "dev:doc": "vp run wish-app-docs#dev",
     "format": "vp run -r fmt",
     "lint": "vp run -r lint",
     "sandcastle": "bash -lc 'export GH_TOKEN=${GH_TOKEN:-$(gh auth token)}; bun .sandcastle/main.mts'",
