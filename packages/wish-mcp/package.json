@@ -1,0 +1,20 @@
+{
+  "name": "@wish/mcp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun server.ts",
+    "check": "bun build server.ts --target=node --outdir=/tmp/wish-mcp-check",
+    "check-types": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "convex": "^1.31.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "@typescript/native-preview": "^7.0.0-dev.20260703.1",
+    "typescript": "^5.9.3"
+  }
+}
