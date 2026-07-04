@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmbedRouteImport } from './routes/embed'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
@@ -25,6 +26,11 @@ import { Route as DashboardProjectProjectIdSlugChangelogRouteImport } from './ro
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedRoute = EmbedRouteImport.update({
+  id: '/embed',
+  path: '/embed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  EmbedRoute: typeof EmbedRoute
   ChangelogSlugRoute: typeof ChangelogSlugRoute
   PProjectSlugRoute: typeof PProjectSlugRouteWithChildren
 }
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embed': {
+      id: '/embed'
+      path: '/embed'
+      fullPath: '/embed'
+      preLoaderRoute: typeof EmbedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  EmbedRoute: EmbedRoute,
   ChangelogSlugRoute: ChangelogSlugRoute,
   PProjectSlugRoute: PProjectSlugRouteWithChildren,
 }
