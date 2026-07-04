@@ -73,8 +73,9 @@ export async function listEmbedRequests(config: EmbedApiConfig): Promise<EmbedRe
 
 export async function listEmbedUpvotedRequestIds(config: EmbedApiConfig): Promise<Set<string>> {
   const payload = await embedFetch(config, `/upvotes?clientId=${encodeURIComponent(config.clientId)}`);
-  const upvotes: Array<{ requestId: string }> = Array.isArray(payload?.upvotes) ? payload.upvotes : [];
-  return new Set(upvotes.map((upvote) => upvote.requestId));
+  // The API returns request ids as strings, not upvote documents.
+  const upvotes: string[] = Array.isArray(payload?.upvotes) ? payload.upvotes : [];
+  return new Set(upvotes);
 }
 
 export async function createEmbedRequest(

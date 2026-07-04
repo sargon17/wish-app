@@ -86,7 +86,7 @@ describe("embedApi", () => {
   });
 
   it("maps viewer upvotes to a set of request ids", async () => {
-    const fetchMock = mockFetch({ upvotes: [{ requestId: "r1" }, { requestId: "r2" }] });
+    const fetchMock = mockFetch({ upvotes: ["r1", "r2"] });
 
     const upvoted = await listEmbedUpvotedRequestIds(config);
 
