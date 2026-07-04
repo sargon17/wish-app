@@ -23,7 +23,8 @@ export default function ProjectDashboard({ projectId, slug }: { projectId: Id<"p
 
   return (
     <ScrollArea className="min-h-0 flex-1 pr-1">
-      <div className="flex flex-col gap-6 pb-6 md:px-6 sidebar-offset-pl">
+      <div className="sidebar-offset-pl">
+        <div className="flex flex-col gap-6 px-2 pb-6 md:px-6">
         <div className="grid gap-3 sm:grid-cols-3">
           <StatCard label="Requests" value={requestCount} description="Product feedback on the board" />
           <StatCard label="Complaints" value={complaintCount} description="Private customer issues" />
@@ -86,6 +87,7 @@ export default function ProjectDashboard({ projectId, slug }: { projectId: Id<"p
               </div>
             ))}
           </PeekCard>
+        </div>
         </div>
       </div>
     </ScrollArea>

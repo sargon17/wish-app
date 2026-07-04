@@ -14,7 +14,7 @@ import { SidebarTrigger } from "../ui/sidebar";
 
 interface Props {
   title: string;
-  actions: React.ReactNode;
+  actions?: React.ReactNode;
   breadcrumbs: {
     url: string;
     label: string;
