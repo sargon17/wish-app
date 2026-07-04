@@ -7,30 +7,8 @@ import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
 import { findNextStatus } from "@/lib/requestStatus/findNextStatus";
 
 type Status = Doc<"requestStatuses">;
-interface UseRequestStatusProps {
-  request: Doc<"requests">;
-}
-type UseRequestSetStatusProps = Status;
 
-type UseRequestSetByIdProps = Id<"requestStatuses">;
-
-interface UseRequestStatusState {
-  current: Status | undefined;
-  statuses: Status[] | undefined;
-  hasChanged: boolean;
-}
-interface UseRequestStatusMethods {
-  setById: (args: UseRequestSetByIdProps) => void;
-  setNext: () => void;
-  save: () => void;
-}
-
-export interface UseRequestStatusReturn {
-  state: UseRequestStatusState;
-  methods: UseRequestStatusMethods;
-}
-
-export function useRequestStatus({ request }: UseRequestStatusProps): UseRequestStatusReturn {
+export function useRequestStatus({ request }: { request: Doc<"requests"> }) {
   const statuses = useQuery(api.requestStatuses.getByProject, { id: request.project });
   const originalStatus = findCurrentStatus({ id: request.status, statuses });
   const [status, setStatus] = useState<Doc<"requestStatuses"> | undefined>(originalStatus);
@@ -57,12 +35,12 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
     setHasChanged(false);
   };
 
-  const set = (val: UseRequestSetStatusProps) => {
+  const set = (val: Status) => {
     setStatus(val);
     checkIfChanged(val);
   };
 
-  const setById = (id: UseRequestSetByIdProps) => {
+  const setById = (id: Id<"requestStatuses">) => {
     const status = findCurrentStatus({ id, statuses });
     if (status) {
       set(status);
@@ -95,3 +73,5 @@ export function useRequestStatus({ request }: UseRequestStatusProps): UseRequest
 
   return { state, methods };
 }
+
+export type UseRequestStatusReturn = ReturnType<typeof useRequestStatus>;

@@ -13,19 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
+import { normalizePortalSort } from "@/lib/portalSort";
 import { requestSlug } from "@/lib/slug";
 import { formatDate } from "@/lib/time";
 import { api } from "@wish/convex-backend/api";
 
 const PORTAL_PAGE_SIZE = 20;
-const PORTAL_SORTS = ["top", "newest"] as const;
-
-function normalizePortalSort(value: unknown) {
-  return PORTAL_SORTS.includes(value as (typeof PORTAL_SORTS)[number])
-    ? value as (typeof PORTAL_SORTS)[number]
-    : "top";
-}
-
 export const Route = createFileRoute("/p/$projectSlug")({
   head: () => ({
     meta: [
@@ -87,7 +80,7 @@ function SuggestionPortalPage() {
     });
   }
 
-  function setSort(sort: (typeof PORTAL_SORTS)[number]) {
+  function setSort(sort: "top" | "newest") {
     void navigate({
       search: {
         q: searchParams.q,

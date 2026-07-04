@@ -1,8 +1,6 @@
-import { Cell, Pie, PieChart } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ChartConfig } from "@/components/ui/chart";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { api } from "@wish/convex-backend/api";
 
 type StatusBreakdownItem =
@@ -33,14 +31,6 @@ export function StatusBreakdownCard({ statuses, total, className }: StatusBreakd
     displayName: status.displayName,
   }));
 
-  const config: ChartConfig = dataset.reduce((acc, status) => {
-    acc[status.key] = {
-      label: status.displayName ?? status.name,
-      color: status.color,
-    };
-    return acc;
-  }, {} as ChartConfig);
-
   const legendItems = dataset.map((item) => ({
     key: item.key,
     label: item.displayName ?? item.name,
@@ -59,33 +49,30 @@ export function StatusBreakdownCard({ statuses, total, className }: StatusBreakd
           <p className="text-sm text-muted-foreground">No statuses to display yet.</p>
         ) : (
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <ChartContainer config={config} className="min-h-80 w-full md:w-[60%]">
-              <PieChart>
-                <Pie
-                  data={dataset}
-                  dataKey="count"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={2}
-                  strokeWidth={2}
-                >
-                  {dataset.map((status) => (
-                    <Cell key={status.key} fill={status.color} stroke="none" />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      nameKey="Status"
-                      formatter={(value, _name, payload) =>
-                        `${value} requests (${payload?.payload?.percent ?? 0}%)`
-                      }
-                    />
-                  }
-                />
-              </PieChart>
-            </ChartContainer>
+            <div className="min-h-80 w-full md:w-[60%]">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={dataset}
+                    dataKey="count"
+                    nameKey="displayName"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={2}
+                    strokeWidth={2}
+                  >
+                    {dataset.map((status) => (
+                      <Cell key={status.key} fill={status.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value, _name, item) =>
+                      `${value} requests (${item.payload?.percent ?? 0}%)`
+                    }
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
             <div className="flex w-full flex-col gap-2 md:w-[40%] md:max-h-[320px] md:overflow-y-auto">
               <div className="flex flex-col gap-2">
                 {legendItems.map((item) => (

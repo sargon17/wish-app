@@ -17,7 +17,6 @@
     "lint:strict": "vp lint",
     "clean": "rm -rf node_modules",
     "clean-project": "rm -rf node_modules",
-    "kill-port": "lsof -ti :3002 | xargs kill -9",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

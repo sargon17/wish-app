@@ -55,7 +55,7 @@ export default function RequestCard({ request, upvotedSet, showUpvoteButton = tr
         {request.description && (
           <CardContent>
             <p className="text-secondary-foreground text-sm">
-              {trimTo({ text: request.description })}
+              {trimTo(request.description)}
             </p>
           </CardContent>
         )}

@@ -1,8 +1,6 @@
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import type { ChartConfig } from "@/components/ui/chart";
 import { api } from "@wish/convex-backend/api";
 
 type ProjectBreakdownItem =
@@ -25,14 +23,6 @@ export function ProjectBreakdownCard({ projects, total, className }: ProjectBrea
     color: palette[index % palette.length],
   }));
 
-  const config: ChartConfig = dataset.reduce((acc, project) => {
-    acc[project.key] = {
-      label: project.title,
-      color: project.color,
-    };
-    return acc;
-  }, {} as ChartConfig);
-
   return (
     <Card className={className}>
       <CardHeader>
@@ -42,33 +32,21 @@ export function ProjectBreakdownCard({ projects, total, className }: ProjectBrea
         {!hasData ? (
           <p className="text-sm text-muted-foreground">No project activity yet.</p>
         ) : (
-          <ChartContainer config={config} className="h-[300px]">
-            <BarChart data={dataset} layout="vertical" margin={{ left: 12, right: 12 }}>
-              <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-              <XAxis type="number" hide />
-              <YAxis
-                type="category"
-                dataKey="title"
-                tickLine={false}
-                axisLine={false}
-                width={120}
-              />
-              <ChartTooltip
-                cursor={{ fill: "var(--muted)" }}
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(value) => value}
-                    formatter={(value) => `${value} requests`}
-                  />
-                }
-              />
-              <Bar dataKey="count" radius={6}>
-                {dataset.map((project) => (
-                  <Cell key={project.key} fill={`var(--color-${project.key})`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ChartContainer>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dataset} layout="vertical" margin={{ left: 12, right: 12 }}>
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="title" tickLine={false} axisLine={false} width={120} />
+                <Tooltip cursor={{ fill: "var(--muted)" }} formatter={(value) => `${value} requests`} />
+                <Bar dataKey="count" radius={6}>
+                  {dataset.map((project) => (
+                    <Cell key={project.key} fill={project.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
