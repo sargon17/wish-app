@@ -5,11 +5,6 @@ export type EmbedApiConfig = {
   clientKey: string;
 };
 
-export type EmbedRequestStatus = {
-  _id: string;
-  displayName: string;
-};
-
 export type EmbedRequest = {
   _id: string;
   _creationTime: number;
@@ -17,7 +12,7 @@ export type EmbedRequest = {
   description?: string;
   kind?: "request" | "complaint";
   upvoteCount?: number;
-  computedStatus?: EmbedRequestStatus;
+  computedStatus?: { _id: string; displayName: string };
 };
 
 export type EmbedComment = {
@@ -38,7 +33,7 @@ export class EmbedApiError extends Error {
   }
 }
 
-async function embedFetch(config: EmbedApiConfig, path: string, init?: RequestInit) {
+async function embedFetch(config: EmbedApiConfig, path: string, init?: { method: string; body: string }) {
   const url = `${config.baseUrl}/api/project/${encodeURIComponent(config.projectId)}${path}`;
 
   let response: Response;
@@ -47,7 +42,7 @@ async function embedFetch(config: EmbedApiConfig, path: string, init?: RequestIn
       ...init,
       headers: {
         "x-api-key": config.clientKey,
-        ...(init?.body ? { "content-type": "application/json" } : {}),
+        ...(init ? { "content-type": "application/json" } : {}),
       },
     });
   } catch {
@@ -70,14 +65,10 @@ async function embedFetch(config: EmbedApiConfig, path: string, init?: RequestIn
   return response.json();
 }
 
-export function isEmbedListedRequest(request: Pick<EmbedRequest, "kind">) {
-  return request.kind !== "complaint";
-}
-
 export async function listEmbedRequests(config: EmbedApiConfig): Promise<EmbedRequest[]> {
   const payload = await embedFetch(config, "/requests/");
   const requests: EmbedRequest[] = Array.isArray(payload?.requests) ? payload.requests : [];
-  return requests.filter(isEmbedListedRequest);
+  return requests.filter((request) => request.kind !== "complaint");
 }
 
 export async function listEmbedUpvotedRequestIds(config: EmbedApiConfig): Promise<Set<string>> {
@@ -93,8 +84,8 @@ export async function createEmbedRequest(
   await embedFetch(config, "/request/", {
     method: "POST",
     body: JSON.stringify({
-      text: input.text,
-      description: input.description || undefined,
+      text: input.text.trim(),
+      description: input.description?.trim() || undefined,
       kind: "request",
       project: config.projectId,
       clientId: config.clientId,

@@ -35,7 +35,6 @@ export const Route = createFileRoute("/embed")({
     projectId: typeof search.projectId === "string" ? search.projectId : undefined,
     clientId: typeof search.clientId === "string" ? search.clientId : undefined,
     clientKey: typeof search.clientKey === "string" ? search.clientKey : undefined,
-    view: search.view === "requests" ? ("requests" as const) : undefined,
   }),
   component: EmbedPage,
 });
@@ -389,7 +388,7 @@ function EmbedNewRequest({
     setIsSending(true);
     setSendError(null);
     try {
-      await createEmbedRequest(config, { text, description: description.trim() });
+      await createEmbedRequest(config, { text, description });
       onCreated();
     } catch (error) {
       setSendError(error instanceof Error ? error.message : "Could not submit the request.");

@@ -4,7 +4,6 @@ import {
   createEmbedComment,
   createEmbedRequest,
   EmbedApiError,
-  isEmbedListedRequest,
   listEmbedRequests,
   listEmbedUpvotedRequestIds,
   toggleEmbedUpvote,
@@ -17,10 +16,9 @@ const config = {
   clientKey: "wish_pk_secret",
 };
 
-function mockFetch(payload: unknown, ok = true, status = 200) {
+function mockFetch(payload: unknown, ok = true) {
   const fetchMock = vi.fn().mockResolvedValue({
     ok,
-    status,
     json: async () => payload,
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -55,13 +53,12 @@ describe("embedApi", () => {
     const requests = await listEmbedRequests(config);
 
     expect(requests.map((request) => request._id)).toEqual(["r1", "r3"]);
-    expect(isEmbedListedRequest({ kind: "complaint" })).toBe(false);
   });
 
-  it("creates requests with clientId, project, and forced request kind", async () => {
+  it("creates trimmed requests with clientId, project, and forced request kind", async () => {
     const fetchMock = mockFetch({});
 
-    await createEmbedRequest(config, { text: "Add dark mode", description: "" });
+    await createEmbedRequest(config, { text: " Add dark mode ", description: "  " });
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("https://example.convex.site/api/project/proj_123/request/");
@@ -99,7 +96,7 @@ describe("embedApi", () => {
   });
 
   it("throws a typed error with the public error code", async () => {
-    mockFetch({ error: "Invalid API key.", code: "invalid_api_key" }, false, 401);
+    mockFetch({ error: "Invalid API key.", code: "invalid_api_key" }, false);
 
     await expect(listEmbedRequests(config)).rejects.toMatchObject({
       name: "EmbedApiError",

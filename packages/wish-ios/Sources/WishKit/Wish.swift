@@ -49,7 +49,7 @@ public enum Wish {
             URLQueryItem(name: "projectId", value: configuration.appId),
             URLQueryItem(name: "clientId", value: configuration.externalUserId),
             URLQueryItem(name: "clientKey", value: configuration.clientKey),
-            URLQueryItem(name: "view", value: destination.viewName),
+            URLQueryItem(name: "view", value: destination.rawValue),
         ]
         return components?.url
     }
@@ -57,13 +57,7 @@ public enum Wish {
 
 /// The Wish surface a ``WishView`` renders. Only requests exist today; the
 /// enum reserves room for future destinations without breaking the API.
-public enum WishDestination {
+/// The raw value is the hosted embed's `view` query parameter.
+public enum WishDestination: String {
     case requests
-
-    var viewName: String {
-        switch self {
-        case .requests:
-            return "requests"
-        }
-    }
 }
