@@ -11,17 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
+import { normalizePortalSort } from "@/lib/portalSort";
 import { formatDate } from "@/lib/time";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
-
-const PORTAL_SORTS = ["top", "newest"] as const;
-
-function normalizePortalSort(value: unknown) {
-  return PORTAL_SORTS.includes(value as (typeof PORTAL_SORTS)[number])
-    ? value as (typeof PORTAL_SORTS)[number]
-    : "top";
-}
 
 export const Route = createFileRoute("/p/$projectSlug/r/$requestId/$requestSlug")({
   head: () => ({

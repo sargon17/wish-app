@@ -19,13 +19,13 @@ export default function CopyButton({
   variant = "default",
   className,
 }: CopyButtonProps) {
-  interface HandleCopyClickProps extends Pick<Parameters<typeof copyToClipboard>[0], "text"> {}
-  function handleCopyClick({ text }: HandleCopyClickProps) {
-    copyToClipboard({
-      text,
-      onSuccess: () => toast.info("Copied successfully"),
-      onFail: () => toast.error("Error during copy"),
-    });
+  async function handleCopyClick() {
+    try {
+      await copyToClipboard(text);
+      toast.info("Copied successfully");
+    } catch {
+      toast.error("Error during copy");
+    }
   }
 
   const Wrapper = variant === "default" ? Button : InputGroupButton;
@@ -42,7 +42,7 @@ export default function CopyButton({
       variant="ghost"
       className={cn("relative z-1", className)}
       size={sizeMap[variant] as any}
-      onClick={() => handleCopyClick({ text })}
+      onClick={() => void handleCopyClick()}
     >
       {children?.toString ? <div>{children}</div> : <Copy size={12} />}
     </Wrapper>
