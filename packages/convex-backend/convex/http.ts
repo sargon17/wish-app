@@ -2,6 +2,7 @@ import { type } from "arktype";
 import type { HonoWithConvex } from "convex-helpers/server/hono";
 import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
@@ -24,6 +25,18 @@ import {
 } from "./lib/publicErrors";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
+
+// The project API authenticates with public client keys, so browser embeds
+// (e.g. the /embed WebView route) may call it from any origin.
+app.use(
+  "/api/project/*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "x-api-key"],
+    maxAge: 86400,
+  }),
+);
 
 async function checkIpRateLimit(c: any) {
   const clientIp = getClientIpAddress(c);

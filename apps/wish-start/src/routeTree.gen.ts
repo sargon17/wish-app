@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as EmbedRouteImport } from './routes/embed'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,6 +23,11 @@ import { Route as PProjectSlugRRequestIdRequestSlugRouteImport } from './routes/
 import { Route as DashboardProjectProjectIdSlugComplaintsRouteImport } from './routes/dashboard.project.$projectId.$slug.complaints'
 import { Route as DashboardProjectProjectIdSlugChangelogRouteImport } from './routes/dashboard.project.$projectId.$slug.changelog'
 
+const EmbedRoute = EmbedRouteImport.update({
+  id: '/embed',
+  path: '/embed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/embed'
     | '/changelog/$slug'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
@@ -177,12 +189,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  EmbedRoute: typeof EmbedRoute
   ChangelogSlugRoute: typeof ChangelogSlugRoute
   PProjectSlugRoute: typeof PProjectSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/embed': {
+      id: '/embed'
+      path: '/embed'
+      fullPath: '/embed'
+      preLoaderRoute: typeof EmbedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  EmbedRoute: EmbedRoute,
   ChangelogSlugRoute: ChangelogSlugRoute,
   PProjectSlugRoute: PProjectSlugRouteWithChildren,
 }
