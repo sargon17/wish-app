@@ -40,7 +40,6 @@ const items = [
 ];
 
 const projectViews = [
-  { title: "Overview", to: "/dashboard/project/$projectId/$slug", icon: LayoutDashboard },
   { title: "Requests", to: "/dashboard/project/$projectId/$slug/requests", icon: ListTodo },
   { title: "Complaints", to: "/dashboard/project/$projectId/$slug/complaints", icon: AlertTriangle },
   { title: "Roadmap", to: "/dashboard/project/$projectId/$slug/roadmap", icon: Map },
@@ -113,9 +112,7 @@ function ProjectNav({ projectId, slug }: { projectId: string; slug: string }) {
               <SidebarMenuItem key={view.title}>
                 <SidebarMenuButton
                   asChild
-                  isActive={
-                    view.to.endsWith("$slug") ? pathname === base : pathname.startsWith(`${base}/${view.to.split("/").at(-1)}`)
-                  }
+                  isActive={pathname.startsWith(`${base}/${view.to.split("/").at(-1)}`)}
                 >
                   <Link to={view.to} params={{ projectId, slug }}>
                     <view.icon />

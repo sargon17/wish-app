@@ -1,19 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import ProjectDashboard from '@/components/project/ProjectDashboard'
-import ProjectViewHeading from '@/components/project/ProjectViewHeading'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/dashboard/project/$projectId/$slug/')({
-  component: ProjectDashboardRoute,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/dashboard/project/$projectId/$slug/requests',
+      params,
+    })
+  },
 })
-
-function ProjectDashboardRoute() {
-  const { projectId, slug } = Route.useParams()
-
-  return (
-    <>
-      <ProjectViewHeading projectId={projectId} slug={slug} title="Overview" />
-      <ProjectDashboard projectId={projectId as never} slug={slug} />
-    </>
-  )
-}
