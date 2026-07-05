@@ -327,3 +327,30 @@ export const listPublishedByProjectInternal = internalQuery({
     return entries.sort(sortEntriesByRecent).map((entry) => toPublicChangelogEntry(entry));
   },
 });
+
+export const getPublishedByVersionInternal = internalQuery({
+  args: {
+    projectId: v.id("projects"),
+    versionLabel: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const versionLabelNormalized = normalizeVersionLabel(args.versionLabel);
+
+    if (!versionLabelNormalized) {
+      return null;
+    }
+
+    const entry = await ctx.db
+      .query("changelogEntries")
+      .withIndex("by_project_version_label", (q) =>
+        q.eq("projectId", args.projectId).eq("versionLabelNormalized", versionLabelNormalized),
+      )
+      .unique();
+
+    if (!entry || entry.status !== "published") {
+      return null;
+    }
+
+    return toPublicChangelogEntry(entry);
+  },
+});

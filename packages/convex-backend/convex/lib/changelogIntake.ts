@@ -21,3 +21,21 @@ export async function listPublicChangelog(c: ProjectKeyAuthorizationContext, pro
     entries,
   };
 }
+
+export async function getWhatsNewEntry(
+  c: ProjectKeyAuthorizationContext,
+  projectId: string,
+  versionLabel: string,
+) {
+  const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
+  if (!authorization.ok) {
+    return authorization;
+  }
+
+  const entry = await c.env.runQuery(internal.changelogEntries.getPublishedByVersionInternal, {
+    projectId: authorization.project._id,
+    versionLabel,
+  });
+
+  return { ok: true as const, entry };
+}

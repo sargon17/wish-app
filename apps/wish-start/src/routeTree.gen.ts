@@ -25,6 +25,7 @@ import { Route as DashboardProjectProjectIdSlugRoadmapRouteImport } from './rout
 import { Route as DashboardProjectProjectIdSlugRequestsRouteImport } from './routes/dashboard.project.$projectId.$slug.requests'
 import { Route as DashboardProjectProjectIdSlugComplaintsRouteImport } from './routes/dashboard.project.$projectId.$slug.complaints'
 import { Route as DashboardProjectProjectIdSlugChangelogRouteImport } from './routes/dashboard.project.$projectId.$slug.changelog'
+import { Route as ApiProjectProjectIdWhatsNewExistsRouteImport } from './routes/api.project.$projectId.whats-new.exists'
 
 const EmbedRoute = EmbedRouteImport.update({
   id: '/embed',
@@ -113,6 +114,12 @@ const DashboardProjectProjectIdSlugChangelogRoute =
     path: '/changelog',
     getParentRoute: () => DashboardProjectProjectIdSlugRoute,
   } as any)
+const ApiProjectProjectIdWhatsNewExistsRoute =
+  ApiProjectProjectIdWhatsNewExistsRouteImport.update({
+    id: '/api/project/$projectId/whats-new/exists',
+    path: '/api/project/$projectId/whats-new/exists',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRouteWithChildren
+  '/api/project/$projectId/whats-new/exists': typeof ApiProjectProjectIdWhatsNewExistsRoute
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
   '/dashboard/project/$projectId/$slug/complaints': typeof DashboardProjectProjectIdSlugComplaintsRoute
   '/dashboard/project/$projectId/$slug/requests': typeof DashboardProjectProjectIdSlugRequestsRoute
@@ -141,6 +149,7 @@ export interface FileRoutesByTo {
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
+  '/api/project/$projectId/whats-new/exists': typeof ApiProjectProjectIdWhatsNewExistsRoute
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
   '/dashboard/project/$projectId/$slug/complaints': typeof DashboardProjectProjectIdSlugComplaintsRoute
   '/dashboard/project/$projectId/$slug/requests': typeof DashboardProjectProjectIdSlugRequestsRoute
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/project/$projectId/$slug': typeof DashboardProjectProjectIdSlugRouteWithChildren
+  '/api/project/$projectId/whats-new/exists': typeof ApiProjectProjectIdWhatsNewExistsRoute
   '/dashboard/project/$projectId/$slug/changelog': typeof DashboardProjectProjectIdSlugChangelogRoute
   '/dashboard/project/$projectId/$slug/complaints': typeof DashboardProjectProjectIdSlugComplaintsRoute
   '/dashboard/project/$projectId/$slug/requests': typeof DashboardProjectProjectIdSlugRequestsRoute
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/p/$projectSlug'
     | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
+    | '/api/project/$projectId/whats-new/exists'
     | '/dashboard/project/$projectId/$slug/changelog'
     | '/dashboard/project/$projectId/$slug/complaints'
     | '/dashboard/project/$projectId/$slug/requests'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/dashboard/waitlist'
     | '/p/$projectSlug'
     | '/dashboard'
+    | '/api/project/$projectId/whats-new/exists'
     | '/dashboard/project/$projectId/$slug/changelog'
     | '/dashboard/project/$projectId/$slug/complaints'
     | '/dashboard/project/$projectId/$slug/requests'
@@ -214,6 +226,7 @@ export interface FileRouteTypes {
     | '/p/$projectSlug'
     | '/dashboard/'
     | '/dashboard/project/$projectId/$slug'
+    | '/api/project/$projectId/whats-new/exists'
     | '/dashboard/project/$projectId/$slug/changelog'
     | '/dashboard/project/$projectId/$slug/complaints'
     | '/dashboard/project/$projectId/$slug/requests'
@@ -229,6 +242,7 @@ export interface RootRouteChildren {
   EmbedRoute: typeof EmbedRoute
   ChangelogSlugRoute: typeof ChangelogSlugRoute
   PProjectSlugRoute: typeof PProjectSlugRouteWithChildren
+  ApiProjectProjectIdWhatsNewExistsRoute: typeof ApiProjectProjectIdWhatsNewExistsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -345,6 +359,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProjectProjectIdSlugChangelogRouteImport
       parentRoute: typeof DashboardProjectProjectIdSlugRoute
     }
+    '/api/project/$projectId/whats-new/exists': {
+      id: '/api/project/$projectId/whats-new/exists'
+      path: '/api/project/$projectId/whats-new/exists'
+      fullPath: '/api/project/$projectId/whats-new/exists'
+      preLoaderRoute: typeof ApiProjectProjectIdWhatsNewExistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -414,6 +435,8 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedRoute: EmbedRoute,
   ChangelogSlugRoute: ChangelogSlugRoute,
   PProjectSlugRoute: PProjectSlugRouteWithChildren,
+  ApiProjectProjectIdWhatsNewExistsRoute:
+    ApiProjectProjectIdWhatsNewExistsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

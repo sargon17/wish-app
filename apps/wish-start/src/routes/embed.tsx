@@ -14,6 +14,7 @@ import {
   createEmbedComment,
   createEmbedRequest,
   getEmbedChangelog,
+  getEmbedWhatsNew,
   listEmbedComments,
   listEmbedRequests,
   listEmbedUpvotedRequestIds,
@@ -36,7 +37,13 @@ export const Route = createFileRoute("/embed")({
     projectId: typeof search.projectId === "string" ? search.projectId : undefined,
     clientId: typeof search.clientId === "string" ? search.clientId : undefined,
     clientKey: typeof search.clientKey === "string" ? search.clientKey : undefined,
-    view: search.view === "changelog" ? ("changelog" as const) : ("requests" as const),
+    view:
+      search.view === "changelog"
+        ? ("changelog" as const)
+        : search.view === "whats-new"
+          ? ("whats-new" as const)
+          : ("requests" as const),
+    appVersion: typeof search.appVersion === "string" ? search.appVersion : undefined,
   }),
   component: EmbedPage,
 });
@@ -68,7 +75,7 @@ function useEmbedResource<T>(loader: () => Promise<T>) {
 }
 
 function EmbedPage() {
-  const { projectId, clientId, clientKey, view } = Route.useSearch();
+  const { projectId, clientId, clientKey, view, appVersion } = Route.useSearch();
   const baseUrl = getConvexHttpBaseUrl(env.VITE_CONVEX_URL);
   const config = useMemo(
     () =>
@@ -89,7 +96,26 @@ function EmbedPage() {
     );
   }
 
-  return view === "changelog" ? <EmbedChangelogApp config={config} /> : <EmbedRequestsApp config={config} />;
+  if (view === "changelog") {
+    return <EmbedChangelogApp config={config} />;
+  }
+
+  if (view === "whats-new") {
+    if (!appVersion) {
+      return (
+        <EmbedShell>
+          <EmbedNotice
+            title="Feedback is unavailable"
+            description="This embed is missing its configuration. Check the appVersion passed to Wish.configure."
+          />
+        </EmbedShell>
+      );
+    }
+
+    return <EmbedWhatsNewApp config={config} appVersion={appVersion} />;
+  }
+
+  return <EmbedRequestsApp config={config} />;
 }
 
 function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
@@ -494,6 +520,45 @@ function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
       {entry.summary ? <p className="text-sm text-muted-foreground">{entry.summary}</p> : null}
       {entry.body ? <div className="whitespace-pre-wrap text-sm text-foreground/90">{entry.body}</div> : null}
     </article>
+  );
+}
+
+function EmbedWhatsNewApp({ config, appVersion }: { config: EmbedApiConfig; appVersion: string }) {
+  const loadEntry = useCallback(() => getEmbedWhatsNew(config, appVersion), [config, appVersion]);
+  const { data: entry, loadError, reload } = useEmbedResource(loadEntry);
+
+  if (loadError) {
+    return (
+      <EmbedShell>
+        <EmbedNotice title="Could not load updates" description={loadError}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void reload()}>
+            Retry
+          </Button>
+        </EmbedNotice>
+      </EmbedShell>
+    );
+  }
+
+  if (entry === undefined) {
+    return (
+      <EmbedShell>
+        <div className="flex justify-center py-16">
+          <Spinner className="size-6 text-muted-foreground" />
+        </div>
+      </EmbedShell>
+    );
+  }
+
+  return (
+    <EmbedShell>
+      <h1 className="text-lg font-semibold tracking-tight">What's new</h1>
+      <Separator className="my-4" />
+      {entry ? (
+        <EmbedChangelogEntryCard entry={entry} />
+      ) : (
+        <p className="text-sm text-muted-foreground">No release notes for this version.</p>
+      )}
+    </EmbedShell>
   );
 }
 
