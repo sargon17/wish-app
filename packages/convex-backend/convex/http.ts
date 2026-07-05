@@ -17,6 +17,7 @@ import {
   listUpvotes,
   toggleUpvote,
 } from "./lib/requestIntake";
+import { listPublicChangelog } from "./lib/changelogIntake";
 import { toPublicProject } from "./lib/projectPublic";
 import {
   createPublicError,
@@ -64,6 +65,22 @@ app.get("/api/project/:id/requests/", async (c) => {
     }
 
     return c.json({ project: toPublicProject(result.project), requests: result.requests });
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+});
+
+app.get("/api/project/:id/changelog", async (c) => {
+  try {
+    const id = c.req.param("id");
+    requirePublicId(id);
+
+    const result = await listPublicChangelog(c, id);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
+
+    return c.json({ project: result.project, entries: result.entries });
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }

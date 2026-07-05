@@ -9,7 +9,7 @@ export const IP_RATE_LIMIT = { limit: 240, windowMs: 60_000 };
 
 export type ProjectOperationScope = "read" | "write" | "admin";
 
-type ProjectKeyAuthorizationContext = {
+export type ProjectKeyAuthorizationContext = {
   req: {
     header(name: string): string | undefined;
   };

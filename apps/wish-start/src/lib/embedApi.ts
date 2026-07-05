@@ -23,6 +23,20 @@ export type EmbedComment = {
   createdAt: number;
 };
 
+export type EmbedChangelogEntry = {
+  versionLabel: string;
+  title: string;
+  summary?: string;
+  body?: string;
+  type: "feature" | "improvement" | "fix";
+  publishedAt?: number;
+};
+
+export type EmbedChangelogFeed = {
+  project: { title: string; publicChangelogSlug?: string };
+  entries: EmbedChangelogEntry[];
+};
+
 export class EmbedApiError extends Error {
   code: string;
 
@@ -115,4 +129,10 @@ export async function toggleEmbedUpvote(config: EmbedApiConfig, requestId: strin
     method: "POST",
     body: JSON.stringify({ clientId: config.clientId }),
   });
+}
+
+export async function getEmbedChangelog(config: EmbedApiConfig): Promise<EmbedChangelogFeed> {
+  const payload = await embedFetch(config, "/changelog");
+  const entries: EmbedChangelogEntry[] = Array.isArray(payload?.entries) ? payload.entries : [];
+  return { project: payload.project, entries };
 }
