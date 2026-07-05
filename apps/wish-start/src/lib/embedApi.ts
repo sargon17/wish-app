@@ -136,3 +136,11 @@ export async function getEmbedChangelog(config: EmbedApiConfig): Promise<EmbedCh
   const entries: EmbedChangelogEntry[] = Array.isArray(payload?.entries) ? payload.entries : [];
   return { project: payload.project, entries };
 }
+
+export async function getEmbedWhatsNew(
+  config: EmbedApiConfig,
+  appVersion: string,
+): Promise<EmbedChangelogEntry | null> {
+  const payload = await embedFetch(config, `/whats-new?version=${encodeURIComponent(appVersion)}`);
+  return payload?.entry ?? null;
+}

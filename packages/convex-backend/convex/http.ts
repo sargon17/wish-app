@@ -17,7 +17,7 @@ import {
   listUpvotes,
   toggleUpvote,
 } from "./lib/requestIntake";
-import { listPublicChangelog } from "./lib/changelogIntake";
+import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
 import { toPublicProject } from "./lib/projectPublic";
 import {
   createPublicError,
@@ -81,6 +81,42 @@ app.get("/api/project/:id/changelog", async (c) => {
     }
 
     return c.json({ project: result.project, entries: result.entries });
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+});
+
+app.get("/api/project/:id/whats-new/exists", async (c) => {
+  try {
+    const id = c.req.param("id");
+    requirePublicId(id);
+    const version = c.req.query("version");
+    requirePublicId(version);
+
+    const result = await getWhatsNewEntry(c, id, version);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
+
+    return c.json({ hasPublishedNotes: result.entry !== null });
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+});
+
+app.get("/api/project/:id/whats-new", async (c) => {
+  try {
+    const id = c.req.param("id");
+    requirePublicId(id);
+    const version = c.req.query("version");
+    requirePublicId(version);
+
+    const result = await getWhatsNewEntry(c, id, version);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
+
+    return c.json({ entry: result.entry });
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
@@ -201,7 +237,7 @@ function isPublicId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function requirePublicId(value: unknown) {
+function requirePublicId(value: unknown): asserts value is string {
   if (!isPublicId(value)) {
     throw createPublicError("validation_failed");
   }

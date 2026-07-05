@@ -5,6 +5,7 @@ import {
   createEmbedRequest,
   EmbedApiError,
   getEmbedChangelog,
+  getEmbedWhatsNew,
   listEmbedRequests,
   listEmbedUpvotedRequestIds,
   toggleEmbedUpvote,
@@ -134,5 +135,27 @@ describe("embedApi", () => {
     const feed = await getEmbedChangelog(config);
 
     expect(feed.entries).toEqual([]);
+  });
+
+  it("fetches the what's-new entry with the version in the query string, sends the client key as x-api-key, never in the URL", async () => {
+    const fetchMock = mockFetch({
+      entry: { versionLabel: "2.0.0", title: "Big release", type: "feature" },
+    });
+
+    const entry = await getEmbedWhatsNew(config, "2.0.0-beta 1");
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://example.convex.site/api/project/proj_123/whats-new?version=2.0.0-beta%201");
+    expect(url).not.toContain(config.clientKey);
+    expect(init.headers["x-api-key"]).toBe(config.clientKey);
+    expect(entry).toEqual({ versionLabel: "2.0.0", title: "Big release", type: "feature" });
+  });
+
+  it("maps a missing entry to null", async () => {
+    mockFetch({ entry: null });
+
+    const entry = await getEmbedWhatsNew(config, "9.9.9");
+
+    expect(entry).toBeNull();
   });
 });
