@@ -313,3 +313,17 @@ export const getPublicBySlugInternal = internalQuery({
     return await getPublicFeedBySlug(ctx, args.slug);
   },
 });
+
+export const listPublishedByProjectInternal = internalQuery({
+  args: {
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
+    const entries = await ctx.db
+      .query("changelogEntries")
+      .withIndex("by_project_status", (q) => q.eq("projectId", args.projectId).eq("status", "published"))
+      .collect();
+
+    return entries.sort(sortEntriesByRecent).map((entry) => toPublicChangelogEntry(entry));
+  },
+});

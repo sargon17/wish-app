@@ -13,12 +13,13 @@ import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 import {
   createEmbedComment,
   createEmbedRequest,
+  getEmbedChangelog,
   listEmbedComments,
   listEmbedRequests,
   listEmbedUpvotedRequestIds,
   toggleEmbedUpvote,
   type EmbedApiConfig,
-  type EmbedComment,
+  type EmbedChangelogEntry,
   type EmbedRequest,
 } from "@/lib/embedApi";
 import { formatDate } from "@/lib/time";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/embed")({
     projectId: typeof search.projectId === "string" ? search.projectId : undefined,
     clientId: typeof search.clientId === "string" ? search.clientId : undefined,
     clientKey: typeof search.clientKey === "string" ? search.clientKey : undefined,
+    view: search.view === "changelog" ? ("changelog" as const) : ("requests" as const),
   }),
   component: EmbedPage,
 });
@@ -44,8 +46,29 @@ type EmbedScreen =
   | { name: "new" }
   | { name: "detail"; requestId: string };
 
+function useEmbedResource<T>(loader: () => Promise<T>) {
+  const [data, setData] = useState<T | undefined>();
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    setLoadError(null);
+    setData(undefined);
+    try {
+      setData(await loader());
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Something went wrong.");
+    }
+  }, [loader]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  return { data, setData, loadError, reload };
+}
+
 function EmbedPage() {
-  const { projectId, clientId, clientKey } = Route.useSearch();
+  const { projectId, clientId, clientKey, view } = Route.useSearch();
   const baseUrl = getConvexHttpBaseUrl(env.VITE_CONVEX_URL);
   const config = useMemo(
     () =>
@@ -66,55 +89,48 @@ function EmbedPage() {
     );
   }
 
-  return <EmbedRequestsApp config={config} />;
+  return view === "changelog" ? <EmbedChangelogApp config={config} /> : <EmbedRequestsApp config={config} />;
 }
 
 function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
-  const [requests, setRequests] = useState<EmbedRequest[] | undefined>();
-  const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [screen, setScreen] = useState<EmbedScreen>({ name: "list" });
 
-  const load = useCallback(async () => {
-    setLoadError(null);
-    setRequests(undefined);
-    try {
-      const [nextRequests, nextUpvoted] = await Promise.all([
-        listEmbedRequests(config),
-        listEmbedUpvotedRequestIds(config),
-      ]);
-      nextRequests.sort((a, b) => b._creationTime - a._creationTime);
-      setRequests(nextRequests);
-      setUpvoted(nextUpvoted);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Something went wrong.");
-    }
+  const loadRequests = useCallback(async () => {
+    const [nextRequests, nextUpvoted] = await Promise.all([
+      listEmbedRequests(config),
+      listEmbedUpvotedRequestIds(config),
+    ]);
+    nextRequests.sort((a, b) => b._creationTime - a._creationTime);
+    return { requests: nextRequests, upvoted: nextUpvoted };
   }, [config]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { data, setData, loadError, reload } = useEmbedResource(loadRequests);
+  const requests = data?.requests;
+  const upvoted = data?.upvoted ?? new Set<string>();
 
   async function handleUpvote(requestId: string) {
     const wasUpvoted = upvoted.has(requestId);
-    setUpvoted((current) => {
-      const next = new Set(current);
-      if (wasUpvoted) next.delete(requestId);
-      else next.add(requestId);
-      return next;
+    setData((current) => {
+      if (!current) {
+        return current;
+      }
+      const nextUpvoted = new Set(current.upvoted);
+      if (wasUpvoted) nextUpvoted.delete(requestId);
+      else nextUpvoted.add(requestId);
+      return {
+        upvoted: nextUpvoted,
+        requests: current.requests.map((request) =>
+          request._id === requestId
+            ? { ...request, upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + (wasUpvoted ? -1 : 1)) }
+            : request,
+        ),
+      };
     });
-    setRequests((current) =>
-      current?.map((request) =>
-        request._id === requestId
-          ? { ...request, upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + (wasUpvoted ? -1 : 1)) }
-          : request,
-      ),
-    );
 
     try {
       await toggleEmbedUpvote(config, requestId);
     } catch {
-      void load();
+      void reload();
     }
   }
 
@@ -122,7 +138,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
     return (
       <EmbedShell>
         <EmbedNotice title="Could not load feedback" description={loadError}>
-          <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void reload()}>
             Retry
           </Button>
         </EmbedNotice>
@@ -148,7 +164,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
           onBack={() => setScreen({ name: "list" })}
           onCreated={() => {
             setScreen({ name: "list" });
-            void load();
+            void reload();
           }}
         />
       </EmbedShell>
@@ -246,25 +262,12 @@ function EmbedRequestDetail({
   onUpvote: () => void;
   onBack: () => void;
 }) {
-  const [comments, setComments] = useState<EmbedComment[] | undefined>();
-  const [commentsError, setCommentsError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const loadComments = useCallback(async () => {
-    setCommentsError(null);
-    setComments(undefined);
-    try {
-      setComments(await listEmbedComments(config, request._id));
-    } catch (error) {
-      setCommentsError(error instanceof Error ? error.message : "Something went wrong.");
-    }
-  }, [config, request._id]);
-
-  useEffect(() => {
-    void loadComments();
-  }, [loadComments]);
+  const loadComments = useCallback(() => listEmbedComments(config, request._id), [config, request._id]);
+  const { data: comments, loadError: commentsError, reload: reloadComments } = useEmbedResource(loadComments);
 
   async function submitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -278,7 +281,7 @@ function EmbedRequestDetail({
     try {
       await createEmbedComment(config, request._id, body);
       setCommentText("");
-      await loadComments();
+      await reloadComments();
     } catch (error) {
       setSendError(error instanceof Error ? error.message : "Could not post the comment.");
     } finally {
@@ -319,7 +322,7 @@ function EmbedRequestDetail({
 
         {commentsError ? (
           <EmbedNotice title="Could not load comments" description={commentsError}>
-            <Button type="button" variant="outline" size="sm" onClick={() => void loadComments()}>
+            <Button type="button" variant="outline" size="sm" onClick={() => void reloadComments()}>
               Retry
             </Button>
           </EmbedNotice>
@@ -426,6 +429,71 @@ function EmbedNewRequest({
         </Button>
       </form>
     </div>
+  );
+}
+
+function EmbedChangelogApp({ config }: { config: EmbedApiConfig }) {
+  const loadFeed = useCallback(() => getEmbedChangelog(config), [config]);
+  const { data: feed, loadError, reload } = useEmbedResource(loadFeed);
+
+  if (loadError) {
+    return (
+      <EmbedShell>
+        <EmbedNotice title="Could not load updates" description={loadError}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void reload()}>
+            Retry
+          </Button>
+        </EmbedNotice>
+      </EmbedShell>
+    );
+  }
+
+  if (feed === undefined) {
+    return (
+      <EmbedShell>
+        <div className="flex justify-center py-16">
+          <Spinner className="size-6 text-muted-foreground" />
+        </div>
+      </EmbedShell>
+    );
+  }
+
+  return (
+    <EmbedShell>
+      <div>
+        <h1 className="text-lg font-semibold tracking-tight">What's new</h1>
+        {feed.project.title ? <p className="text-sm text-muted-foreground">{feed.project.title}</p> : null}
+      </div>
+
+      <Separator className="my-4" />
+
+      {feed.entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No published updates yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {feed.entries.map((entry) => (
+            <EmbedChangelogEntryCard key={entry.versionLabel} entry={entry} />
+          ))}
+        </div>
+      )}
+    </EmbedShell>
+  );
+}
+
+function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
+  return (
+    <article className="space-y-2 rounded-lg border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline">{entry.versionLabel}</Badge>
+        <Badge variant="secondary" className="capitalize">
+          {entry.type}
+        </Badge>
+        <time className="text-xs text-muted-foreground">{formatDate(entry.publishedAt)}</time>
+      </div>
+      <h2 className="text-sm font-semibold tracking-tight">{entry.title}</h2>
+      {entry.summary ? <p className="text-sm text-muted-foreground">{entry.summary}</p> : null}
+      {entry.body ? <div className="whitespace-pre-wrap text-sm text-foreground/90">{entry.body}</div> : null}
+    </article>
   );
 }
 

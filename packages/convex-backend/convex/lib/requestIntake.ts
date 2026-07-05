@@ -1,17 +1,10 @@
-import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { createPublicError } from "./publicErrors";
+import type { ProjectKeyAuthorizationContext } from "./projectKeyAuthorization";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
 
-type RequestIntakeContext = {
-  req: {
-    header(name: string): string | undefined;
-  };
-  env: Pick<ActionCtx, "runQuery" | "runMutation">;
-};
-
-export async function listRequests(c: RequestIntakeContext, projectId: string) {
+export async function listRequests(c: ProjectKeyAuthorizationContext, projectId: string) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
   if (!authorization.ok) {
     return authorization;
@@ -35,7 +28,7 @@ export async function listRequests(c: RequestIntakeContext, projectId: string) {
 }
 
 async function assertRequestBelongsToProject(
-  c: RequestIntakeContext,
+  c: ProjectKeyAuthorizationContext,
   requestId: string,
   projectId: string,
 ): Promise<Id<"requests">> {
@@ -50,7 +43,7 @@ async function assertRequestBelongsToProject(
   return request._id;
 }
 
-async function getInitialStatusId(c: RequestIntakeContext, projectId: Id<"projects">) {
+async function getInitialStatusId(c: ProjectKeyAuthorizationContext, projectId: Id<"projects">) {
   const statuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
     id: projectId,
   });
@@ -64,7 +57,7 @@ async function getInitialStatusId(c: RequestIntakeContext, projectId: Id<"projec
 }
 
 export async function createRequest(
-  c: RequestIntakeContext,
+  c: ProjectKeyAuthorizationContext,
   projectId: string,
   body: {
     text: string;
@@ -90,7 +83,7 @@ export async function createRequest(
   return { ok: true as const };
 }
 
-export async function deleteRequest(c: RequestIntakeContext, projectId: string, requestId: string) {
+export async function deleteRequest(c: ProjectKeyAuthorizationContext, projectId: string, requestId: string) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "admin");
   if (!authorization.ok) {
     return authorization;
@@ -105,7 +98,7 @@ export async function deleteRequest(c: RequestIntakeContext, projectId: string, 
   return { ok: true as const };
 }
 
-export async function listComments(c: RequestIntakeContext, projectId: string, requestId: string) {
+export async function listComments(c: ProjectKeyAuthorizationContext, projectId: string, requestId: string) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
   if (!authorization.ok) {
     return authorization;
@@ -120,7 +113,7 @@ export async function listComments(c: RequestIntakeContext, projectId: string, r
 }
 
 export async function createComment(
-  c: RequestIntakeContext,
+  c: ProjectKeyAuthorizationContext,
   projectId: string,
   requestId: string,
   body: {
@@ -146,7 +139,7 @@ export async function createComment(
 }
 
 export async function deleteComment(
-  c: RequestIntakeContext,
+  c: ProjectKeyAuthorizationContext,
   projectId: string,
   requestId: string,
   commentId: string,
@@ -161,7 +154,7 @@ export async function deleteComment(
   });
 }
 
-export async function listUpvotes(c: RequestIntakeContext, projectId: string, clientId: string | undefined) {
+export async function listUpvotes(c: ProjectKeyAuthorizationContext, projectId: string, clientId: string | undefined) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
   if (!authorization.ok) {
     return authorization;
@@ -176,7 +169,7 @@ export async function listUpvotes(c: RequestIntakeContext, projectId: string, cl
 }
 
 export async function toggleUpvote(
-  c: RequestIntakeContext,
+  c: ProjectKeyAuthorizationContext,
   projectId: string,
   requestId: string,
   clientId: string,

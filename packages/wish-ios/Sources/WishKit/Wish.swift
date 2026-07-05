@@ -55,9 +55,9 @@ public enum Wish {
     }
 }
 
-/// The Wish surface a ``WishView`` renders. Only requests exist today; the
-/// enum reserves room for future destinations without breaking the API.
-/// The raw value is the hosted embed's `view` query parameter.
+/// The Wish surface a ``WishView`` renders. The raw value is the hosted
+/// embed's `view` query parameter.
 public enum WishDestination: String {
     case requests
+    case changelog
 }

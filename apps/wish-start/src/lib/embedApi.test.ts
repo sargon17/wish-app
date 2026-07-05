@@ -4,6 +4,7 @@ import {
   createEmbedComment,
   createEmbedRequest,
   EmbedApiError,
+  getEmbedChangelog,
   listEmbedRequests,
   listEmbedUpvotedRequestIds,
   toggleEmbedUpvote,
@@ -109,5 +110,29 @@ describe("embedApi", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
     await expect(listEmbedRequests(config)).rejects.toBeInstanceOf(EmbedApiError);
+  });
+
+  it("fetches the changelog feed and sends the client key as x-api-key, never in the URL", async () => {
+    const fetchMock = mockFetch({
+      project: { title: "My Project", publicChangelogSlug: "my-project" },
+      entries: [{ versionLabel: "1.0.0", title: "Launch", type: "feature" }],
+    });
+
+    const feed = await getEmbedChangelog(config);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://example.convex.site/api/project/proj_123/changelog");
+    expect(url).not.toContain(config.clientKey);
+    expect(init.headers["x-api-key"]).toBe(config.clientKey);
+    expect(feed.project).toEqual({ title: "My Project", publicChangelogSlug: "my-project" });
+    expect(feed.entries).toEqual([{ versionLabel: "1.0.0", title: "Launch", type: "feature" }]);
+  });
+
+  it("maps a missing or invalid entries field to an empty array", async () => {
+    mockFetch({ project: { title: "My Project" }, entries: "not-an-array" });
+
+    const feed = await getEmbedChangelog(config);
+
+    expect(feed.entries).toEqual([]);
   });
 });
