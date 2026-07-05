@@ -3,8 +3,8 @@ import WebKit
 
 /// Renders the hosted Wish UI in a `WKWebView`.
 ///
-/// Requires ``Wish/configure(appId:clientKey:externalUserId:baseURL:)`` to
-/// have been called first; otherwise a visible configuration error is shown.
+/// Requires ``Wish/configure(appId:clientKey:externalUserId:appVersion:baseURL:)``
+/// to have been called first; otherwise a visible configuration error is shown.
 public struct WishView: View {
     private let destination: WishDestination
 
