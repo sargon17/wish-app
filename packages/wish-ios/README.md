@@ -35,6 +35,20 @@ WishView()
 `externalUserId` is a stable identifier for the current user of your app. Wish
 uses it to attribute requests, upvotes, and comments to that user.
 
+`WishView` defaults to the feature-request list. Pass a destination for the
+other hosted surfaces:
+
+```swift
+WishView(.changelog)  // published release notes
+WishView(.whatsNew)   // notes for the current app version
+WishView(.complaint)  // submit-only complaint form
+```
+
+`WishView(.complaint)` shows a private complaint form — users can file a
+complaint (optionally leaving an email for follow-up) but never see other
+users' complaints. Present it when your app's review gate learns the user is
+unhappy, instead of sending them to the App Store.
+
 If `WishView` is rendered before `Wish.configure`, it shows a visible
 configuration error instead of a blank view. Load failures show a native retry
 state.

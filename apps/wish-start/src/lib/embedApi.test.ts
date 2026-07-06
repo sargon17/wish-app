@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
   createEmbedComment,
+  createEmbedComplaint,
   createEmbedRequest,
+  deriveComplaintTitle,
   EmbedApiError,
   getEmbedChangelog,
   getEmbedWhatsNew,
@@ -73,6 +75,52 @@ describe("embedApi", () => {
       project: "proj_123",
       clientId: "user-42",
     });
+  });
+
+  it("creates complaints with the complaint kind, a derived title, and the full message as description", async () => {
+    const fetchMock = mockFetch({});
+
+    await createEmbedComplaint(config, {
+      message: " The app crashes\nwhenever I open settings ",
+      email: " me@example.com ",
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://example.convex.site/api/project/proj_123/request/");
+    expect(url).not.toContain(config.clientKey);
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({
+      text: "The app crashes whenever I open settings",
+      description: "The app crashes\nwhenever I open settings",
+      kind: "complaint",
+      requesterEmail: "me@example.com",
+      project: "proj_123",
+      clientId: "user-42",
+    });
+  });
+
+  it("omits requesterEmail from complaints when no email is given", async () => {
+    const fetchMock = mockFetch({});
+
+    await createEmbedComplaint(config, { message: "Sync is broken", email: "  " });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).not.toHaveProperty("requesterEmail");
+  });
+
+  it("truncates long complaint titles to 80 characters with an ellipsis", () => {
+    const longMessage = "a".repeat(200);
+
+    const title = deriveComplaintTitle(longMessage);
+
+    expect(title.length).toBe(80);
+    expect(title.endsWith("…")).toBe(true);
+    expect(deriveComplaintTitle("short complaint")).toBe("short complaint");
+
+    const emojiTitle = deriveComplaintTitle("😀".repeat(100));
+    expect(emojiTitle.endsWith("…")).toBe(true);
+    // encodeURIComponent throws on lone surrogates left by a bad cut.
+    expect(() => encodeURIComponent(emojiTitle)).not.toThrow();
   });
 
   it("sends clientId in comment and upvote bodies", async () => {

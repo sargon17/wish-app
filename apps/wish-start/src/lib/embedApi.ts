@@ -108,6 +108,38 @@ export async function createEmbedRequest(
   });
 }
 
+// Complaints reuse the request intake API, which requires a short title. The
+// full message lives in `description`; the title is only a dashboard summary.
+const COMPLAINT_TITLE_MAX_LENGTH = 80;
+
+export function deriveComplaintTitle(message: string): string {
+  const collapsed = message.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= COMPLAINT_TITLE_MAX_LENGTH) {
+    return collapsed;
+  }
+  // Slice by code point so the cut never splits a surrogate pair (emoji).
+  const truncated = Array.from(collapsed).slice(0, COMPLAINT_TITLE_MAX_LENGTH - 1).join("");
+  return `${truncated.trimEnd()}…`;
+}
+
+export async function createEmbedComplaint(
+  config: EmbedApiConfig,
+  input: { message: string; email?: string },
+): Promise<void> {
+  const message = input.message.trim();
+  await embedFetch(config, "/request/", {
+    method: "POST",
+    body: JSON.stringify({
+      text: deriveComplaintTitle(message),
+      description: message,
+      kind: "complaint",
+      requesterEmail: input.email?.trim() || undefined,
+      project: config.projectId,
+      clientId: config.clientId,
+    }),
+  });
+}
+
 export async function listEmbedComments(config: EmbedApiConfig, requestId: string): Promise<EmbedComment[]> {
   const payload = await embedFetch(config, `/request/${encodeURIComponent(requestId)}/comments`);
   return Array.isArray(payload?.comments) ? payload.comments : [];
