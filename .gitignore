@@ -37,3 +37,10 @@ lerna-debug.log*
 .turbo
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# local agent worktrees
+.claude/
+
+# Swift package build/cache output
+.build/
+.swiftpm/
