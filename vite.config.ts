@@ -32,7 +32,7 @@ export default defineConfig({
       "**/_generated/*"
     ],
     experimentalTailwindcss: {
-      stylesheet: "./layers/ui/assets/css/main.css",
+      stylesheet: "./apps/wish-start/src/styles.css",
       attributes: ["class", "className"],
       functions: ["clsx", "cn"],
       preserveWhitespace: true,

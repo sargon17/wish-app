@@ -11,13 +11,6 @@ export function groupRequestsByStatus(requests?: Doc<"requests">[]) {
   }, {});
 }
 
-export function getRequestsForStatus(
-  groupedRequests: Record<string, Doc<"requests">[]>,
-  statusId: Id<"requestStatuses">,
-) {
-  return groupedRequests[statusId.toString()] ?? [];
-}
-
 export function toUpvotedRequestSet(viewerUpvotes?: Id<"requests">[]) {
   return new Set(viewerUpvotes ?? []);
 }
@@ -25,10 +18,7 @@ export function toUpvotedRequestSet(viewerUpvotes?: Id<"requests">[]) {
 export function createMoveRequestToStatus(
   updateStatus: (args: { id: Id<"requests">; status: Id<"requestStatuses"> }) => Promise<unknown>,
 ) {
-  return async function moveRequestToStatus(
-    requestId: string,
-    statusId: Id<"requestStatuses">,
-  ) {
+  return async function moveRequestToStatus(requestId: string, statusId: Id<"requestStatuses">) {
     if (!requestId) {
       return;
     }
