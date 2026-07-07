@@ -9,28 +9,20 @@ import CreateRequestDialog from "../Request/RequestCreateEditDialog";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
+import useRequests from "#/hooks/useRequests";
 
 interface Props {
-  title: string;
-  requests?: Doc<"requests">[];
+  status: Doc<"requestStatuses">;
   projectId: Id<"projects">;
-  statusId: Id<"requestStatuses">;
-  color?: string;
-  upvotedSet: Set<Id<"requests">>;
   onDropRequest: (event: DragEvent<HTMLDivElement>, statusId: Id<"requestStatuses">) => void;
 }
 
-export default function DashboardBoardColumn({
-  title,
-  requests,
-  projectId,
-  statusId,
-  color,
-  upvotedSet,
-  onDropRequest,
-}: Props) {
+export default function DashboardBoardColumn({ status, projectId, onDropRequest }: Props) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const requests = useRequests(projectId);
   const dragDepth = useRef(0);
+  const { _id: statusId, color, displayName } = status;
+  const requestsByStatus = requests.byStatus.get(statusId);
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -56,7 +48,7 @@ export default function DashboardBoardColumn({
     e.preventDefault();
     dragDepth.current = 0;
     setIsDraggingOver(false);
-    onDropRequest(e, statusId);
+    onDropRequest(e, status._id);
   }
   return (
     <div
@@ -69,7 +61,7 @@ export default function DashboardBoardColumn({
       <div className="flex justify-between items-center font-semibold p-3">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-xs" style={{ backgroundColor: color }} />
-          {title}
+          {displayName}
         </div>
         <CreateRequestDialog project={projectId} status={statusId}>
           <Button size="icon" variant="ghost">
@@ -79,10 +71,10 @@ export default function DashboardBoardColumn({
       </div>
       <Separator />
       <ScrollArea className="relative h-full flex-1 min-h-0">
-        {requests && (
+        {requestsByStatus && (
           <div className="flex flex-col gap-2 p-3">
-            {requests.map((request) => (
-              <RequestCard request={request} key={request._id} upvotedSet={upvotedSet} />
+            {requestsByStatus.map((request) => (
+              <RequestCard request={request} key={request._id} />
             ))}
           </div>
         )}

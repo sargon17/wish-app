@@ -25,13 +25,20 @@
     "TypeScript": {
       "language_servers": [
         "oxc",
-        "tsgo",
         "vtsls",
+        "!tsgo",
+        "!graphql",
         "!typescript-language-server",
         "!eslint",
         "...",
       ],
-      "formatter": "language_server",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt",
+          },
+        },
+      ],
       "code_actions_on_format": {
         "source.fixAll.oxc": true,
       },
@@ -39,13 +46,20 @@
     "TSX": {
       "language_servers": [
         "oxc",
-        "tsgo",
         "vtsls",
+        "!tsgo",
+        "!graphql",
         "!typescript-language-server",
         "!eslint",
         "...",
       ],
-      "formatter": "language_server",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt",
+          },
+        },
+      ],
       "code_actions_on_format": {
         "source.fixAll.oxc": true,
       },

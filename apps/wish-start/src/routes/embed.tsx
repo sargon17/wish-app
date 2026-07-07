@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 import {
   createEmbedComment,
+  createEmbedComplaint,
   createEmbedRequest,
   getEmbedChangelog,
   getEmbedWhatsNew,
@@ -42,7 +43,9 @@ export const Route = createFileRoute("/embed")({
         ? ("changelog" as const)
         : search.view === "whats-new"
           ? ("whats-new" as const)
-          : ("requests" as const),
+          : search.view === "complaint"
+            ? ("complaint" as const)
+            : ("requests" as const),
     appVersion: typeof search.appVersion === "string" ? search.appVersion : undefined,
   }),
   component: EmbedPage,
@@ -98,6 +101,10 @@ function EmbedPage() {
 
   if (view === "changelog") {
     return <EmbedChangelogApp config={config} />;
+  }
+
+  if (view === "complaint") {
+    return <EmbedComplaintApp config={config} />;
   }
 
   if (view === "whats-new") {
@@ -455,6 +462,87 @@ function EmbedNewRequest({
         </Button>
       </form>
     </div>
+  );
+}
+
+function EmbedComplaintApp({ config }: { config: EmbedApiConfig }) {
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (message.trim().length < 3 || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    setSendError(null);
+    try {
+      await createEmbedComplaint(config, { message, email });
+      setMessage("");
+      setEmail("");
+      setIsSubmitted(true);
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Could not send the complaint.");
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  if (isSubmitted) {
+    return (
+      <EmbedShell>
+        <EmbedNotice
+          title="Thanks for letting us know"
+          description="We've received your complaint and will look into it."
+        >
+          <Button type="button" variant="outline" size="sm" onClick={() => setIsSubmitted(false)}>
+            Send another
+          </Button>
+        </EmbedNotice>
+      </EmbedShell>
+    );
+  }
+
+  return (
+    <EmbedShell>
+      <h1 className="text-lg font-semibold tracking-tight">What's going wrong?</h1>
+      <p className="text-sm text-muted-foreground">
+        Tell us what's not working so we can look into it.
+      </p>
+
+      <Separator className="my-4" />
+
+      <form className="space-y-3" onSubmit={submit}>
+        <Textarea
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Describe the problem"
+          required
+          minLength={3}
+          rows={6}
+        />
+        <div className="space-y-1">
+          <Input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Email (optional)"
+          />
+          <p className="text-xs text-muted-foreground">
+            Leave your email if you'd like us to follow up on this.
+          </p>
+        </div>
+        {sendError ? <p className="text-sm text-destructive">{sendError}</p> : null}
+        <Button type="submit" disabled={isSending || message.trim().length < 3}>
+          {isSending ? <Spinner /> : null}
+          Send complaint
+        </Button>
+      </form>
+    </EmbedShell>
   );
 }
 

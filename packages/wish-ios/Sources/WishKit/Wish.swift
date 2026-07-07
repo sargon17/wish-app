@@ -79,4 +79,8 @@ public enum WishDestination: String {
     case requests
     case changelog
     case whatsNew = "whats-new"
+    /// A submit-only complaint form. Complaints are private: users can file
+    /// one but never see complaints from other users. Present this when your
+    /// review gate learns the user is unhappy with the app.
+    case complaint
 }
