@@ -8,23 +8,19 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "../ui/card
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import RequestCardActions from "./RequestCardActions";
 import RequestUpvoteButton from "./RequestUpvoteButton";
+import useRequests from "#/hooks/useRequests";
 
 interface Props {
   request: Doc<"requests">;
-  upvotedSet: Set<Doc<"requests">["_id"]>;
   showUpvoteButton?: boolean;
 }
 
-export default function RequestCard({ request, upvotedSet, showUpvoteButton = true }: Props) {
+export default function RequestCard({ request, showUpvoteButton = true }: Props) {
   const upvoteCount = request.upvoteCount ?? 0;
-  const isUpvoted = upvotedSet.has(request._id);
+  const requests = useRequests(request.project);
 
   return (
-    <RequestDetailView
-      request={request}
-      upvotedSet={upvotedSet}
-      showUpvoteButton={showUpvoteButton}
-    >
+    <RequestDetailView request={request} showUpvoteButton={showUpvoteButton}>
       <Card
         draggable
         onDragStart={(e) => {
@@ -47,16 +43,14 @@ export default function RequestCard({ request, upvotedSet, showUpvoteButton = tr
                 requestId={request._id}
                 projectId={request.project}
                 upvoteCount={upvoteCount}
-                isUpvoted={isUpvoted}
+                isUpvoted={requests.upvotedByUser.has(request._id)}
               />
             ) : null}
           </CardAction>
         </CardHeader>
         {request.description && (
           <CardContent>
-            <p className="text-secondary-foreground text-sm">
-              {trimTo(request.description)}
-            </p>
+            <p className="text-secondary-foreground text-sm">{trimTo(request.description)}</p>
           </CardContent>
         )}
       </Card>

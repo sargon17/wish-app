@@ -32,7 +32,11 @@ interface Props {
   alwaysVisible?: boolean;
   label?: string;
 }
-export default function RequestCardActions({ request, alwaysVisible = false, label = "Request" }: Props) {
+export default function RequestCardActions({
+  request,
+  alwaysVisible = false,
+  label = "Request",
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const deleteProject = useMutation(api.requests.deleteRequest);
@@ -49,7 +53,11 @@ export default function RequestCardActions({ request, alwaysVisible = false, lab
           <Button
             variant="ghost"
             size="icon"
-            className={alwaysVisible ? undefined : "opacity-0 group-hover/request-card:opacity-100 transition-all"}
+            className={
+              alwaysVisible
+                ? undefined
+                : "opacity-0 group-hover/request-card:opacity-100 transition-all"
+            }
           >
             <Ellipsis />
           </Button>
@@ -79,6 +87,7 @@ export default function RequestCardActions({ request, alwaysVisible = false, lab
       <RequestCreateEditDialog
         method="edit"
         request={request}
+        project={request.project}
         open={isEdit}
         onOpenChange={setIsEdit}
       />

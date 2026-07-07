@@ -21,21 +21,17 @@ import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
 import { useRequestStatus } from "@/hooks/useRequestStatus";
 import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
+import useRequests from "#/hooks/useRequests";
 
 interface Props {
   children: ReactNode;
   request: Doc<"requests">;
-  upvotedSet: Set<Doc<"requests">["_id"]>;
   showUpvoteButton?: boolean;
 }
 
-export default function RequestDetailView({
-  children,
-  request,
-  upvotedSet,
-  showUpvoteButton = true,
-}: Props) {
+export default function RequestDetailView({ children, request, showUpvoteButton = true }: Props) {
   const [activeRequestId, setActiveRequestId] = useState(request._id);
+  const requests = useRequests(request.project);
 
   useEffect(() => {
     setActiveRequestId(request._id);
@@ -45,11 +41,11 @@ export default function RequestDetailView({
     api.requests.getByClientId,
     request.clientId
       ? {
-        projectId: request.project,
-        clientId: request.clientId,
-        excludeId: request._id,
-        limit: 5,
-      }
+          projectId: request.project,
+          clientId: request.clientId,
+          excludeId: request._id,
+          limit: 5,
+        }
       : "skip",
   );
 
@@ -61,8 +57,6 @@ export default function RequestDetailView({
   }, [request, suggestions]);
 
   const activeRequest = requestMap.get(activeRequestId) ?? request;
-  const activeUpvoteCount = activeRequest.upvoteCount ?? 0;
-  const activeIsUpvoted = upvotedSet.has(activeRequest._id);
 
   const requestStatus = useRequestStatus({ request: activeRequest });
 
@@ -81,9 +75,7 @@ export default function RequestDetailView({
       <DialogContent className="sm:max-w-106.25 md:max-w-5xl max-h-[85vh] overflow-hidden">
         <div
           className={
-            hasSuggestions
-              ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]"
-              : "grid gap-6"
+            hasSuggestions ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]" : "grid gap-6"
           }
         >
           <div className="flex min-h-0 flex-col gap-6">
@@ -94,8 +86,8 @@ export default function RequestDetailView({
                   <RequestUpvoteButton
                     requestId={activeRequest._id}
                     projectId={activeRequest.project}
-                    upvoteCount={activeUpvoteCount}
-                    isUpvoted={activeIsUpvoted}
+                    upvoteCount={activeRequest.upvoteCount ?? 0}
+                    isUpvoted={requests.upvotedByUser.has(activeRequest._id)}
                     size="default"
                   />
                 ) : null}
@@ -107,7 +99,10 @@ export default function RequestDetailView({
                     <>
                       <div>
                         <Mail size={16} />
-                        <a className="hover:text-foreground" href={`mailto:${activeRequest.requesterEmail}`}>
+                        <a
+                          className="hover:text-foreground"
+                          href={`mailto:${activeRequest.requesterEmail}`}
+                        >
                           {activeRequest.requesterEmail}
                         </a>
                       </div>

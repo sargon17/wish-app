@@ -47,6 +47,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import CopyButton from "../Organisms/CopyButton";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import DashboardTable from "../dashboard/DashboardTable";
 
 type WaitlistEntry = Doc<"waitlist">;
 type WaitlistId = WaitlistEntry["_id"];
@@ -337,61 +338,7 @@ export function WaitlistTable() {
 
       <ScrollArea className="rounded-md border bg-background/80 max-h-[60vh]">
         <div className="min-w-full">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {isLoading &&
-                Array.from({ length: 5 }).map((_, idx) => (
-                  <TableRow key={`loading-${idx}`}>
-                    <TableCell colSpan={4}>
-                      <Skeleton className="h-10 w-full rounded-lg" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-              {!isLoading && (waitlist?.length ?? 0) === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No one is on the waitlist yet. Share your signup form to start collecting
-                    interest.
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {!isLoading &&
-                (waitlist?.length ?? 0) > 0 &&
-                table.getRowModel().rows.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                      No entries match your search or filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-
-              {!isLoading &&
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="group">
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="truncate">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+          <DashboardTable table={table} isLoading={isLoading} />
         </div>
       </ScrollArea>
 

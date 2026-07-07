@@ -1,30 +1,18 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useMemo } from "react";
 import type { DragEvent } from "react";
+import { useMemo } from "react";
 
 import { api } from "@wish/convex-backend/api";
-import type { Doc, Id } from "@wish/convex-backend/data-model";
+import type { Id } from "@wish/convex-backend/data-model";
 
+import { createMoveRequestToStatus } from "@/lib/requestBoard/boardState";
 import { readRequestDragPayload } from "@/lib/requestBoard/dragPayload";
-import {
-  createMoveRequestToStatus,
-  groupRequestsByStatus,
-  getRequestsForStatus,
-  toUpvotedRequestSet,
-} from "@/lib/requestBoard/boardState";
 
-export function useRequestBoardState({
-  requests,
-  viewerUpvotes,
-}: {
-  requests?: Doc<"requests">[];
-  viewerUpvotes?: Id<"requests">[];
-}) {
+export function useRequestBoardState() {
   const updateStatus = useMutation(api.requests.updateStatus);
-  const groupedRequests = useMemo(() => groupRequestsByStatus(requests), [requests]);
-  const upvotedSet = useMemo(() => toUpvotedRequestSet(viewerUpvotes), [viewerUpvotes]);
+
   const moveRequestToStatus = useMemo(
     () => createMoveRequestToStatus(updateStatus),
     [updateStatus],
@@ -41,11 +29,7 @@ export function useRequestBoardState({
   }
 
   return {
-    groupedRequests,
-    getRequestsForStatus: (statusId: Id<"requestStatuses">) =>
-      getRequestsForStatus(groupedRequests, statusId),
     handleRequestDrop,
     moveRequestToStatus,
-    upvotedSet,
   };
 }

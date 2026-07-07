@@ -4,27 +4,16 @@ import { useQuery } from "convex/react";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 
-import DashboardBoardColumn from "./DashboardBoardColumn";
-import { useRequestBoardState } from "@/hooks/useRequestBoardState";
+import type { BoardType } from "#/lib/requestBoard/boardType";
+import RequestTable from "../Request/RequestTable";
+import RequestKanban from "@components/Request/RequestKanban";
 
 interface Props {
   projectId: Id<"projects">;
+  type: BoardType;
 }
-export default function DashboardBoard({
-  projectId,
-}: Props) {
+export default function DashboardBoard({ projectId, type }: Props) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
-  const statuses = useQuery(api.requestStatuses.getByProject, { id: projectId });
-  const requests = useQuery(api.requests.getByProject, { id: projectId });
-  const viewerUpvotes = useQuery(
-    api.requestUpvotes.getViewerUpvotesByProject,
-    project ? { projectId: project._id } : "skip",
-  );
-
-  const { getRequestsForStatus, handleRequestDrop, upvotedSet } = useRequestBoardState({
-    requests: requests ?? undefined,
-    viewerUpvotes: viewerUpvotes ?? undefined,
-  });
 
   if (!project) return null;
 
@@ -33,18 +22,11 @@ export default function DashboardBoard({
       {/*gap*/}
       <div className="sidebar-offset-width shrink-0"></div>
       {/*gap*/}
-      {statuses?.map((status) => (
-        <DashboardBoardColumn
-          key={status._id}
-          title={status.displayName}
-          requests={getRequestsForStatus(status._id)}
-          projectId={project._id}
-          statusId={status._id}
-          color={status.color}
-          upvotedSet={upvotedSet}
-          onDropRequest={handleRequestDrop}
-        />
-      ))}
+      {type === "kanban" ? (
+        <RequestKanban projectId={project._id} />
+      ) : (
+        <RequestTable projectId={projectId} />
+      )}
     </div>
   );
 }

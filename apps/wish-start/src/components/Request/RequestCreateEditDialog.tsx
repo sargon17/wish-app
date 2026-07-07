@@ -41,7 +41,7 @@ interface Props extends React.ComponentProps<typeof Dialog> {
   method?: "create" | "edit";
   request?: Doc<"requests">;
   children?: React.ReactNode;
-  project?: Id<"projects">;
+  project: Id<"projects">;
   status?: Id<"requestStatuses">;
 }
 
@@ -58,7 +58,7 @@ export default function RequestCreateEditDialog({
   const createRequest = useMutation(api.requests.create);
   const editRequest = useMutation(api.requests.edit);
   const statuses = useQuery(api.requestStatuses.getByProject, {
-    id: (project || request?.project)!,
+    id: project,
   });
 
   const ArkSchema = type({
