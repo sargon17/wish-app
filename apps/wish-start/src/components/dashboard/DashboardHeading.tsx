@@ -22,8 +22,8 @@ interface Props {
 }
 export default function DashboardHeading({ title, actions, breadcrumbs }: Props) {
   return (
-    <div className="flex flex-col gap-3 w-full pb-6 sidebar-offset-pl">
-      <div className="flex items-center justify-between gap-4 max-md:px-2 overflow-hidden">
+    <div className="flex flex-col gap-3 w-full pb-2 sticky top-0 md:pt-6 backdrop-blur-2xl z-50">
+      <div className="flex items-center justify-between gap-4 max-md:px-2 overflow-hidden md:pr-6 sidebar-offset-pl">
         <div className="flex items-center gap-4 h-10 min-w-0 flex-1">
           <SidebarTrigger />
           <Separator orientation="vertical" />
@@ -34,7 +34,7 @@ export default function DashboardHeading({ title, actions, breadcrumbs }: Props)
         <div className="flex shrink-0 flex-none">{actions}</div>
       </div>
       <Separator />
-      <Breadcrumb className="max-md:px-2">
+      <Breadcrumb className="max-md:px-2 md:pr-6 sidebar-offset-pl">
         <BreadcrumbList>
           {breadcrumbs.map((item) => (
             <div key={item.url} className=" contents">
@@ -46,10 +46,6 @@ export default function DashboardHeading({ title, actions, breadcrumbs }: Props)
               <BreadcrumbSeparator />
             </div>
           ))}
-          {/* <BreadcrumbItem>
-            <BreadcrumbLink href="/components">Components</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator /> */}
           <BreadcrumbItem>
             <BreadcrumbPage>{title}</BreadcrumbPage>
           </BreadcrumbItem>

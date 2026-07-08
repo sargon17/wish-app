@@ -10,23 +10,22 @@ import RequestKanban from "@components/Request/RequestKanban";
 
 interface Props {
   projectId: Id<"projects">;
-  type: BoardType;
+  boardType: BoardType;
 }
-export default function DashboardBoard({ projectId, type }: Props) {
+export default function DashboardBoard({ projectId, boardType }: Props) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
 
   if (!project) return null;
 
   return (
-    <div className="flex h-full gap-2 w-full overflow-x-scroll px-2 md:px-6 p-px">
-      {/*gap*/}
-      <div className="sidebar-offset-width shrink-0"></div>
-      {/*gap*/}
-      {type === "kanban" ? (
+    // <div className="sidebar-offset-pl h-full">
+    <div className="flex h-full gap-2 w-full overflow-x-scroll pt-px sidebar-offset-pl pr-6 ">
+      {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} />
       ) : (
         <RequestTable projectId={projectId} />
       )}
     </div>
+    // </div>
   );
 }

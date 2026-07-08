@@ -183,5 +183,5 @@
 }
 
 @utility sidebar-offset-pl {
-  @apply pl-(--sidebar-width) group-data-[state=collapsed]/sidebar-wrapper:pl-0 transition-[padding] duration-200 ease-out;
+  @apply pl-[calc(1rem+var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:pl-6 transition-[padding] duration-200 ease-out;
 }

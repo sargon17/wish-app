@@ -1,17 +1,17 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
-import Loading from '@/components/Organisms/Loading'
-import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
+import Loading from "@/components/Organisms/Loading";
+import { useStoreUserEffect } from "@/hooks/useStoreUserEffect";
 
-export const Route = createFileRoute('/dashboard/project/$projectId/$slug')({
+export const Route = createFileRoute("/dashboard/project/$projectId/$slug")({
   component: ProjectDetails,
-})
+});
 
 function ProjectDetails() {
-  const { isLoading, isAuthenticated } = useStoreUserEffect()
+  const { isLoading, isAuthenticated } = useStoreUserEffect();
 
   return (
-    <div className="flex h-[calc(100dvh-8px)] flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-8px)] flex-col">
       {isLoading ? (
         <Loading />
       ) : !isAuthenticated ? (
@@ -20,5 +20,5 @@ function ProjectDetails() {
         <Outlet />
       )}
     </div>
-  )
+  );
 }

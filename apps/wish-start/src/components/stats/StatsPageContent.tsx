@@ -17,7 +17,7 @@ export function StatsPageContent() {
   }
 
   return (
-    <div className="flex flex-col gap-6 sidebar-offset-pl">
+    <div className="flex flex-col gap-4">
       <RequestsSummaryCards stats={stats} />
       <div className="grid gap-4 lg:grid-cols-12">
         <RequestsTrendCard data={stats.weeklyTrend} className="lg:col-span-7" />

@@ -1,21 +1,14 @@
 import type { Doc, Id } from "@wish/convex-backend/data-model";
-import {
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type ColumnDef,
-  type SortingState,
-} from "@tanstack/react-table";
-import { useState, useMemo } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
 import { trimTo } from "#/lib/text.ts";
 import StatusChip from "../Status/StatusChip";
-import DashboardTable from "../dashboard/DashboardTable";
-import { Input } from "@components/ui/input";
+import EntityTable from "../molecules/EntityTable";
 import SortButton from "@components/atoms/SortButton";
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import useRequests from "#/hooks/useRequests";
 import useStatuses from "#/hooks/useStatuses";
+import { Checkbox } from "@components/ui/checkbox";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
@@ -30,10 +23,7 @@ type RequestEntry = {
 
 const RequestTable = ({ projectId }: RequestTableProps) => {
   const { value: requests, byId } = useRequests(projectId);
-  const statuses = useStatuses(projectId);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "title", desc: true }]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
-  const [searchTerm, setSearchTerm] = useState("");
+  const { byId: statusesById } = useStatuses(projectId);
 
   const mappedRequests: RequestEntry[] = useMemo(
     () =>
@@ -41,26 +31,28 @@ const RequestTable = ({ projectId }: RequestTableProps) => {
         _id: request._id,
         title: request.text,
         description: request.description,
-        status: statuses.byId.get(request.status),
+        status: statusesById.get(request.status),
       })),
-    [statuses.byId, requests],
+    [requests, statusesById],
   );
-
-  const filteredRequests: RequestEntry[] = useMemo(() => {
-    if (!searchTerm) return mappedRequests;
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return mappedRequests.filter((request) => {
-      const matchesTitle = request.title.toLowerCase().includes(normalizedSearch);
-      const matchesDescription = request.description?.toLowerCase().includes(normalizedSearch);
-      const matchesStatus = request.status?.displayName.toLowerCase().includes(normalizedSearch);
-
-      return matchesTitle || matchesDescription || matchesStatus;
-    });
-  }, [searchTerm, mappedRequests]);
 
   const columns = useMemo<ColumnDef<RequestEntry>[]>(
     () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllRowsSelected()}
+            onCheckedChange={(v) => table.toggleAllRowsSelected(!!v)}
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(v) => row.toggleSelected(!!v)}
+          />
+        ),
+      },
       {
         accessorKey: "title",
         header: ({ column }) => (
@@ -116,33 +108,14 @@ const RequestTable = ({ projectId }: RequestTableProps) => {
     [byId],
   );
 
-  const table = useReactTable({
-    data: filteredRequests ?? [],
-    columns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      sorting,
-    },
-  });
-
   return (
     <div className="w-full mt-1 flex flex-col gap-4">
-      <div>
-        <Input
-          className="max-w-80"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search"
-        />
-      </div>
-      <div className="outline rounded-md overflow-hidden">
-        <DashboardTable table={table} />
-      </div>
+      <EntityTable
+        data={mappedRequests ?? []}
+        columns={columns}
+        initialSorting={[{ id: "title", desc: true }]}
+        getSearchText={(row) => [row.title, row.description, row.status?.name]}
+      />
     </div>
   );
 };

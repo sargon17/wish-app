@@ -1,15 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import {
-  Copy,
-  FileClock,
-  Globe,
-  Pencil,
-  Rocket,
-  Trash2,
-  Undo2,
-} from "lucide-react";
+import { Copy, FileClock, Globe, Pencil, Rocket, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -116,7 +108,8 @@ function PublicLinksDialog({
         <DialogHeader>
           <DialogTitle>Changelog links</DialogTitle>
           <DialogDescription>
-            Use the hosted public page for customers. Keep the JSON endpoint only for integrations that need it.
+            Use the hosted public page for customers. Keep the JSON endpoint only for integrations
+            that need it.
           </DialogDescription>
         </DialogHeader>
 
@@ -179,13 +172,13 @@ export default function ProjectChangelogManager({
     }
 
     void ensurePublicChangelogSlug({ id: projectId }).catch((error) => {
-      console.error(error)
-    })
-  }, [ensurePublicChangelogSlug, project, projectId])
+      console.error(error);
+    });
+  }, [ensurePublicChangelogSlug, project, projectId]);
 
   useEffect(() => {
     if (!newEntryTrigger) {
-      return
+      return;
     }
 
     setDraftEntry({
@@ -195,10 +188,10 @@ export default function ProjectChangelogManager({
       body: undefined,
       type: "feature",
       status: "draft",
-    })
-    setSelectedEntryId(null)
-    setIsEditorOpen(true)
-  }, [newEntryTrigger])
+    });
+    setSelectedEntryId(null);
+    setIsEditorOpen(true);
+  }, [newEntryTrigger]);
 
   const selectedEntry = useMemo(() => {
     if (draftEntry) {
@@ -215,7 +208,8 @@ export default function ProjectChangelogManager({
   const publicSlug = project?.publicChangelogSlug ?? "";
   const publicPageUrl = publicSlug ? `/changelog/${publicSlug}` : "";
   const convexHttpBaseUrl = getConvexHttpBaseUrl(env.VITE_CONVEX_URL);
-  const publicApiUrl = publicSlug && convexHttpBaseUrl ? `${convexHttpBaseUrl}/api/changelog/${publicSlug}` : "";
+  const publicApiUrl =
+    publicSlug && convexHttpBaseUrl ? `${convexHttpBaseUrl}/api/changelog/${publicSlug}` : "";
 
   async function handleSave(values: {
     versionLabel: string;
@@ -304,7 +298,7 @@ export default function ProjectChangelogManager({
   }
 
   return (
-    <div className="max-w-full space-y-6 overflow-hidden pb-8">
+    <div className="max-w-full space-y-6 pb-8">
       <div className="flex items-center justify-end">
         <PublicLinksDialog publicPageUrl={publicPageUrl} publicApiUrl={publicApiUrl} />
       </div>
@@ -316,23 +310,28 @@ export default function ProjectChangelogManager({
           </div>
         ) : entries.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-gradient-to-br from-orange-500/8 via-background to-background p-8 text-center text-sm text-muted-foreground">
-            No changelog entries yet. Create the first release note, publish it, and your hosted page and API feed will update automatically.
+            No changelog entries yet. Create the first release note, publish it, and your hosted
+            page and API feed will update automatically.
           </div>
         ) : (
           entries.map((entry) => (
-            <Card key={entry._id} className="overflow-hidden border-border/70 bg-background/80 backdrop-blur-sm">
+            <Card key={entry._id} className=" border-border/70 bg-background/80 backdrop-blur-sm">
               <CardHeader className="gap-3 pb-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={entry.status === "published" ? "default" : "outline"}>{entry.status}</Badge>
+                      <Badge variant={entry.status === "published" ? "default" : "outline"}>
+                        {entry.status}
+                      </Badge>
                       <Badge variant="secondary" className="capitalize">
                         {entry.type}
                       </Badge>
                       <Badge variant="outline">{entry.versionLabel || "No version yet"}</Badge>
                     </div>
                     <div>
-                      <CardTitle className="text-base">{entry.title || "Untitled changelog entry"}</CardTitle>
+                      <CardTitle className="text-base">
+                        {entry.title || "Untitled changelog entry"}
+                      </CardTitle>
                       <CardDescription>
                         {entry.status === "published"
                           ? `Published ${formatDate(entry.publishedAt)}`
@@ -364,7 +363,12 @@ export default function ProjectChangelogManager({
                         <DeleteDraftButton entryId={entry._id} onDelete={handleDeleteDraft} />
                       </>
                     ) : (
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleUnpublish(entry._id)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnpublish(entry._id)}
+                      >
                         <Undo2 />
                         Unpublish
                       </Button>
@@ -374,7 +378,9 @@ export default function ProjectChangelogManager({
               </CardHeader>
 
               <CardContent className="space-y-4">
-                {entry.summary ? <p className="text-sm text-muted-foreground">{entry.summary}</p> : null}
+                {entry.summary ? (
+                  <p className="text-sm text-muted-foreground">{entry.summary}</p>
+                ) : null}
 
                 {entry.body ? (
                   <div className="rounded-xl border bg-muted/20 p-4 text-sm leading-6 whitespace-pre-wrap text-foreground/90">

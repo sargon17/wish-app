@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { ChevronDown, ChevronLeft, ChevronRight, Check, ArrowUpDown } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, Check, ArrowUpDown } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -14,40 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
 import { StatCard } from "@components/molecules/StatCard";
-import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 import CopyButton from "../Organisms/CopyButton";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import DashboardTable from "../dashboard/DashboardTable";
+import EntityTable from "../molecules/EntityTable";
 
 type WaitlistEntry = Doc<"waitlist">;
 type WaitlistId = WaitlistEntry["_id"];
@@ -93,11 +68,7 @@ function StatusBadge({
 export function WaitlistTable() {
   const waitlist = useQuery(api.waitlist.list);
   const setStatus = useMutation(api.waitlist.setStatus);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "appliedAt", desc: true }]);
   const [updatingId, setUpdatingId] = useState<WaitlistId | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "invited">("all");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
 
   const handleStatusChange = useCallback(
     async (id: WaitlistId, status: "pending" | "invited") => {
@@ -236,56 +207,6 @@ export function WaitlistTable() {
     [handleStatusChange, updatingId],
   );
 
-  const filteredWaitlist = useMemo(() => {
-    if (!waitlist) return [];
-
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return waitlist.filter((entry) => {
-      const matchesSearch =
-        !normalizedSearch || entry.email.toLowerCase().includes(normalizedSearch);
-      const isInvited = Boolean(entry.invitedAt);
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "invited" && isInvited) ||
-        (statusFilter === "pending" && !isInvited);
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [searchTerm, statusFilter, waitlist]);
-
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [searchTerm, statusFilter]);
-
-  useEffect(() => {
-    setPagination((prev) => {
-      const maxPage =
-        filteredWaitlist.length === 0
-          ? 0
-          : Math.max(Math.ceil(filteredWaitlist.length / prev.pageSize) - 1, 0);
-
-      if (prev.pageIndex > maxPage) {
-        return { ...prev, pageIndex: maxPage };
-      }
-      return prev;
-    });
-  }, [filteredWaitlist.length]);
-
-  const table = useReactTable({
-    data: filteredWaitlist ?? [],
-    columns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      sorting,
-    },
-  });
-
   const stats = useMemo(() => {
     const total = waitlist?.length ?? 0;
     const invited = waitlist?.filter((item) => Boolean(item.invitedAt)).length ?? 0;
@@ -293,105 +214,20 @@ export function WaitlistTable() {
     return { total, invited, pending };
   }, [waitlist]);
 
-  const isLoading = waitlist === undefined;
-  const hasFilters = Boolean(searchTerm.trim()) || statusFilter !== "all";
-  const totalFiltered = filteredWaitlist.length;
-  const { pageIndex, pageSize } = table.getState().pagination;
-  const pageStart = totalFiltered === 0 ? 0 : pageIndex * pageSize + 1;
-  const pageEnd = totalFiltered === 0 ? 0 : Math.min((pageIndex + 1) * pageSize, totalFiltered);
-  const pageCount = table.getPageCount();
-
   return (
-    <div className="flex flex-col gap-4 sidebar-offset-pl">
+    <div className="flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Total" value={stats.total} description="All emails captured so far" />
         <StatCard label="Invited" value={stats.invited} description="Already contacted" />
         <StatCard label="Pending" value={stats.pending} description="Still waiting on invites" />
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Input
-          placeholder="Search by email..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="w-full sm:max-w-xs"
-        />
-        <div className="flex items-center gap-3">
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as "all" | "pending" | "invited")}
-          >
-            <SelectTrigger className="w-40" aria-label="Filter by status">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="invited">Invited</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
-            Showing {filteredWaitlist.length} of {waitlist?.length ?? 0}
-          </span>
-        </div>
-      </div>
-
-      <ScrollArea className="rounded-md border bg-background/80 max-h-[60vh]">
-        <div className="min-w-full">
-          <DashboardTable table={table} isLoading={isLoading} />
-        </div>
-      </ScrollArea>
-
-      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-        <p className="text-sm text-muted-foreground">
-          {totalFiltered === 0
-            ? "No entries to display"
-            : `Showing ${pageStart}-${pageEnd} of ${totalFiltered}${hasFilters ? " (filtered)" : ""}`}
-        </p>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(value) =>
-                setPagination({ pageIndex: 0, pageSize: Number(value) || 10 })
-              }
-            >
-              <SelectTrigger className="w-[110px]" aria-label="Rows per page">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronLeft className="mr-1 size-4" />
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {pageCount === 0 ? 1 : pageIndex + 1} of {Math.max(pageCount, 1)}
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-            <ChevronRight className="ml-1 size-4" />
-          </Button>
-        </div>
-      </div>
+      <EntityTable
+        data={waitlist ?? []}
+        columns={columns}
+        initialSorting={[{ id: "appliedAt", desc: true }]}
+        getSearchText={(row) => [row.email]}
+      />
     </div>
   );
 }

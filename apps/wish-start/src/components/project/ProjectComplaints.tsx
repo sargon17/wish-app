@@ -11,13 +11,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 
-import { ComplaintCaseDetail } from "./complaints/ComplaintCaseDetail";
-import { ComplaintCaseList } from "./complaints/ComplaintCaseList";
+import { ComplaintCaseDetail } from "../complaints/ComplaintCaseDetail";
+import { ComplaintCaseList } from "../complaints/ComplaintCaseList";
 import {
   getFilterCounts,
   isComplaintOverdue,
   terminalComplaintStages,
-} from "./complaints/complaintCaseHelpers";
+} from "../complaints/complaintCaseHelpers";
 
 const filters = ["all", "triage", "overdue", "mine", "critical", "closed"] as const;
 const filterLabels = {
@@ -31,6 +31,7 @@ const filterLabels = {
 
 export default function ProjectComplaints({ projectId }: { projectId: Id<"projects"> }) {
   const data = useQuery(api.complaintCases.getByProject, { id: projectId });
+
   const [selectedId, setSelectedId] = useState<Id<"requests"> | undefined>();
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
   const [search, setSearch] = useState("");
@@ -46,7 +47,8 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
       const matchesFilter =
         filter === "all" ||
         (filter === "triage" && stage === "new") ||
-        (filter === "overdue" && isComplaintOverdue(stage, complaint.complaintFirstResponseDueAt)) ||
+        (filter === "overdue" &&
+          isComplaintOverdue(stage, complaint.complaintFirstResponseDueAt)) ||
         (filter === "mine" && complaint.complaintOwnerUserId === data?.currentUser._id) ||
         (filter === "critical" && complaint.complaintSeverity === "S1") ||
         (filter === "closed" && terminalComplaintStages.has(stage));
@@ -109,14 +111,15 @@ export default function ProjectComplaints({ projectId }: { projectId: Id<"projec
   }
 
   return (
-    <div className="h-full sidebar-offset-pl">
-      <div className="flex h-full flex-col overflow-hidden px-4 py-4 md:px-6">
+    <div className="h-full">
+      <div className="flex h-full flex-col px-4 py-4 md:px-6">
         <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
           <header className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold tracking-tight">Complaint cases</h2>
               <p className="text-sm text-muted-foreground">
-                Triage customer harm, assign custody, track SLA risk, and require evidence before closure.
+                Triage customer harm, assign custody, track SLA risk, and require evidence before
+                closure.
               </p>
             </div>
             {counts?.overdue ? (

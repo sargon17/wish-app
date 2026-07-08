@@ -18,9 +18,9 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         }
       />
-      <SidebarInset className="overflow-hidden">
+      <SidebarInset>
         <div className="gradient-homepage fixed inset-0 z-0" />
-        <main className="relative z-10 h-screen">{children}</main>
+        <main className="relative z-10">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
