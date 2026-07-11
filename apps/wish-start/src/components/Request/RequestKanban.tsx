@@ -5,9 +5,10 @@ import type { Id } from "@wish/convex-backend/data-model";
 
 type RequestKanbanProps = {
   projectId: Id<"projects">;
+  kind?: "request" | "complaint";
 };
 
-const RequestKanban = ({ projectId }: RequestKanbanProps) => {
+const RequestKanban = ({ projectId, kind }: RequestKanbanProps) => {
   const statuses = useStatuses(projectId);
   const { handleRequestDrop } = useRequestBoardState();
 
@@ -20,6 +21,7 @@ const RequestKanban = ({ projectId }: RequestKanbanProps) => {
           key={status._id}
           status={status}
           projectId={projectId}
+          kind={kind}
           onDropRequest={handleRequestDrop}
         />
       ))}

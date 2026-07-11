@@ -11,8 +11,9 @@ import RequestKanban from "@components/Request/RequestKanban";
 interface Props {
   projectId: Id<"projects">;
   boardType: BoardType;
+  kind?: "request" | "complaint";
 }
-export default function DashboardBoard({ projectId, boardType }: Props) {
+export default function DashboardBoard({ projectId, boardType, kind }: Props) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
 
   if (!project) return null;
@@ -21,9 +22,9 @@ export default function DashboardBoard({ projectId, boardType }: Props) {
     // <div className="sidebar-offset-pl h-full">
     <div className="flex h-full gap-2 w-full overflow-x-scroll pt-px sidebar-offset-pl pr-6 ">
       {boardType === "kanban" ? (
-        <RequestKanban projectId={project._id} />
+        <RequestKanban projectId={project._id} kind={kind} />
       ) : (
-        <RequestTable projectId={projectId} />
+        <RequestTable projectId={projectId} kind={kind} />
       )}
     </div>
     // </div>

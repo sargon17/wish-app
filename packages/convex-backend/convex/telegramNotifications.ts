@@ -56,7 +56,6 @@ export const buildMessageInternal = internalQuery({
 
     const request = event.requestId ? await ctx.db.get(event.requestId) : null;
     const comment = event.commentId ? await ctx.db.get(event.commentId) : null;
-    const caseEvent = event.complaintCaseEventId ? await ctx.db.get(event.complaintCaseEventId) : null;
     const requestUrl = formatRequestUrl({
       projectSlug: project.projectSlug,
       requestId: request?._id.toString(),
@@ -66,9 +65,6 @@ export const buildMessageInternal = internalQuery({
     const description = truncate(request?.description, 300);
     const commentBody = truncate(comment?.body, 300);
     const projectTitle = truncate(project.title, 100);
-    const caseEventChange = caseEvent
-      ? `${caseEvent.fromOwnerUserId || caseEvent.fromStage || "None"} -> ${caseEvent.toOwnerUserId || caseEvent.toStage || "None"}`
-      : "";
 
     const textByType = {
       "request.created": compactLines([
@@ -87,13 +83,6 @@ export const buildMessageInternal = internalQuery({
         `New comment in ${projectTitle}`,
         requestTitle,
         commentBody,
-        requestUrl,
-      ]),
-      "complaint.case_event_created": compactLines([
-        `Complaint updated in ${projectTitle}`,
-        requestTitle,
-        caseEvent ? `${caseEvent.type}: ${caseEventChange}` : "",
-        truncate(caseEvent?.reason, 240),
         requestUrl,
       ]),
     };

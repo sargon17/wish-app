@@ -12,6 +12,7 @@ import { Checkbox } from "@components/ui/checkbox";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
+  kind?: "request" | "complaint";
 }
 
 type RequestEntry = {
@@ -21,8 +22,8 @@ type RequestEntry = {
   status?: Doc<"requestStatuses">;
 };
 
-const RequestTable = ({ projectId }: RequestTableProps) => {
-  const { value: requests, byId } = useRequests(projectId);
+const RequestTable = ({ projectId, kind }: RequestTableProps) => {
+  const { value: requests, byId } = useRequests(projectId, kind);
   const { byId: statusesById } = useStatuses(projectId);
 
   const mappedRequests: RequestEntry[] = useMemo(
@@ -70,7 +71,7 @@ const RequestTable = ({ projectId }: RequestTableProps) => {
           if (!request) return;
 
           return (
-            <RequestDetailView request={request} showUpvoteButton={true}>
+            <RequestDetailView request={request} showUpvoteButton={kind !== "complaint"}>
               <span>{title}</span>
             </RequestDetailView>
           );

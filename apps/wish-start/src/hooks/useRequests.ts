@@ -3,8 +3,8 @@ import type { Doc, Id } from "@wish/convex-backend/data-model";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 
-export default function useRequests(projectId: Id<"projects">) {
-  const requests = useQuery(api.requests.getByProject, { id: projectId });
+export default function useRequests(projectId: Id<"projects">, kind?: "request" | "complaint") {
+  const requests = useQuery(api.requests.getByProject, { id: projectId, kind });
   const requestsUpvotedByUser = useQuery(api.requestUpvotes.getViewerUpvotesByProject, {
     projectId: projectId,
   });

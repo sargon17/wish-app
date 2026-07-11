@@ -6,10 +6,9 @@ export async function emitNotificationEvent(
   ctx: MutationCtx,
   args: {
     projectId: Id<"projects">;
-    type: "request.created" | "complaint.created" | "request.comment_created" | "complaint.case_event_created";
+    type: "request.created" | "complaint.created" | "request.comment_created";
     requestId?: Id<"requests">;
     commentId?: Id<"requestComments">;
-    complaintCaseEventId?: Id<"complaintCaseEvents">;
   },
 ) {
   const now = Date.now();

@@ -11,10 +11,6 @@ export const NOTIFICATION_EVENTS = [
     type: "request.comment_created",
     label: "Request Comment Created",
   },
-  {
-    type: "complaint.case_event_created",
-    label: "Complaint Case Event Created",
-  },
 ] as const;
 
 export const DEFAULT_NOTIFICATION_EVENT_TYPES = NOTIFICATION_EVENTS.map((event) => event.type);

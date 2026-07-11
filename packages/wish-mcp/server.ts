@@ -47,10 +47,6 @@ const actions = {
   update_status_color: ["mutation", api.requestStatuses.updateColor],
   repair_status_defaults: ["mutation", api.requestStatuses.repairProjectDefaults],
 
-  list_complaints: ["query", api.complaintCases.getByProject],
-  get_complaint_events: ["query", api.complaintCases.getEvents],
-  update_complaint: ["mutation", api.complaintCases.update],
-
   list_changelog_entries: ["query", api.changelogEntries.listByProject],
   create_changelog_entry: ["mutation", api.changelogEntries.create],
   save_changelog_entry: ["mutation", api.changelogEntries.save],

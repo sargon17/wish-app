@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import ProjectComplaints from "@/components/project/ProjectComplaints";
+import DashboardBoard from "@/components/dashboard/DashboardBoard";
 import ButtonSwitcher from "@components/molecules/ButtonSwitcher";
 import { useBoardType } from "#/hooks/useBoardType";
 import { boardTypeValues } from "#/lib/requestBoard/boardType";
@@ -15,26 +15,26 @@ function ProjectComplaintsRoute() {
   const { type: boardType, switchTo: switchToBoardType } = useBoardType();
 
   return (
-    <DashboardPage
-      breadcrumbs={[
-        { label: "home", url: "/" },
-        { label: "dashboard", url: "/dashboard" },
-        { label: slug.replaceAll("-", " "), url: `/dashboard/project/${projectId}/${slug}` },
-      ]}
-      title="Complaints"
-      actions={
-        <div>
-          <ButtonSwitcher
-            switches={boardTypeValues}
-            selected={boardType}
-            onChange={(type) => switchToBoardType(type)}
-          />
-        </div>
-      }
-    >
-      <div className="min-h-0 flex-1">
-        <ProjectComplaints projectId={projectId as never} />
-      </div>
-    </DashboardPage>
+    <>
+      <DashboardPage
+        breadcrumbs={[
+          { label: "home", url: "/" },
+          { label: "dashboard", url: "/dashboard" },
+          { label: slug.replaceAll("-", " "), url: `/dashboard/project/${projectId}/${slug}` },
+        ]}
+        title="Complaints"
+        actions={
+          <div>
+            <ButtonSwitcher
+              switches={boardTypeValues}
+              selected={boardType}
+              onChange={(type) => switchToBoardType(type)}
+            />
+          </div>
+        }
+      ></DashboardPage>
+      {/*outside page scope for styling purpouses */}
+      <DashboardBoard projectId={projectId as never} boardType={boardType} kind="complaint" />
+    </>
   );
 }

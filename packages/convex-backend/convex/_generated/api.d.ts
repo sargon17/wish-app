@@ -10,7 +10,6 @@
 
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
-import type * as complaintCases from "../complaintCases.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
@@ -55,7 +54,6 @@ import type {
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
-  complaintCases: typeof complaintCases;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;

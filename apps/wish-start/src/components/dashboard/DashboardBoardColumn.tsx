@@ -14,12 +14,13 @@ import useRequests from "#/hooks/useRequests";
 interface Props {
   status: Doc<"requestStatuses">;
   projectId: Id<"projects">;
+  kind?: "request" | "complaint";
   onDropRequest: (event: DragEvent<HTMLDivElement>, statusId: Id<"requestStatuses">) => void;
 }
 
-export default function DashboardBoardColumn({ status, projectId, onDropRequest }: Props) {
+export default function DashboardBoardColumn({ status, projectId, kind, onDropRequest }: Props) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const requests = useRequests(projectId);
+  const requests = useRequests(projectId, kind);
   const dragDepth = useRef(0);
   const { _id: statusId, color, displayName } = status;
   const requestsByStatus = requests.byStatus.get(statusId);
