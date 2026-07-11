@@ -1,17 +1,15 @@
 import type { BoardType } from "#/lib/requestBoard/boardType";
-import { useState } from "react";
-
+import { useLocalStorage } from "./useLocalStorage";
 
 export function useBoardType() {
-  const [type, setType] = useState<BoardType>("table")
+  const [type, setType] = useLocalStorage<BoardType>("board-type", "table");
 
   const switchTo = (type: BoardType) => {
-    setType(type)
-  }
+    setType(type);
+  };
 
   return {
     type,
-    switchTo
-  }
-
+    switchTo,
+  };
 }
