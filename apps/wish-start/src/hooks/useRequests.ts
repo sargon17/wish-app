@@ -1,13 +1,21 @@
+import { convexQuery } from "@convex-dev/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
-import { useQuery } from "convex/react";
 import { useMemo } from "react";
 
 export default function useRequests(projectId: Id<"projects">, kind?: "request" | "complaint") {
-  const requests = useQuery(api.requests.getByProject, { id: projectId, kind });
-  const requestsUpvotedByUser = useQuery(api.requestUpvotes.getViewerUpvotesByProject, {
-    projectId: projectId,
-  });
+  const {
+    data: requests,
+    isPending,
+    error,
+  } = useQuery(convexQuery(api.requests.getByProject, { id: projectId, kind }));
+
+  const { data: requestsUpvotedByUser } = useQuery(
+    convexQuery(api.requestUpvotes.getViewerUpvotesByProject, {
+      projectId: projectId,
+    }),
+  );
 
   const byId = useMemo(
     () => new Map((requests ?? []).map((request) => [request._id, request])),
@@ -30,6 +38,8 @@ export default function useRequests(projectId: Id<"projects">, kind?: "request" 
 
   return {
     value: requests,
+    isPending,
+    error,
     byId,
     byStatus,
     upvotedByUser,
