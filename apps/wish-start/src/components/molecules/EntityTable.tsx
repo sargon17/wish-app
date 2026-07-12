@@ -1,5 +1,15 @@
+import { Button } from "@components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@components/ui/empty";
 import { Input } from "@components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -80,6 +90,8 @@ const EntityTable = <T,>({
     },
   });
 
+  const pagesNumber = useMemo(() => table.getPageCount(), [table]);
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div>
@@ -91,9 +103,9 @@ const EntityTable = <T,>({
         />
       </div>
       <FilterList active={activeFilter} onChange={(v) => setActiveFilter(v)} filters={filters} />
-      <div className="overflow-hidden rounded-md outline">
+      <div className="min-h-0 flex-1 overflow-auto rounded-md outline [&_[data-slot=table-container]]:overflow-visible">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
@@ -139,6 +151,40 @@ const EntityTable = <T,>({
           </TableBody>
         </Table>
       </div>
+      {pagesNumber > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious href="#" onClick={() => table.previousPage()} />
+            </PaginationItem>
+            {Array.from({ length: pagesNumber }).map((_, idx) => {
+              if (idx - 4 >= pagination.pageIndex || idx + 4 <= pagination.pageIndex) return null;
+
+              if (idx - 3 >= pagination.pageIndex || idx + 3 <= pagination.pageIndex)
+                return (
+                  <PaginationItem key={idx}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+
+              return (
+                <PaginationItem key={idx}>
+                  <PaginationLink
+                    href="#"
+                    isActive={pagination.pageIndex === idx}
+                    onClick={() => table.setPageIndex(idx)}
+                  >
+                    {idx + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
+            <PaginationItem>
+              <PaginationNext href="#" onClick={() => table.nextPage()} />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };

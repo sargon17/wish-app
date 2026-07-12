@@ -72,6 +72,18 @@ _Avoid_: column, state
 One of the initial statuses automatically created for a new project board: Open, Under Review, Planned, In Progress, and Done.
 _Avoid_: default status, system status, locked status
 
+**Work Tracker**:
+An external system where a Project Owner manages actionable work, such as Linear, GitHub Issues, or ClickUp.
+_Avoid_: notification service, export destination, integration when referring to the external system itself
+
+**External Work Item**:
+An issue or task created in a Work Tracker from a Request or Complaint and linked back to its source in Wish.
+_Avoid_: synchronized request, exported request
+
+**Work Tracker Connection**:
+A Project Board's authorized link to one Work Tracker, including the destination used when creating External Work Items.
+_Avoid_: global integration, notification connector
+
 ## Relationships
 
 - A **Project Owner** creates and manages one or more **Project Boards**
@@ -118,6 +130,12 @@ _Avoid_: default status, system status, locked status
 - Status names are unique within a **Project Board**
 - A **Request** belongs to exactly one **Status** on its **Project Board**
 - Removing a **Status** that has **Requests** requires moving those **Requests** to another **Status** on the same **Project Board**
+- A **Request** or **Complaint** becomes external work only when a **Project Owner** explicitly sends it to a **Work Tracker**
+- Creating an **External Work Item** is a one-way action in v1: Wish retains its external identifier and URL but does not synchronize later changes
+- A **Request** or **Complaint** may have at most one **External Work Item** in each connected **Work Tracker**
+- A **Work Tracker Connection** belongs to exactly one **Project Board** and identifies one destination team, with an optional default project when the Work Tracker supports it
+- Sending a **Request** or **Complaint** to a **Work Tracker** creates the **External Work Item** immediately without an intermediate editing step
+- After creation, the **Project Owner** is given the **External Work Item** link
 
 ## Example dialogue
 

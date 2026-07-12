@@ -8,8 +8,8 @@ import {
   LayoutDashboard,
   ListTodo,
   Mail,
-  Map,
   Plug,
+  ScrollText,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -62,7 +62,11 @@ const projectViews = [
     to: "/dashboard/project/$projectId/$slug/complaints",
     icon: AlertTriangle,
   },
-  { title: "Roadmap", to: "/dashboard/project/$projectId/$slug/roadmap", icon: Map },
+  {
+    title: "Changelog",
+    to: "/dashboard/project/$projectId/$slug/changelog",
+    icon: ScrollText,
+  },
 ] as const;
 
 interface Props {

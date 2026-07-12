@@ -95,7 +95,11 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
       {
         accessorKey: "description",
         header: "Description",
-        cell: (info) => <span className="">{trimTo(info.getValue<string>(), 40)}</span>,
+        cell: (info) => {
+          const description = info.getValue<string>();
+          if (!description || description.length === 0) return <span></span>;
+          return <span className="">{trimTo(info.getValue<string>(), 40)}</span>;
+        },
       },
       {
         accessorKey: "status",
