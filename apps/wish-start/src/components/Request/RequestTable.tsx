@@ -7,7 +7,7 @@ import { type ColumnDef, type RowSelectionState } from "@tanstack/react-table";
 import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
@@ -36,14 +36,18 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: statuses, byId: statusesById } = useStatuses(projectId);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isBulkMutationPending, setIsBulkMutationPending] = useState(false);
+  const bulkMutationInFlight = useRef(false);
   const updateStatuses = useMutation(api.requests.updateStatuses);
   const deleteRequests = useMutation(api.requests.deleteRequests);
-  const selectedIds = Object.keys(rowSelection) as Id<"requests">[];
+  const selectedIds = (requests ?? [])
+    .filter((request) => rowSelection[request._id])
+    .map((request) => request._id);
 
   const handleBulkStatusChange = async (status: Id<"requestStatuses">) => {
-    if (isBulkMutationPending || selectedIds.length === 0) return;
+    if (bulkMutationInFlight.current || selectedIds.length === 0) return;
 
     try {
+      bulkMutationInFlight.current = true;
       setIsBulkMutationPending(true);
       await updateStatuses({ ids: selectedIds, status });
       setRowSelection({});
@@ -54,14 +58,16 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
       console.error(error);
       toast.error("Unable to update the selected items");
     } finally {
+      bulkMutationInFlight.current = false;
       setIsBulkMutationPending(false);
     }
   };
 
   const handleBulkDelete = async () => {
-    if (isBulkMutationPending || selectedIds.length === 0) return false;
+    if (bulkMutationInFlight.current || selectedIds.length === 0) return false;
 
     try {
+      bulkMutationInFlight.current = true;
       setIsBulkMutationPending(true);
       await deleteRequests({ ids: selectedIds });
       setRowSelection({});
@@ -74,6 +80,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
       toast.error("Unable to delete the selected items");
       return false;
     } finally {
+      bulkMutationInFlight.current = false;
       setIsBulkMutationPending(false);
     }
   };

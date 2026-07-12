@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import { deleteRequestsInBulk, getBulkRequests, updateRequestStatuses } from "./requests";
+import { deleteOwnedRequests, getBulkRequests, updateRequestStatuses } from "./requests";
 
 const projectId = "project-1" as Id<"projects">;
 
@@ -119,8 +119,36 @@ describe("bulk request validation", () => {
         ids: [first._id, otherProject._id],
         status: statusId,
       }),
-    ).rejects.toThrow("Failed to update requests");
+    ).rejects.toThrow("same project");
     expect(patch).not.toHaveBeenCalled();
+  });
+
+  it("performs no status writes for a non-owner or foreign Status", async () => {
+    const first = request("request-1");
+    const statusId = "status-2" as Id<"requestStatuses">;
+    const nonOwner = mutationContext({
+      user: { _id: "user-1" },
+      [first._id]: first,
+      [projectId]: { _id: projectId, user: "user-2" },
+      [statusId]: { _id: statusId, project: projectId },
+    });
+
+    await expect(
+      updateRequestStatuses(nonOwner.ctx, { ids: [first._id], status: statusId }),
+    ).rejects.toThrow("Not authorized");
+    expect(nonOwner.patch).not.toHaveBeenCalled();
+
+    const foreignStatus = mutationContext({
+      user: { _id: "user-1" },
+      [first._id]: first,
+      [projectId]: { _id: projectId, user: "user-1" },
+      [statusId]: { _id: statusId, project: "project-2" },
+    });
+
+    await expect(
+      updateRequestStatuses(foreignStatus.ctx, { ids: [first._id], status: statusId }),
+    ).rejects.toThrow("Status does not belong");
+    expect(foreignStatus.patch).not.toHaveBeenCalled();
   });
 
   it("deletes every selected Request and its dependent records", async () => {
@@ -135,11 +163,29 @@ describe("bulk request validation", () => {
       comment: { _id: "comment-1", requestId: first._id, message: "Comment" },
     });
 
-    await deleteRequestsInBulk(ctx, { ids: [first._id, second._id] });
+    await deleteOwnedRequests(ctx, [first._id, second._id]);
 
     expect(remove).toHaveBeenCalledWith("upvote-1");
     expect(remove).toHaveBeenCalledWith("comment-1");
     expect(remove).toHaveBeenCalledWith(first._id);
     expect(remove).toHaveBeenCalledWith(second._id);
+  });
+
+  it("performs no deletes when ownership or request validation fails", async () => {
+    const first = request("request-1");
+    const nonOwner = mutationContext({
+      user: { _id: "user-1" },
+      [first._id]: first,
+      [projectId]: { _id: projectId, user: "user-2" },
+    });
+
+    await expect(deleteOwnedRequests(nonOwner.ctx, [first._id])).rejects.toThrow("Not authorized");
+    expect(nonOwner.remove).not.toHaveBeenCalled();
+
+    const missingRequest = mutationContext({ user: { _id: "user-1" } });
+    await expect(
+      deleteOwnedRequests(missingRequest.ctx, ["missing" as Id<"requests">]),
+    ).rejects.toThrow("Request not found");
+    expect(missingRequest.remove).not.toHaveBeenCalled();
   });
 });

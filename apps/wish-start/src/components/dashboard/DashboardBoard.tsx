@@ -23,7 +23,7 @@ export default function DashboardBoard({ projectId, boardType, kind }: Props) {
       {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} kind={kind} />
       ) : (
-        <RequestTable projectId={projectId} kind={kind} />
+        <RequestTable key={`${projectId}:${kind ?? "request"}`} projectId={projectId} kind={kind} />
       )}
     </div>
     // </div>

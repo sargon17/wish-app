@@ -40,8 +40,6 @@ export function RequestBulkActions({
   statuses: Doc<"requestStatuses">[];
 }) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const label = kind === "complaint" ? "complaint" : "request";
-
   const handleDelete = async () => {
     if (await onDelete()) setIsDeleteOpen(false);
   };
@@ -52,7 +50,7 @@ export function RequestBulkActions({
       className="flex flex-wrap items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 p-2 dark:border-orange-900 dark:bg-orange-950/30"
     >
       <span className="mr-auto px-1 text-sm font-medium">
-        {count} {label}
+        {count} {kind}
         {count === 1 ? "" : "s"} selected
       </span>
 
@@ -86,11 +84,11 @@ export function RequestBulkActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {count} {label}
+              Delete {count} {kind}
               {count === 1 ? "" : "s"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes the selected {label}
+              This permanently deletes the selected {kind}
               {count === 1 ? "" : "s"}, including their comments and upvotes. This action cannot be
               undone.
             </AlertDialogDescription>
