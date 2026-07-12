@@ -1,4 +1,6 @@
 const clerkJwtIssuerDomain = process.env.CLERK_JWT_ISSUER_DOMAIN;
+const mcpIssuer = process.env.WISH_MCP_JWT_ISSUER;
+const mcpJwks = process.env.WISH_MCP_JWKS;
 
 if (!clerkJwtIssuerDomain) {
   throw new Error("CLERK_JWT_ISSUER_DOMAIN is required");
@@ -14,5 +16,16 @@ export default {
       domain: clerkJwtIssuerDomain,
       applicationID: "convex",
     },
+    ...(mcpIssuer && mcpJwks
+      ? [
+          {
+            type: "customJwt" as const,
+            issuer: mcpIssuer,
+            applicationID: "wish-mcp",
+            jwks: `data:application/json;base64,${btoa(mcpJwks)}`,
+            algorithm: "ES256" as const,
+          },
+        ]
+      : []),
   ],
 };

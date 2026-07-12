@@ -17,6 +17,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as PProjectSlugRouteImport } from './routes/p.$projectSlug'
 import { Route as DashboardWaitlistRouteImport } from './routes/dashboard.waitlist'
 import { Route as DashboardStatsRouteImport } from './routes/dashboard.stats'
+import { Route as DashboardMcpRouteImport } from './routes/dashboard.mcp'
 import { Route as ChangelogSlugRouteImport } from './routes/changelog.$slug'
 import { Route as DashboardProjectProjectIdSlugRouteImport } from './routes/dashboard.project.$projectId.$slug'
 import { Route as DashboardProjectProjectIdSlugIndexRouteImport } from './routes/dashboard.project.$projectId.$slug.index'
@@ -65,6 +66,11 @@ const DashboardWaitlistRoute = DashboardWaitlistRouteImport.update({
 const DashboardStatsRoute = DashboardStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMcpRoute = DashboardMcpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => DashboardRoute,
 } as any)
 const ChangelogSlugRoute = ChangelogSlugRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
+  '/dashboard/mcp': typeof DashboardMcpRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
+  '/dashboard/mcp': typeof DashboardMcpRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/embed': typeof EmbedRoute
   '/changelog/$slug': typeof ChangelogSlugRoute
+  '/dashboard/mcp': typeof DashboardMcpRoute
   '/dashboard/stats': typeof DashboardStatsRoute
   '/dashboard/waitlist': typeof DashboardWaitlistRoute
   '/p/$projectSlug': typeof PProjectSlugRouteWithChildren
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/embed'
     | '/changelog/$slug'
+    | '/dashboard/mcp'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
     | '/p/$projectSlug'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/embed'
     | '/changelog/$slug'
+    | '/dashboard/mcp'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
     | '/p/$projectSlug'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/embed'
     | '/changelog/$slug'
+    | '/dashboard/mcp'
     | '/dashboard/stats'
     | '/dashboard/waitlist'
     | '/p/$projectSlug'
@@ -301,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/dashboard/stats'
       preLoaderRoute: typeof DashboardStatsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/mcp': {
+      id: '/dashboard/mcp'
+      path: '/mcp'
+      fullPath: '/dashboard/mcp'
+      preLoaderRoute: typeof DashboardMcpRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/changelog/$slug': {
@@ -397,6 +416,7 @@ const DashboardProjectProjectIdSlugRouteWithChildren =
   )
 
 interface DashboardRouteChildren {
+  DashboardMcpRoute: typeof DashboardMcpRoute
   DashboardStatsRoute: typeof DashboardStatsRoute
   DashboardWaitlistRoute: typeof DashboardWaitlistRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -404,6 +424,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardMcpRoute: DashboardMcpRoute,
   DashboardStatsRoute: DashboardStatsRoute,
   DashboardWaitlistRoute: DashboardWaitlistRoute,
   DashboardIndexRoute: DashboardIndexRoute,
