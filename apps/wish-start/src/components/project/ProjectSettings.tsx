@@ -2,6 +2,10 @@
 import type { Id } from "@wish/convex-backend/data-model";
 import type { ReactElement, ReactNode } from "react";
 
+import {
+  LinearPrototypeSwitcher,
+  LinearSettingsPrototype,
+} from "../prototypes/LinearHandoffPrototype";
 import { SettingsView, SettingsContent } from "../settings/SettingsView";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 
@@ -37,6 +41,15 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
       label: "Connectors",
       content: <ProjectNotificationConnectorsManager projectId={projectID} />,
     },
+    ...(import.meta.env.PROD
+      ? []
+      : [
+          {
+            key: "work-trackers",
+            label: "Work trackers · Prototype",
+            content: <LinearSettingsPrototype />,
+          },
+        ]),
   ];
 
   return (
@@ -56,6 +69,7 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
             </SettingsContent>
           ))}
         </SettingsView>
+        {import.meta.env.PROD ? null : <LinearPrototypeSwitcher />}
       </DialogContent>
     </Dialog>
   );

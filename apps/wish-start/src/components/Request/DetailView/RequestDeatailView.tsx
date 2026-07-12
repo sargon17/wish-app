@@ -6,6 +6,10 @@ import { ChevronUp, Mail, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  LinearPrototypeSwitcher,
+  LinearRequestActionPrototype,
+} from "@/components/prototypes/LinearHandoffPrototype";
 import CommentsPanel from "@/components/Request/Comments/CommentsPanel";
 import RequestUpvoteButton from "@/components/Request/RequestUpvoteButton";
 import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
@@ -127,6 +131,8 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
 
             <CommentsPanel request={activeRequest} />
 
+            {import.meta.env.PROD ? null : <LinearRequestActionPrototype />}
+
             {hasChanges && (
               <DialogFooter>
                 <Button onClick={handleSave}>Save</Button>
@@ -193,6 +199,7 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
             </div>
           )}
         </div>
+        {import.meta.env.PROD ? null : <LinearPrototypeSwitcher />}
       </DialogContent>
     </Dialog>
   );
