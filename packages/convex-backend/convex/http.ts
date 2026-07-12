@@ -4,10 +4,12 @@ import { HttpRouterWithHono } from "convex-helpers/server/hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
+import { makeFunctionReference } from "convex/server";
 import type { ActionCtx } from "./_generated/server";
 import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
 import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
+import { handleMcpRequest } from "./lib/mcpServer";
 import { toPublicProject } from "./lib/projectPublic";
 import { createPublicError, publicErrorJson, toPublicErrorResponse } from "./lib/publicErrors";
 import {
@@ -22,6 +24,16 @@ import {
 } from "./lib/requestIntake";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
+const assertValidMcpToken = makeFunctionReference<"query">("mcpTokens:assertValid");
+
+app.all("/mcp", async (c) => {
+  try {
+    await c.env.runQuery(assertValidMcpToken, {});
+    return await handleMcpRequest(c.env, c.req.raw);
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+});
 
 // The project API authenticates with public client keys, so browser embeds
 // (e.g. the /embed WebView route) may call it from any origin.

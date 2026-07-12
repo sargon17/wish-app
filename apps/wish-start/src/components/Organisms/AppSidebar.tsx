@@ -9,6 +9,7 @@ import {
   ListTodo,
   Mail,
   Map,
+  Plug,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -46,6 +47,11 @@ const items = [
     title: "Waitlist",
     url: "/dashboard/waitlist",
     icon: Mail,
+  },
+  {
+    title: "MCP connection",
+    url: "/dashboard/mcp",
+    icon: Plug,
   },
 ];
 

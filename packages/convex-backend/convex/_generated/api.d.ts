@@ -30,6 +30,7 @@ import type * as lib_requestStatusStarterData from "../lib/requestStatusStarterD
 import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js";
 import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
 import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
+import type * as mcpTokens from "../mcpTokens.js";
 import type * as notificationConnectors from "../notificationConnectors.js";
 import type * as notificationEvents from "../notificationEvents.js";
 import type * as projects from "../projects.js";
@@ -74,6 +75,7 @@ declare const fullApi: ApiFromModules<{
   "lib/requestStatusWorkflow": typeof lib_requestStatusWorkflow;
   "lib/requesterIdentity": typeof lib_requesterIdentity;
   "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
+  mcpTokens: typeof mcpTokens;
   notificationConnectors: typeof notificationConnectors;
   notificationEvents: typeof notificationEvents;
   projects: typeof projects;

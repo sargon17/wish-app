@@ -40,6 +40,16 @@ export default defineSchema({
     .index("by_project_status", ["projectId", "status"])
     .index("by_prefix_status", ["keyPrefix", "status"]),
 
+  mcpTokens: defineTable({
+    userId: v.id("users"),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_token_hash", ["tokenHash"]),
+
   apiRateLimits: defineTable({
     bucket: v.string(),
     windowStartedAt: v.number(),

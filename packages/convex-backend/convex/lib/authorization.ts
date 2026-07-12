@@ -1,12 +1,34 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
+import { getMcpTokenId, hashMcpTokenId } from "./mcpToken";
+
 type Ctx = QueryCtx | MutationCtx;
 
 export async function getCurrentUser(ctx: Ctx): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Not authenticated");
+  }
+
+  const mcpTokenId = getMcpTokenId(identity);
+  if (mcpTokenId) {
+    const tokenHash = await hashMcpTokenId(mcpTokenId);
+    const token = await ctx.db
+      .query("mcpTokens")
+      .withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash))
+      .unique();
+
+    if (!token || token.revokedAt || token.expiresAt <= Date.now() || identity.subject !== token.userId) {
+      throw new Error("MCP token is invalid or expired");
+    }
+
+    const user = await ctx.db.get(token.userId);
+    if (!user) {
+      throw new Error("Unauthenticated call");
+    }
+
+    return user;
   }
 
   const user = await ctx.db
@@ -25,6 +47,10 @@ export async function getCurrentUserOrNull(ctx: Ctx): Promise<Doc<"users"> | nul
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     return null;
+  }
+
+  if (getMcpTokenId(identity)) {
+    return await getCurrentUser(ctx);
   }
 
   const user = await ctx.db

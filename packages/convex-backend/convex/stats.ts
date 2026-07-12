@@ -1,26 +1,14 @@
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { query } from "./_generated/server";
+import { getCurrentUser } from "./lib/authorization";
 import { buildRequestOverviewReadModel } from "./lib/requestOverviewReadModel";
 
 export const requestOverview = query({
   args: {},
   handler: async (ctx) => {
     try {
-      const identity = await ctx.auth.getUserIdentity();
-
-      if (identity === null) {
-        throw new Error("Not authenticated");
-      }
-
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-        .unique();
-
-      if (!user) {
-        throw new Error("Unauthenticated call to query");
-      }
+      const user = await getCurrentUser(ctx);
 
       const projects = await ctx.db
         .query("projects")

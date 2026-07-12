@@ -150,20 +150,8 @@ export const deleteByClient = mutation({
         throw new ConvexError({ code: "NOT_FOUND", message: "Comment not found" });
       }
 
-      const identity = await ctx.auth.getUserIdentity();
-      if (identity) {
-        const user = await ctx.db
-          .query("users")
-          .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-          .unique();
-
-        if (!user) {
-          throw new ConvexError({
-            code: "UNAUTHENTICATED",
-            message: "Unauthenticated call to mutation",
-          });
-        }
-
+      const user = await getCurrentUserOrNull(ctx);
+      if (user) {
         const project = await ctx.db.get(comment.projectId);
         if (!project || project.user !== user._id) {
           if (comment.authorType !== "developer" || comment.authorUserId !== user._id) {
