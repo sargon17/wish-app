@@ -45,11 +45,20 @@ function readVariant() {
 function usePrototypeVariant() {
   const [variant, setVariant] = useState(readVariant);
 
+  useEffect(() => {
+    function syncVariant() {
+      setVariant(readVariant());
+    }
+
+    window.addEventListener("popstate", syncVariant);
+    return () => window.removeEventListener("popstate", syncVariant);
+  }, []);
+
   function selectVariant(next: string) {
     const url = new URL(window.location.href);
     url.searchParams.set("variant", next);
     window.history.replaceState(null, "", url);
-    setVariant(next);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   return { variant, selectVariant };
