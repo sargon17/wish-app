@@ -30,6 +30,7 @@ export type EmbedChangelogEntry = {
   body?: string;
   type: "feature" | "improvement" | "fix";
   publishedAt?: number;
+  features: Array<{ title: string; description?: string; icon?: string }>;
 };
 
 export type EmbedChangelogFeed = {

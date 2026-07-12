@@ -12,6 +12,24 @@ const changelogTypeValidator = v.union(
   v.literal("fix"),
 );
 
+const changelogFeatureValidator = v.object({
+  title: v.string(),
+  description: v.optional(v.string()),
+  icon: v.optional(v.string()),
+});
+
+function normalizeFeatures(
+  features: Array<{ title: string; description?: string; icon?: string }>,
+) {
+  return features
+    .map((feature) => ({
+      title: feature.title.trim(),
+      description: normalizeOptionalText(feature.description),
+      icon: normalizeOptionalText(feature.icon),
+    }))
+    .filter((feature) => feature.title.length > 0);
+}
+
 function normalizeOptionalText(value?: string) {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
@@ -24,8 +42,7 @@ function normalizeVersionLabel(value: string) {
 function validatePublishedFields(args: {
   versionLabel: string;
   title: string;
-  summary?: string;
-  body?: string;
+  features: Array<{ title: string }>;
 }) {
   if (!args.versionLabel) {
     throw new Error("Add a version label before publishing");
@@ -35,8 +52,8 @@ function validatePublishedFields(args: {
     throw new Error("Add a title before publishing");
   }
 
-  if (!args.summary && !args.body) {
-    throw new Error("Add a summary or body before publishing");
+  if (args.features.length === 0) {
+    throw new Error("Add at least one feature before publishing");
   }
 }
 
@@ -48,12 +65,19 @@ function sortEntriesByRecent(left: Doc<"changelogEntries">, right: Doc<"changelo
 }
 
 function toPublicChangelogEntry(entry: Doc<"changelogEntries">) {
+  const features = entry.features?.length
+    ? entry.features
+    : entry.body || entry.summary
+      ? [{ title: entry.title, description: entry.body ?? entry.summary }]
+      : [];
+
   return {
     versionLabel: entry.versionLabel,
     title: entry.title,
     summary: entry.summary,
     body: entry.body,
     type: entry.type,
+    features,
     publishedAt: entry.publishedAt,
   };
 }
@@ -146,6 +170,7 @@ export const create = mutation({
     summary: v.optional(v.string()),
     body: v.optional(v.string()),
     type: changelogTypeValidator,
+    features: v.array(changelogFeatureValidator),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -157,6 +182,7 @@ export const create = mutation({
     const title = args.title.trim();
     const summary = normalizeOptionalText(args.summary);
     const body = normalizeOptionalText(args.body);
+    const features = normalizeFeatures(args.features);
 
     await assertUniqueVersionLabel(ctx, args.projectId, versionLabel);
 
@@ -169,6 +195,7 @@ export const create = mutation({
       summary,
       body,
       type: args.type,
+      features,
       status: "draft",
       publishedAt: undefined,
       createdAt: now,
@@ -187,6 +214,7 @@ export const save = mutation({
     summary: v.optional(v.string()),
     body: v.optional(v.string()),
     type: changelogTypeValidator,
+    features: v.array(changelogFeatureValidator),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -199,11 +227,12 @@ export const save = mutation({
     const title = args.title.trim();
     const summary = normalizeOptionalText(args.summary);
     const body = normalizeOptionalText(args.body);
+    const features = normalizeFeatures(args.features);
 
     await assertUniqueVersionLabel(ctx, entry.projectId, versionLabel, entry._id);
 
     if (entry.status === "published") {
-      validatePublishedFields({ versionLabel, title, summary, body });
+      validatePublishedFields({ versionLabel, title, features });
     }
 
     await ctx.db.patch(entry._id, {
@@ -213,6 +242,7 @@ export const save = mutation({
       summary,
       body,
       type: args.type,
+      features,
       updatedAt: Date.now(),
       updatedBy: user._id,
     });
@@ -236,8 +266,9 @@ export const publish = mutation({
     const title = entry.title.trim();
     const summary = normalizeOptionalText(entry.summary);
     const body = normalizeOptionalText(entry.body);
+    const features = normalizeFeatures(entry.features ?? []);
 
-    validatePublishedFields({ versionLabel, title, summary, body });
+    validatePublishedFields({ versionLabel, title, features });
 
     await assertUniqueVersionLabel(ctx, entry.projectId, versionLabel, entry._id);
 
@@ -248,6 +279,7 @@ export const publish = mutation({
       title,
       summary,
       body,
+      features,
       status: "published",
       publishedAt,
       updatedAt: Date.now(),

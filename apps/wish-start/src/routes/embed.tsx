@@ -3,6 +3,7 @@ import { ArrowBigUp, ArrowLeft, MessageCircle, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { ChangelogFeatureIcon } from "@/components/project/ChangelogFeatureIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -528,19 +529,35 @@ function EmbedChangelogApp({ config }: { config: EmbedApiConfig }) {
 
 function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
   return (
-    <article className="space-y-2 rounded-lg border bg-card p-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <article className="space-y-4 py-3 first:pt-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Badge variant="outline">{entry.versionLabel}</Badge>
-        <Badge variant="secondary" className="capitalize">
-          {entry.type}
-        </Badge>
         <time className="text-xs text-muted-foreground">{formatDate(entry.publishedAt)}</time>
       </div>
-      <h2 className="text-sm font-semibold tracking-tight">{entry.title}</h2>
-      {entry.summary ? <p className="text-sm text-muted-foreground">{entry.summary}</p> : null}
-      {entry.body ? (
-        <div className="text-sm whitespace-pre-wrap text-foreground/90">{entry.body}</div>
-      ) : null}
+      <div className="space-y-1.5">
+        <h2 className="text-base font-semibold tracking-tight">{entry.title}</h2>
+        {entry.summary ? (
+          <p className="text-sm leading-6 text-muted-foreground">{entry.summary}</p>
+        ) : null}
+      </div>
+      <ul className="grid gap-4" aria-label={`Features in ${entry.versionLabel}`}>
+        {entry.features.map((feature) => (
+          <li key={feature.title} className="flex gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 [&>svg]:size-4 dark:text-orange-400">
+              <ChangelogFeatureIcon name={feature.icon} />
+            </span>
+            <div className="grid gap-0.5">
+              <h3 className="text-sm font-medium">{feature.title}</h3>
+              {feature.description ? (
+                <p className="text-sm leading-5 whitespace-pre-wrap text-muted-foreground">
+                  {feature.description}
+                </p>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <Separator />
     </article>
   );
 }

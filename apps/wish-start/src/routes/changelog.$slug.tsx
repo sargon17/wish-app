@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { api } from "@wish/convex-backend/api";
 import { useQuery } from "convex/react";
 
+import { ChangelogFeatureIcon } from "@/components/project/ChangelogFeatureIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -74,9 +75,6 @@ function PublicChangelogPage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{entry.versionLabel}</Badge>
-                      <Badge variant="secondary" className="capitalize">
-                        {entry.type}
-                      </Badge>
                     </div>
                     <h2 className="text-xl font-semibold tracking-tight">{entry.title}</h2>
                   </div>
@@ -90,11 +88,23 @@ function PublicChangelogPage() {
                   <p className="text-base leading-7 text-muted-foreground">{entry.summary}</p>
                 ) : null}
 
-                {entry.body ? (
-                  <div className="text-base leading-7 whitespace-pre-wrap text-foreground/90">
-                    {entry.body}
-                  </div>
-                ) : null}
+                <ul className="grid gap-5" aria-label={`Features in ${entry.versionLabel}`}>
+                  {entry.features.map((feature) => (
+                    <li key={feature.title} className="flex gap-3">
+                      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 [&>svg]:size-4 dark:text-orange-400">
+                        <ChangelogFeatureIcon name={feature.icon} />
+                      </span>
+                      <div className="grid gap-1">
+                        <h3 className="font-medium text-foreground">{feature.title}</h3>
+                        {feature.description ? (
+                          <p className="text-sm leading-6 whitespace-pre-wrap text-muted-foreground">
+                            {feature.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
 
                 <Separator />
               </section>

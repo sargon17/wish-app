@@ -175,6 +175,15 @@ export default defineSchema({
     summary: v.optional(v.string()),
     body: v.optional(v.string()),
     type: v.union(v.literal("feature"), v.literal("improvement"), v.literal("fix")),
+    features: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.optional(v.string()),
+          icon: v.optional(v.string()),
+        }),
+      ),
+    ),
     status: v.union(v.literal("draft"), v.literal("published")),
     publishedAt: v.optional(v.number()),
     createdAt: v.number(),

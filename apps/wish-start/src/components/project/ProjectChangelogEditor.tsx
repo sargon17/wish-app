@@ -1,7 +1,12 @@
 "use client";
 
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import {
+  CHANGELOG_FEATURE_ICONS,
+  ChangelogFeatureIcon,
+} from "@/components/project/ChangelogFeatureIcon";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +27,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-const CHANGELOG_TYPES = ["feature", "improvement", "fix"] as const;
+function emptyFeature() {
+  return { id: crypto.randomUUID(), title: "", description: "", icon: "sparkles" };
+}
 
 export default function ProjectChangelogEditor({
   entry,
@@ -37,6 +44,7 @@ export default function ProjectChangelogEditor({
     summary?: string;
     body?: string;
     type: "feature" | "improvement" | "fix";
+    features?: Array<{ title: string; description?: string; icon?: string }>;
     status: "draft" | "published";
   } | null;
   open: boolean;
@@ -48,29 +56,45 @@ export default function ProjectChangelogEditor({
     summary?: string;
     body?: string;
     type: "feature" | "improvement" | "fix";
+    features: Array<{ title: string; description?: string; icon?: string }>;
   }) => Promise<void>;
 }) {
   const [versionLabel, setVersionLabel] = useState("");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
-  const [body, setBody] = useState("");
-  const [type, setType] = useState<(typeof CHANGELOG_TYPES)[number]>("feature");
+  const [features, setFeatures] = useState([emptyFeature()]);
 
   useEffect(() => {
     if (!entry) {
       setVersionLabel("");
       setTitle("");
       setSummary("");
-      setBody("");
-      setType("feature");
+      setFeatures([emptyFeature()]);
       return;
     }
 
     setVersionLabel(entry.versionLabel);
     setTitle(entry.title);
     setSummary(entry.summary ?? "");
-    setBody(entry.body ?? "");
-    setType(entry.type);
+    setFeatures(
+      entry.features?.length
+        ? entry.features.map((feature) => ({
+            ...feature,
+            description: feature.description ?? "",
+            icon: feature.icon ?? "sparkles",
+            id: crypto.randomUUID(),
+          }))
+        : entry.body || entry.summary
+          ? [
+              {
+                id: crypto.randomUUID(),
+                title: entry.title,
+                description: entry.body ?? "",
+                icon: "sparkles",
+              },
+            ]
+          : [emptyFeature()],
+    );
   }, [entry]);
 
   async function handleSave() {
@@ -78,8 +102,12 @@ export default function ProjectChangelogEditor({
       versionLabel,
       title,
       summary,
-      body,
-      type,
+      type: "feature",
+      features: features.map(({ title: featureTitle, description, icon }) => ({
+        title: featureTitle,
+        description,
+        icon,
+      })),
     });
   }
 
@@ -87,50 +115,32 @@ export default function ProjectChangelogEditor({
     versionLabel.trim().length === 0 &&
     title.trim().length === 0 &&
     summary.trim().length === 0 &&
-    body.trim().length === 0;
+    features.every(
+      (feature) => feature.title.trim().length === 0 && feature.description.trim().length === 0,
+    );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {entry?.status === "published" ? "Edit published entry" : "Edit draft"}
           </DialogTitle>
           <DialogDescription>
-            Keep the release title tight. The body should explain what changed in plain language.
+            Add each user-facing change as a separate feature. Keep titles short and descriptions
+            focused on what users can now do.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px]">
-            <div className="grid gap-2">
-              <Label htmlFor="changelog-version-label">Version label</Label>
-              <Input
-                id="changelog-version-label"
-                value={versionLabel}
-                onChange={(event) => setVersionLabel(event.target.value)}
-                placeholder="v2.4.1"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="changelog-type">Type</Label>
-              <Select
-                value={type}
-                onValueChange={(value) => setType(value as (typeof CHANGELOG_TYPES)[number])}
-              >
-                <SelectTrigger id="changelog-type">
-                  <SelectValue placeholder="Select a type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHANGELOG_TYPES.map((item) => (
-                    <SelectItem key={item} value={item} className="capitalize">
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="changelog-version-label">Version label</Label>
+            <Input
+              id="changelog-version-label"
+              value={versionLabel}
+              onChange={(event) => setVersionLabel(event.target.value)}
+              placeholder="v2.4.1"
+            />
           </div>
 
           <div className="grid gap-2">
@@ -139,7 +149,7 @@ export default function ProjectChangelogEditor({
               id="changelog-title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Faster search across large wishlists"
+              placeholder="A faster, clearer way to plan"
             />
           </div>
 
@@ -149,20 +159,93 @@ export default function ProjectChangelogEditor({
               id="changelog-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
-              placeholder="One short paragraph for the changelog list and hosted page preview."
+              placeholder="Optional introduction to this release."
               rows={3}
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="changelog-body">Body</Label>
-            <Textarea
-              id="changelog-body"
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder="Explain what shipped, why it matters, and what users should notice."
-              rows={10}
-            />
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label>Features</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setFeatures((current) => [...current, emptyFeature()])}
+              >
+                <Plus />
+                Add feature
+              </Button>
+            </div>
+
+            {features.map((feature, index) => (
+              <div key={feature.id} className="grid gap-3 rounded-xl border bg-muted/20 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium">Feature {index + 1}</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Remove feature ${index + 1}`}
+                    disabled={features.length === 1}
+                    onClick={() =>
+                      setFeatures((current) => current.filter((item) => item.id !== feature.id))
+                    }
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
+                  <Select
+                    value={feature.icon}
+                    onValueChange={(icon) =>
+                      setFeatures((current) =>
+                        current.map((item) =>
+                          item.id === feature.id ? { ...item, icon } : item,
+                        ),
+                      )
+                    }
+                  >
+                    <SelectTrigger aria-label={`Feature ${index + 1} icon`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CHANGELOG_FEATURE_ICONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <ChangelogFeatureIcon name={option.value} />
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    aria-label={`Feature ${index + 1} title`}
+                    value={feature.title}
+                    placeholder="Saved views"
+                    onChange={(event) =>
+                      setFeatures((current) =>
+                        current.map((item) =>
+                          item.id === feature.id ? { ...item, title: event.target.value } : item,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <Textarea
+                  aria-label={`Feature ${index + 1} description`}
+                  value={feature.description}
+                  placeholder="Explain what changed and why it matters."
+                  rows={3}
+                  onChange={(event) =>
+                    setFeatures((current) =>
+                      current.map((item) =>
+                        item.id === feature.id ? { ...item, description: event.target.value } : item,
+                      ),
+                    )
+                  }
+                />
+              </div>
+            ))}
           </div>
         </div>
 

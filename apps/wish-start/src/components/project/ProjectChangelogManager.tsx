@@ -7,6 +7,7 @@ import { Copy, FileClock, Globe, Pencil, Rocket, Trash2, Undo2 } from "lucide-re
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ChangelogFeatureIcon } from "@/components/project/ChangelogFeatureIcon";
 import ProjectChangelogEditor from "@/components/project/ProjectChangelogEditor";
 import {
   AlertDialog,
@@ -161,6 +162,7 @@ export default function ProjectChangelogManager({
     summary?: string;
     body?: string;
     type: "feature" | "improvement" | "fix";
+    features: Array<{ title: string; description?: string; icon?: string }>;
     status: "draft";
   } | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -187,6 +189,7 @@ export default function ProjectChangelogManager({
       summary: undefined,
       body: undefined,
       type: "feature",
+      features: [],
       status: "draft",
     });
     setSelectedEntryId(null);
@@ -217,6 +220,7 @@ export default function ProjectChangelogManager({
     summary?: string;
     body?: string;
     type: "feature" | "improvement" | "fix";
+    features: Array<{ title: string; description?: string; icon?: string }>;
   }) {
     if (!selectedEntry) {
       return;
@@ -232,6 +236,7 @@ export default function ProjectChangelogManager({
           summary: values.summary,
           body: values.body,
           type: values.type,
+          features: values.features,
         });
 
         setDraftEntry(null);
@@ -250,6 +255,7 @@ export default function ProjectChangelogManager({
           summary: values.summary,
           body: values.body,
           type: values.type,
+          features: values.features,
         });
         setSelectedEntryId(null);
         setIsEditorOpen(false);
@@ -323,9 +329,6 @@ export default function ProjectChangelogManager({
                       <Badge variant={entry.status === "published" ? "default" : "outline"}>
                         {entry.status}
                       </Badge>
-                      <Badge variant="secondary" className="capitalize">
-                        {entry.type}
-                      </Badge>
                       <Badge variant="outline">{entry.versionLabel || "No version yet"}</Badge>
                     </div>
                     <div>
@@ -382,7 +385,23 @@ export default function ProjectChangelogManager({
                   <p className="text-sm text-muted-foreground">{entry.summary}</p>
                 ) : null}
 
-                {entry.body ? (
+                {entry.features?.length ? (
+                  <ul className="grid gap-2 rounded-xl border bg-muted/20 p-4">
+                    {entry.features.map((feature) => (
+                      <li key={feature.title} className="flex items-start gap-2 text-sm">
+                        <span className="mt-0.5 text-orange-600 [&>svg]:size-4 dark:text-orange-400">
+                          <ChangelogFeatureIcon name={feature.icon} />
+                        </span>
+                        <span>
+                          <span className="font-medium">{feature.title}</span>
+                          {feature.description ? (
+                            <span className="text-muted-foreground"> — {feature.description}</span>
+                          ) : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : entry.body ? (
                   <div className="rounded-xl border bg-muted/20 p-4 text-sm leading-6 whitespace-pre-wrap text-foreground/90">
                     {entry.body}
                   </div>
