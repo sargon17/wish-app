@@ -80,6 +80,10 @@ _Avoid_: notification service, export destination, integration when referring to
 An issue or task created in a Work Tracker from a Request or Complaint and linked back to its source in Wish.
 _Avoid_: synchronized request, exported request
 
+**Work Item Handoff**:
+A durable attempt to create one External Work Item from one Request or Complaint in one Work Tracker.
+_Avoid_: External Work Item before creation succeeds, notification delivery
+
 **Work Tracker Connection**:
 A Project Board's authorized link to one Work Tracker, including the destination used when creating External Work Items.
 _Avoid_: global integration, notification connector
@@ -133,6 +137,11 @@ _Avoid_: global integration, notification connector
 - A **Request** or **Complaint** becomes external work only when a **Project Owner** explicitly sends it to a **Work Tracker**
 - Creating an **External Work Item** is a one-way action in v1: Wish retains its external identifier and URL but does not synchronize later changes
 - A **Request** or **Complaint** may have at most one **External Work Item** in each connected **Work Tracker**
+- A **Work Item Handoff** exists before its **External Work Item** and remains the record of an unsuccessful or successful creation attempt
+- A **Request** or **Complaint** has at most one **Work Item Handoff** for each **Work Tracker**, even when its **Work Tracker Connection** is replaced
+- A **Request** or **Complaint** cannot be deleted while its **Work Item Handoff** is pending or has an uncertain outcome
+- Deleting a **Request** or **Complaint** removes its settled **Work Item Handoffs** from Wish but does not delete their **External Work Items**
+- A **Work Tracker Connection** cannot be disconnected while one of its **Work Item Handoffs** is pending or has an uncertain outcome
 - A **Work Tracker Connection** belongs to exactly one **Project Board** and identifies one destination team, with an optional default project when the Work Tracker supports it
 - Sending a **Request** or **Complaint** to a **Work Tracker** creates the **External Work Item** immediately without an intermediate editing step
 - After creation, the **Project Owner** is given the **External Work Item** link
