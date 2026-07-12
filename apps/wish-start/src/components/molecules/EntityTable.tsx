@@ -1,4 +1,3 @@
-import { Button } from "@components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@components/ui/empty";
 import { Input } from "@components/ui/input";
 import {
@@ -103,7 +102,7 @@ const EntityTable = <T,>({
         />
       </div>
       <FilterList active={activeFilter} onChange={(v) => setActiveFilter(v)} filters={filters} />
-      <div className="min-h-0 flex-1 overflow-auto rounded-md outline [&_[data-slot=table-container]]:overflow-visible">
+      <div className="**:data-[slot=table-container]:overflow-visiblep min-h-0 flex-1 overflow-auto rounded-md outline">
         <Table>
           <TableHeader className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
