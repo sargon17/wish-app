@@ -3,9 +3,12 @@ import useStatuses from "#/hooks/useStatuses";
 import { trimTo } from "#/lib/text.ts";
 import SortButton from "@components/atoms/SortButton";
 import { Checkbox } from "@components/ui/checkbox";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type RowSelectionState } from "@tanstack/react-table";
+import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
-import { useMemo } from "react";
+import { useMutation } from "convex/react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
 
@@ -13,6 +16,7 @@ import EntityTable from "../molecules/EntityTable";
 import StatusChip from "../Status/StatusChip";
 
 import RequestDetailView from "./DetailView/RequestDeatailView";
+import { RequestBulkActions } from "./RequestBulkActions";
 import RequestsEmpty from "./RequestsEmpty";
 
 interface RequestTableProps {
@@ -29,7 +33,50 @@ type RequestEntry = {
 
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: requests, byId, byStatus, isPending } = useRequests(projectId, kind);
-  const { byId: statusesById } = useStatuses(projectId);
+  const { value: statuses, byId: statusesById } = useStatuses(projectId);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [isBulkMutationPending, setIsBulkMutationPending] = useState(false);
+  const updateStatuses = useMutation(api.requests.updateStatuses);
+  const deleteRequests = useMutation(api.requests.deleteRequests);
+  const selectedIds = Object.keys(rowSelection) as Id<"requests">[];
+
+  const handleBulkStatusChange = async (status: Id<"requestStatuses">) => {
+    if (isBulkMutationPending || selectedIds.length === 0) return;
+
+    try {
+      setIsBulkMutationPending(true);
+      await updateStatuses({ ids: selectedIds, status });
+      setRowSelection({});
+      toast.success(
+        `${selectedIds.length} ${kind === "complaint" ? "complaints" : "requests"} updated`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to update the selected items");
+    } finally {
+      setIsBulkMutationPending(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (isBulkMutationPending || selectedIds.length === 0) return false;
+
+    try {
+      setIsBulkMutationPending(true);
+      await deleteRequests({ ids: selectedIds });
+      setRowSelection({});
+      toast.success(
+        `${selectedIds.length} ${kind === "complaint" ? "complaints" : "requests"} deleted`,
+      );
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to delete the selected items");
+      return false;
+    } finally {
+      setIsBulkMutationPending(false);
+    }
+  };
 
   const mappedRequests: RequestEntry[] = useMemo(
     () =>
@@ -58,14 +105,21 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={table.getIsAllRowsSelected()}
-            onCheckedChange={(v) => table.toggleAllRowsSelected(!!v)}
+            aria-label="Select current page"
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            disabled={isBulkMutationPending}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           />
         ),
         cell: ({ row }) => (
           <Checkbox
+            aria-label={`Select ${kind === "complaint" ? "complaint" : "request"}`}
             checked={row.getIsSelected()}
-            onCheckedChange={(v) => row.toggleSelected(!!v)}
+            disabled={isBulkMutationPending}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
           />
         ),
       },
@@ -125,7 +179,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
     ],
-    [byId, kind],
+    [byId, isBulkMutationPending, kind],
   );
 
   // empty
@@ -134,13 +188,27 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
 
   return (
     <div className="mt-1 flex w-full flex-col gap-4">
+      {selectedIds.length > 0 && (
+        <RequestBulkActions
+          count={selectedIds.length}
+          isPending={isBulkMutationPending}
+          kind={kind ?? "request"}
+          onClear={() => setRowSelection({})}
+          onDelete={handleBulkDelete}
+          onStatusChange={handleBulkStatusChange}
+          statuses={statuses ?? []}
+        />
+      )}
       <EntityTable
         data={mappedRequests}
         columns={columns}
+        getRowId={(row) => row._id}
         initialSorting={[{ id: "title", desc: true }]}
         getSearchText={(row) => [row.title, row.description, row.status?.name]}
         getFilterText={(row) => [row.status?.name]}
         filters={filters}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
       />
     </div>
   );

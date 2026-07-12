@@ -24,6 +24,8 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type OnChangeFn,
+  type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table";
 import { TableProperties } from "lucide-react";
@@ -41,7 +43,10 @@ interface EntityTableProps<T> extends Pick<ComponentProps<typeof FilterList>, "f
   initialSorting: SortingState;
   getSearchText: FieldsFN<T>;
   getFilterText?: FieldsFN<T>;
+  getRowId?: (row: T) => string;
   isLoading?: boolean;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  rowSelection?: RowSelectionState;
 }
 
 const filterData = <T,>(row: T, query: string, fieldsFn?: FieldsFN<T>): boolean => {
@@ -56,7 +61,10 @@ const EntityTable = <T,>({
   isLoading,
   getSearchText,
   getFilterText,
+  getRowId,
   initialSorting,
+  onRowSelectionChange,
+  rowSelection,
   filters,
 }: EntityTableProps<T>) => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
@@ -78,9 +86,11 @@ const EntityTable = <T,>({
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { sorting, pagination },
+    state: { sorting, pagination, rowSelection },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onRowSelectionChange,
+    getRowId,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),

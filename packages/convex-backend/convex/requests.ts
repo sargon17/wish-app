@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
@@ -10,6 +10,29 @@ import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
+
+export async function getBulkRequests(
+  ctx: Pick<MutationCtx, "db">,
+  ids: Id<"requests">[],
+): Promise<Doc<"requests">[]> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) {
+    throw new Error("Select at least one request");
+  }
+
+  const requests = await Promise.all(uniqueIds.map((id) => ctx.db.get(id)));
+  if (requests.some((request) => !request)) {
+    throw new Error("Request not found");
+  }
+
+  const existingRequests = requests as Doc<"requests">[];
+  const projectId = existingRequests[0].project;
+  if (existingRequests.some((request) => request.project !== projectId)) {
+    throw new Error("Requests must belong to the same project");
+  }
+
+  return existingRequests;
+}
 
 async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   const request = await ctx.db.get(id);
@@ -200,6 +223,34 @@ export const updateStatus = mutation({
   },
 });
 
+export async function updateRequestStatuses(
+  ctx: MutationCtx,
+  args: { ids: Id<"requests">[]; status: Id<"requestStatuses"> },
+) {
+  try {
+    const user = await getCurrentUser(ctx);
+    const requests = await getBulkRequests(ctx, args.ids);
+    const projectId = requests[0].project;
+
+    await assertProjectOwner(ctx, projectId, user._id);
+    await assertStatusBelongsToProject(ctx, args.status, projectId);
+    await Promise.all(
+      requests.map((request) => ctx.db.patch(request._id, { status: args.status })),
+    );
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to update requests");
+  }
+}
+
+export const updateStatuses = mutation({
+  args: {
+    ids: v.array(v.id("requests")),
+    status: v.id("requestStatuses"),
+  },
+  handler: updateRequestStatuses,
+});
+
 export const deleteRequest = mutation({
   args: { id: v.id("requests") },
   handler: async (ctx, args) => {
@@ -214,6 +265,26 @@ export const deleteRequest = mutation({
       throw new Error("Failed to delete request");
     }
   },
+});
+
+export async function deleteRequestsInBulk(ctx: MutationCtx, args: { ids: Id<"requests">[] }) {
+  try {
+    const user = await getCurrentUser(ctx);
+    const requests = await getBulkRequests(ctx, args.ids);
+
+    await assertProjectOwner(ctx, requests[0].project, user._id);
+    for (const request of requests) {
+      await deleteRequestCascade(ctx, request._id);
+    }
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to delete requests");
+  }
+}
+
+export const deleteRequests = mutation({
+  args: { ids: v.array(v.id("requests")) },
+  handler: deleteRequestsInBulk,
 });
 
 export const deleteRequestByApiKeyInternal = internalMutation({
