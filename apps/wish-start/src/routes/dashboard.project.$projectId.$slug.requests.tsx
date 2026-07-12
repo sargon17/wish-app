@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 
 import DashboardBoard from "@/components/dashboard/DashboardBoard";
-import RequestCreateEditDialog from "@/components/Request/RequestCreateEditDialog";
-import { Button } from "@/components/ui/button";
+import { RequestsCreateEditButton } from "@/components/Request/RequestCreateEditDialog";
 import ButtonSwitcher from "@components/molecules/ButtonSwitcher";
 import { useBoardType } from "#/hooks/useBoardType.ts";
 import { boardTypeValues } from "#/lib/requestBoard/boardType";
@@ -33,12 +31,7 @@ function ProjectRequestsRoute() {
               selected={boardType}
               onChange={(type) => switchToBoardType(type)}
             />
-            <RequestCreateEditDialog project={projectId as never}>
-              <Button className="shrink-0" variant="outline">
-                <Plus />
-                New Request
-              </Button>
-            </RequestCreateEditDialog>
+            <RequestsCreateEditButton projectId={projectId as never} />
           </div>
         }
       ></DashboardPage>

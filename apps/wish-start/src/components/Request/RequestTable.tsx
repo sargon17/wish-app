@@ -9,6 +9,8 @@ import RequestDetailView from "./DetailView/RequestDeatailView";
 import useRequests from "#/hooks/useRequests";
 import useStatuses from "#/hooks/useStatuses";
 import { Checkbox } from "@components/ui/checkbox";
+import type { Filter } from "@/lib/requestBoard/buildFilters";
+import RequestsEmpty from "./RequestsEmpty";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
@@ -23,7 +25,7 @@ type RequestEntry = {
 };
 
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
-  const { value: requests, byId } = useRequests(projectId, kind);
+  const { value: requests, byId, byStatus, isPending } = useRequests(projectId, kind);
   const { byId: statusesById } = useStatuses(projectId);
 
   const mappedRequests: RequestEntry[] = useMemo(
@@ -36,6 +38,16 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
       })),
     [requests, statusesById],
   );
+
+  const filters = useMemo(() => {
+    let res: Filter[] = [];
+    byStatus.forEach((value, key) => {
+      const status = statusesById.get(key);
+      if (!status) return;
+      res = [...res, { label: status.displayName, value: status.name, count: value.length }];
+    });
+    return res;
+  }, [byStatus, statusesById]);
 
   const columns = useMemo<ColumnDef<RequestEntry>[]>(
     () => [
@@ -106,16 +118,22 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
     ],
-    [byId],
+    [byId, kind],
   );
+
+  // empty
+  if (!isPending && mappedRequests.length === 0)
+    return <RequestsEmpty projectId={projectId as never} />;
 
   return (
     <div className="w-full mt-1 flex flex-col gap-4">
       <EntityTable
-        data={mappedRequests ?? []}
+        data={mappedRequests}
         columns={columns}
         initialSorting={[{ id: "title", desc: true }]}
         getSearchText={(row) => [row.title, row.description, row.status?.name]}
+        getFilterText={(row) => [row.status?.name]}
+        filters={filters}
       />
     </div>
   );

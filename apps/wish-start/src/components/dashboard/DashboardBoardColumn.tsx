@@ -5,7 +5,7 @@ import type { DragEvent } from "react";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 
 import RequestCard from "../Request/RequestCard";
-import CreateRequestDialog from "../Request/RequestCreateEditDialog";
+import RequestCreateEditDialog from "../Request/RequestCreateEditDialog";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
@@ -64,11 +64,11 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
           <div className="w-3 h-3 rounded-xs" style={{ backgroundColor: color }} />
           {displayName}
         </div>
-        <CreateRequestDialog project={projectId} status={statusId}>
+        <RequestCreateEditDialog project={projectId} status={statusId}>
           <Button size="icon" variant="ghost">
             +
           </Button>
-        </CreateRequestDialog>
+        </RequestCreateEditDialog>
       </div>
       <Separator />
       <ScrollArea className="relative h-full flex-1 min-h-0">
@@ -93,11 +93,11 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
         )}
 
         <div className="w-full flex justify-center opacity-0 group-hover/board-column:opacity-100 transition-opacity p-3">
-          <CreateRequestDialog project={projectId} status={statusId}>
+          <RequestCreateEditDialog project={projectId} status={statusId}>
             <Button size="icon" variant="ghost">
               +
             </Button>
-          </CreateRequestDialog>
+          </RequestCreateEditDialog>
         </div>
       </ScrollArea>
     </div>

@@ -36,6 +36,7 @@ import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
 import { arktypeResolver } from "@hookform/resolvers/arktype";
 import { getRequestDialogDefaultStatus } from "@/lib/requestBoard/defaultStatus";
+import { Plus } from "lucide-react";
 
 interface Props extends React.ComponentProps<typeof Dialog> {
   method?: "create" | "edit";
@@ -219,3 +220,18 @@ export default function RequestCreateEditDialog({
     </Dialog>
   );
 }
+
+interface RequestsCreateEditButtonProps {
+  projectId: Id<"projects">;
+}
+
+export const RequestsCreateEditButton = ({ projectId }: RequestsCreateEditButtonProps) => {
+  return (
+    <RequestCreateEditDialog project={projectId as never}>
+      <Button className="shrink-0" variant="outline">
+        <Plus />
+        New Request
+      </Button>
+    </RequestCreateEditDialog>
+  );
+};

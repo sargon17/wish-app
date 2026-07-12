@@ -1,15 +1,15 @@
-import { type } from 'arktype'
-import { useMutation } from 'convex/react'
-import { AlertTriangle, KeyRound } from 'lucide-react'
-import { useState } from 'react'
-import type { ReactNode } from 'react'
-import type { SubmitHandler } from 'react-hook-form'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
+import { type } from "arktype";
+import { useMutation } from "convex/react";
+import { AlertTriangle, KeyRound, Plus } from "lucide-react";
+import { useState } from "react";
+import type { ReactNode } from "react";
+import type { SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-import CopyButton from '@/components/Organisms/CopyButton'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import CopyButton from "@/components/Organisms/CopyButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,25 +18,30 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
 
-import { api } from '@wish/convex-backend/api'
-import { arktypeResolver } from '@hookform/resolvers/arktype'
+import { api } from "@wish/convex-backend/api";
+import { arktypeResolver } from "@hookform/resolvers/arktype";
 
 interface Props {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export default function CreateProjectDialog({ children }: Props) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [createdApiKey, setCreatedApiKey] = useState('')
-  const createProject = useMutation(api.projects.createProject)
+  const [isOpen, setIsOpen] = useState(false);
+  const [createdApiKey, setCreatedApiKey] = useState("");
+  const createProject = useMutation(api.projects.createProject);
   const schema = type({
-    title: 'string > 2',
-  })
+    title: "string > 2",
+  });
   const {
     register,
     handleSubmit,
@@ -44,35 +49,35 @@ export default function CreateProjectDialog({ children }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<typeof schema.infer>({
     resolver: arktypeResolver(schema),
-    mode: 'onBlur',
-  })
+    mode: "onBlur",
+  });
 
   const onSubmit: SubmitHandler<typeof schema.infer> = async ({ title }) => {
     try {
-      const result = await createProject({ title })
+      const result = await createProject({ title });
 
       if (result.apiKey) {
-        setCreatedApiKey(result.apiKey)
-        toast.success('Project created. API key ready.')
-        return
+        setCreatedApiKey(result.apiKey);
+        toast.success("Project created. API key ready.");
+        return;
       }
 
-      toast.success('Project created')
-      reset()
-      setIsOpen(false)
+      toast.success("Project created");
+      reset();
+      setIsOpen(false);
     } catch (error) {
-      console.error(error)
-      toast.error('Unable to create the project')
-      throw new Error('Unable to create the project')
+      console.error(error);
+      toast.error("Unable to create the project");
+      throw new Error("Unable to create the project");
     }
-  }
+  };
 
   function handleOpenChange(open: boolean) {
-    setIsOpen(open)
+    setIsOpen(open);
 
     if (!open) {
-      setCreatedApiKey('')
-      reset()
+      setCreatedApiKey("");
+      reset();
     }
   }
 
@@ -84,7 +89,9 @@ export default function CreateProjectDialog({ children }: Props) {
           <div className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>Project API key</DialogTitle>
-              <DialogDescription>This key is shown once right after project creation.</DialogDescription>
+              <DialogDescription>
+                This key is shown once right after project creation.
+              </DialogDescription>
             </DialogHeader>
             <Alert>
               <KeyRound className="size-4" />
@@ -106,9 +113,9 @@ export default function CreateProjectDialog({ children }: Props) {
               <Button
                 type="button"
                 onClick={() => {
-                  setCreatedApiKey('')
-                  reset()
-                  setIsOpen(false)
+                  setCreatedApiKey("");
+                  reset();
+                  setIsOpen(false);
                 }}
               >
                 Done
@@ -126,7 +133,7 @@ export default function CreateProjectDialog({ children }: Props) {
               <Label htmlFor="project-title">Title</Label>
               <Input
                 id="project-title"
-                {...register('title')}
+                {...register("title")}
                 aria-invalid={Boolean(errors.title)}
                 placeholder="Wish mobile app"
               />
@@ -139,16 +146,32 @@ export default function CreateProjectDialog({ children }: Props) {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => setIsOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => setIsOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating…' : 'Create'}
+                {isSubmitting ? "Creating…" : "Create"}
               </Button>
             </DialogFooter>
           </form>
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
+
+export const CreateProjectButton = () => {
+  return (
+    <CreateProjectDialog>
+      <Button variant="outline" className="gap-2">
+        <Plus className="h-4 w-4" />
+        New Project
+      </Button>
+    </CreateProjectDialog>
+  );
+};
