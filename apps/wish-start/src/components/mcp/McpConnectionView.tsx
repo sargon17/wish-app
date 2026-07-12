@@ -84,7 +84,7 @@ export default function McpConnectionView() {
           </Badge>
           <CardTitle className="text-2xl tracking-tight">Connect Codex in one paste</CardTitle>
           <CardDescription className="mt-2 max-w-xl text-[15px] leading-6">
-            Create one revocable token for every project you own. There are no admin keys, deployment secrets, or impersonation settings to manage.
+            Connect directly to the hosted Wish MCP endpoint with one revocable token. No local server, admin keys, deployment secrets, or impersonation settings are required.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
@@ -131,7 +131,7 @@ export default function McpConnectionView() {
         <CardContent className="space-y-2 text-sm text-background/80">
           <p>Manage projects and requests</p>
           <p>Maintain statuses and changelog entries</p>
-          <p>Review waitlist and project settings</p>
+          <p>Manage project settings and integrations</p>
         </CardContent>
       </Card>
 
@@ -139,7 +139,7 @@ export default function McpConnectionView() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Connect Codex</DialogTitle>
-            <DialogDescription>Run this once in Terminal, then restart Codex. This token is shown only once.</DialogDescription>
+            <DialogDescription>Run this once in Terminal to register the hosted MCP endpoint, then restart Codex. This token is shown only once.</DialogDescription>
           </DialogHeader>
           <Alert>
             <CircleAlert className="size-4" />
