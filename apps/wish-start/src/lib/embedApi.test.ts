@@ -145,7 +145,9 @@ describe("embedApi", () => {
     const entry = await getEmbedWhatsNew(config, "2.0.0-beta 1");
 
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://example.convex.site/api/project/proj_123/whats-new?version=2.0.0-beta%201");
+    expect(url).toBe(
+      "https://example.convex.site/api/project/proj_123/whats-new?version=2.0.0-beta%201",
+    );
     expect(url).not.toContain(config.clientKey);
     expect(init.headers["x-api-key"]).toBe(config.clientKey);
     expect(entry).toEqual({ versionLabel: "2.0.0", title: "Big release", type: "feature" });

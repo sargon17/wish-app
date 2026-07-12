@@ -1,6 +1,7 @@
 "use client";
 
 import { Link, useNavigate } from "@tanstack/react-router";
+import { api } from "@wish/convex-backend/api";
 import { useMutation, useQuery } from "convex/react";
 import { ArrowBigUp, Lightbulb, Send } from "lucide-react";
 import type { FormEvent, ReactNode } from "react";
@@ -22,7 +23,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
 import { requestSlug } from "@/lib/slug";
-import { api } from "@wish/convex-backend/api";
 
 export function PublicRequestSubmitDialog({
   projectSlug,
@@ -46,10 +46,10 @@ export function PublicRequestSubmitDialog({
     api.suggestionPortals.getSimilarSuggestions,
     open && cleanTitle.length >= 3
       ? {
-        projectSlug,
-        text: cleanTitle,
-        limit: 5,
-      }
+          projectSlug,
+          text: cleanTitle,
+          limit: 5,
+        }
       : "skip",
   );
 
@@ -140,7 +140,7 @@ export function PublicRequestSubmitDialog({
 
           {similarSuggestions && similarSuggestions.length > 0 ? (
             <div className="space-y-2 rounded-lg border bg-muted/25 p-3">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
                 Similar suggestions
               </p>
               <div className="space-y-2">
@@ -158,7 +158,7 @@ export function PublicRequestSubmitDialog({
                     onClick={() => setOpen(false)}
                   >
                     <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-medium leading-5">{suggestion.text}</p>
+                      <p className="text-sm leading-5 font-medium">{suggestion.text}</p>
                       {suggestion.status ? (
                         <Badge variant="secondary" className="text-[10px]">
                           {suggestion.status}

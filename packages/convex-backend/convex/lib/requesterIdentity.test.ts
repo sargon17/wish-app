@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { isRequesterClientId, isRequesterEmail, normalizeRequesterEmail } from "./requesterIdentity";
+import {
+  isRequesterClientId,
+  isRequesterEmail,
+  normalizeRequesterEmail,
+} from "./requesterIdentity";
 
 describe("requester identity", () => {
   it("normalizes optional requester email", () => {

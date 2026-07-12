@@ -107,9 +107,7 @@ export const getViewerUpvotesByProject = query({
 
       const upvotes = userId
         ? await upvotesQuery.filter((q) => q.eq(q.field("userId"), userId)).collect()
-        : await upvotesQuery
-            .filter((q) => q.eq(q.field("clientId"), args.clientId))
-            .collect();
+        : await upvotesQuery.filter((q) => q.eq(q.field("clientId"), args.clientId)).collect();
 
       return upvotes.map((upvote) => upvote.requestId);
     } catch (error) {

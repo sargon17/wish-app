@@ -1,11 +1,11 @@
+import { useBoardType } from "#/hooks/useBoardType.ts";
+import { boardTypeValues } from "#/lib/requestBoard/boardType";
+import DashboardPage from "@components/dashboard/DashboardPage";
+import ButtonSwitcher from "@components/molecules/ButtonSwitcher";
 import { createFileRoute } from "@tanstack/react-router";
 
 import DashboardBoard from "@/components/dashboard/DashboardBoard";
 import { RequestsCreateEditButton } from "@/components/Request/RequestCreateEditDialog";
-import ButtonSwitcher from "@components/molecules/ButtonSwitcher";
-import { useBoardType } from "#/hooks/useBoardType.ts";
-import { boardTypeValues } from "#/lib/requestBoard/boardType";
-import DashboardPage from "@components/dashboard/DashboardPage";
 
 export const Route = createFileRoute("/dashboard/project/$projectId/$slug/requests")({
   component: ProjectRequestsRoute,

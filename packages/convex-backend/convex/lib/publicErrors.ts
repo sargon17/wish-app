@@ -84,7 +84,10 @@ export function publicErrorStatus(code: PublicErrorCode) {
   return publicErrorStatuses[code];
 }
 
-export function publicErrorJson(c: { json: (body: PublicErrorResponse, status: number) => Response }, error: PublicErrorInput) {
+export function publicErrorJson(
+  c: { json: (body: PublicErrorResponse, status: number) => Response },
+  error: PublicErrorInput,
+) {
   return c.json(publicErrorResponse(error), publicErrorStatus(error.code));
 }
 
@@ -100,7 +103,14 @@ function publicErrorFromConvexError(error: unknown): PublicErrorResponse | null 
 
   if (isRecord(error) && isRecord(error.data)) {
     const code = error.data.code;
-    if (!isPublicErrorCode(code) && code !== "BAD_REQUEST" && code !== "NOT_FOUND" && code !== "FORBIDDEN" && code !== "UNAUTHENTICATED" && code !== "RATE_LIMITED") {
+    if (
+      !isPublicErrorCode(code) &&
+      code !== "BAD_REQUEST" &&
+      code !== "NOT_FOUND" &&
+      code !== "FORBIDDEN" &&
+      code !== "UNAUTHENTICATED" &&
+      code !== "RATE_LIMITED"
+    ) {
       return null;
     }
 
@@ -114,7 +124,10 @@ function publicErrorFromConvexError(error: unknown): PublicErrorResponse | null 
   return null;
 }
 
-export function toPublicErrorResponse(error: unknown, fallback: PublicErrorCode = "internal_error") {
+export function toPublicErrorResponse(
+  error: unknown,
+  fallback: PublicErrorCode = "internal_error",
+) {
   if (isPublicErrorInput(error)) {
     return publicErrorResponse(error);
   }

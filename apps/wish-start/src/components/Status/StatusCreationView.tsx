@@ -1,9 +1,11 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
+import { PaintBucket, Plus } from "lucide-react";
 import { useState } from "react";
 import type { PropsWithChildren } from "react";
-import { PaintBucket, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,8 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { slugifyStatusName } from "@/lib/requestStatus/slugifyStatusName";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 type StatusCreationViewProps = PropsWithChildren<{
   projectId: Id<"projects">;
@@ -96,7 +96,8 @@ export default function StatusCreationView({
         <DialogHeader>
           <DialogTitle>Create a new status</DialogTitle>
           <DialogDescription>
-            Add a workflow stage for this project. It will appear at the end of the ordered project statuses.
+            Add a workflow stage for this project. It will appear at the end of the ordered project
+            statuses.
           </DialogDescription>
         </DialogHeader>
 
@@ -111,7 +112,9 @@ export default function StatusCreationView({
                 onChange={(event) => setName(event.target.value)}
                 aria-invalid={isInvalidName && cleanName.length > 0}
               />
-              <p className="text-xs text-muted-foreground">Used in the board, filters, and request editor.</p>
+              <p className="text-xs text-muted-foreground">
+                Used in the board, filters, and request editor.
+              </p>
             </div>
 
             <div className="grid gap-2">

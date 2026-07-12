@@ -1,14 +1,15 @@
 "use client";
+import useRequests from "#/hooks/useRequests";
 import type { Doc } from "@wish/convex-backend/data-model";
-import { trimTo } from "@/lib/text";
+
 import { writeRequestDragPayload } from "@/lib/requestBoard/dragPayload";
+import { trimTo } from "@/lib/text";
 
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import RequestCardActions from "./RequestCardActions";
 import RequestUpvoteButton from "./RequestUpvoteButton";
-import useRequests from "#/hooks/useRequests";
 
 interface Props {
   request: Doc<"requests">;
@@ -30,7 +31,7 @@ export default function RequestCard({ request, showUpvoteButton = true }: Props)
             // noop
           }
         }}
-        className="w-full relative group/request-card"
+        className="group/request-card relative w-full"
         key={request._id}
         data-request={request._id}
       >
@@ -50,7 +51,7 @@ export default function RequestCard({ request, showUpvoteButton = true }: Props)
         </CardHeader>
         {request.description && (
           <CardContent>
-            <p className="text-secondary-foreground text-sm">{trimTo(request.description)}</p>
+            <p className="text-sm text-secondary-foreground">{trimTo(request.description)}</p>
           </CardContent>
         )}
       </Card>

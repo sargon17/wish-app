@@ -100,7 +100,7 @@ export const publishSuggestionPortal = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const project = await assertProjectOwner(ctx, args.id, user._id);
-    const projectSlug = project.projectSlug ?? await createUniqueProjectSlug(ctx, project.title);
+    const projectSlug = project.projectSlug ?? (await createUniqueProjectSlug(ctx, project.title));
     const suggestionPortalPublishedAt = project.suggestionPortalPublishedAt ?? Date.now();
 
     await ctx.db.patch(project._id, {
@@ -261,12 +261,14 @@ export const rotateApiKey = mutation({
         .withIndex("by_project_status", (q) => q.eq("projectId", args.id).eq("status", "active"))
         .collect();
 
-      await Promise.all(activeApiKeys.map((apiKeyDoc) =>
-        ctx.db.patch(apiKeyDoc._id, {
-          status: "revoked",
-          revokedAt: Date.now(),
-        })
-      ));
+      await Promise.all(
+        activeApiKeys.map((apiKeyDoc) =>
+          ctx.db.patch(apiKeyDoc._id, {
+            status: "revoked",
+            revokedAt: Date.now(),
+          }),
+        ),
+      );
 
       const { apiKey } = await createApiKeyRecord(ctx, {
         projectId: args.id,
@@ -296,27 +298,29 @@ export const backfillMissingApiKeys = mutation({
       const missing = projects.filter((project) => !!project.apiKeyHash);
       const generatedKeys: Array<{ projectId: Id<"projects">; apiKey: string }> = [];
 
-      await Promise.all(missing.map(async (project) => {
-        const existingApiKeys = await ctx.db
-          .query("apiKeys")
-          .withIndex("by_project", (q) => q.eq("projectId", project._id))
-          .collect();
+      await Promise.all(
+        missing.map(async (project) => {
+          const existingApiKeys = await ctx.db
+            .query("apiKeys")
+            .withIndex("by_project", (q) => q.eq("projectId", project._id))
+            .collect();
 
-        if (existingApiKeys.length > 0) {
-          return;
-        }
+          if (existingApiKeys.length > 0) {
+            return;
+          }
 
-        await ctx.db.insert("apiKeys", {
-          projectId: project._id,
-          name: "Legacy key",
-          keyPrefix: "wish_pk_legacy",
-          keyHash: project.apiKeyHash!,
-          scopes: ["read", "write", "admin"],
-          status: "active",
-          createdAt: Date.now(),
-          createdBy: project.user,
-        });
-      }));
+          await ctx.db.insert("apiKeys", {
+            projectId: project._id,
+            name: "Legacy key",
+            keyPrefix: "wish_pk_legacy",
+            keyHash: project.apiKeyHash!,
+            scopes: ["read", "write", "admin"],
+            status: "active",
+            createdAt: Date.now(),
+            createdBy: project.user,
+          });
+        }),
+      );
 
       return {
         updated: missing.length,

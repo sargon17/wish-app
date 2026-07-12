@@ -2,7 +2,6 @@ import { converter, formatHex, wcagContrast } from "culori";
 
 const toOklch = converter("oklch");
 
-
 export function contrastShade(color: string) {
   const parsed = toOklch(color);
   if (!parsed) return color;
@@ -12,7 +11,6 @@ export function contrastShade(color: string) {
 
   return wcagContrast(dark, color) > wcagContrast(light, color) ? dark : light;
 }
-
 
 export function lighten(color: string, amount = 0.1) {
   const parsed = toOklch(color);

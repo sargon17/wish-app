@@ -158,13 +158,19 @@ export const deleteByClient = mutation({
           .unique();
 
         if (!user) {
-          throw new ConvexError({ code: "UNAUTHENTICATED", message: "Unauthenticated call to mutation" });
+          throw new ConvexError({
+            code: "UNAUTHENTICATED",
+            message: "Unauthenticated call to mutation",
+          });
         }
 
         const project = await ctx.db.get(comment.projectId);
         if (!project || project.user !== user._id) {
           if (comment.authorType !== "developer" || comment.authorUserId !== user._id) {
-            throw new ConvexError({ code: "FORBIDDEN", message: "Not allowed to delete this comment" });
+            throw new ConvexError({
+              code: "FORBIDDEN",
+              message: "Not allowed to delete this comment",
+            });
           }
         }
 
@@ -173,11 +179,17 @@ export const deleteByClient = mutation({
       }
 
       if (!args.clientId) {
-        throw new ConvexError({ code: "BAD_REQUEST", message: "Client id is required for public comment deletion" });
+        throw new ConvexError({
+          code: "BAD_REQUEST",
+          message: "Client id is required for public comment deletion",
+        });
       }
 
       if (comment.authorType !== "client") {
-        throw new ConvexError({ code: "FORBIDDEN", message: "Only client comments can be deleted publicly" });
+        throw new ConvexError({
+          code: "FORBIDDEN",
+          message: "Only client comments can be deleted publicly",
+        });
       }
 
       if (comment.authorClientId !== args.clientId) {

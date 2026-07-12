@@ -1,5 +1,14 @@
+import { api } from "@wish/convex-backend/api";
 import { useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -9,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@wish/convex-backend/api";
 
 type WeeklyTrendPoint = (typeof api.stats.requestOverview._returnType)["weeklyTrend"][number];
 
@@ -52,7 +60,7 @@ export function RequestsTrendCard({ data, className }: RequestsTrendCardProps) {
           </span>
           <span className="text-xs sm:text-sm">{deltaLabel}</span>
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wide">Range</span>
+            <span className="text-xs tracking-wide uppercase">Range</span>
             <Select
               value={String(timeframe)}
               onValueChange={(value) => setTimeframe(Number(value))}

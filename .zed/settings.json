@@ -8,18 +8,18 @@
     "oxlint": {
       "initialization_options": {
         "settings": {
-          "run": "onType",
-        },
-      },
+          "run": "onType"
+        }
+      }
     },
     "oxfmt": {
       "initialization_options": {
         "settings": {
           "configPath": "vite.config.ts",
-          "run": "onSave",
-        },
-      },
-    },
+          "run": "onSave"
+        }
+      }
+    }
   },
   "languages": {
     "TypeScript": {
@@ -30,18 +30,18 @@
         "!graphql",
         "!typescript-language-server",
         "!eslint",
-        "...",
+        "..."
       ],
       "formatter": [
         {
           "language_server": {
-            "name": "oxfmt",
-          },
-        },
+            "name": "oxfmt"
+          }
+        }
       ],
       "code_actions_on_format": {
-        "source.fixAll.oxc": true,
-      },
+        "source.fixAll.oxc": true
+      }
     },
     "TSX": {
       "language_servers": [
@@ -51,18 +51,18 @@
         "!graphql",
         "!typescript-language-server",
         "!eslint",
-        "...",
+        "..."
       ],
       "formatter": [
         {
           "language_server": {
-            "name": "oxfmt",
-          },
-        },
+            "name": "oxfmt"
+          }
+        }
       ],
       "code_actions_on_format": {
-        "source.fixAll.oxc": true,
-      },
-    },
-  },
+        "source.fixAll.oxc": true
+      }
+    }
+  }
 }

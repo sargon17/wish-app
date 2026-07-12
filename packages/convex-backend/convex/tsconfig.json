@@ -4,7 +4,6 @@
    * You can modify it, but some settings are required to use Convex.
    */
   "compilerOptions": {
-
     /* These compiler options are required by Convex */
     "target": "ESNext",
     "jsx": "react-jsx",

@@ -1,4 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, MessageCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -13,8 +15,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
 import { normalizePortalSort } from "@/lib/portalSort";
 import { formatDate } from "@/lib/time";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 export const Route = createFileRoute("/p/$projectSlug/r/$requestId/$requestSlug")({
   head: () => ({
@@ -91,7 +91,7 @@ function PublicRequestDetailPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-5 py-8 md:px-8 md:py-12">
-        <Button variant="ghost" className="-ml-3 mb-6" asChild>
+        <Button variant="ghost" className="mb-6 -ml-3" asChild>
           <Link to="/p/$projectSlug" params={{ projectSlug }} search={searchParams}>
             <ArrowLeft />
             Back to {detail.project.title}
@@ -109,14 +109,18 @@ function PublicRequestDetailPage() {
             />
             <div className="min-w-0 flex-1 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
-                {detail.status ? <Badge variant="secondary">{detail.status.displayName}</Badge> : null}
-                <time className="text-sm text-muted-foreground">{formatDate(detail.request._creationTime)}</time>
+                {detail.status ? (
+                  <Badge variant="secondary">{detail.status.displayName}</Badge>
+                ) : null}
+                <time className="text-sm text-muted-foreground">
+                  {formatDate(detail.request._creationTime)}
+                </time>
               </div>
               <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
                 {detail.request.text}
               </h1>
               {detail.request.description ? (
-                <p className="whitespace-pre-wrap text-base leading-7 text-muted-foreground">
+                <p className="text-base leading-7 whitespace-pre-wrap text-muted-foreground">
                   {detail.request.description}
                 </p>
               ) : null}
@@ -147,9 +151,13 @@ function PublicRequestDetailPage() {
                       <Badge variant={comment.authorType === "developer" ? "default" : "outline"}>
                         {comment.authorType === "developer" ? "Project Owner" : "Requester"}
                       </Badge>
-                      <time className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</time>
+                      <time className="text-xs text-muted-foreground">
+                        {formatDate(comment.createdAt)}
+                      </time>
                     </div>
-                    {clientId && comment.authorType === "client" && comment.authorClientId === clientId ? (
+                    {clientId &&
+                    comment.authorType === "client" &&
+                    comment.authorClientId === clientId ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -163,7 +171,7 @@ function PublicRequestDetailPage() {
                       </Button>
                     ) : null}
                   </div>
-                  <p className="whitespace-pre-wrap text-sm leading-6">{comment.body}</p>
+                  <p className="text-sm leading-6 whitespace-pre-wrap">{comment.body}</p>
                 </div>
               ))
             )}

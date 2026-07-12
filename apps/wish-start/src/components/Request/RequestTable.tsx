@@ -1,15 +1,18 @@
-import type { Doc, Id } from "@wish/convex-backend/data-model";
-import { type ColumnDef } from "@tanstack/react-table";
-import { useMemo } from "react";
-import { trimTo } from "#/lib/text.ts";
-import StatusChip from "../Status/StatusChip";
-import EntityTable from "../molecules/EntityTable";
-import SortButton from "@components/atoms/SortButton";
-import RequestDetailView from "./DetailView/RequestDeatailView";
 import useRequests from "#/hooks/useRequests";
 import useStatuses from "#/hooks/useStatuses";
+import { trimTo } from "#/lib/text.ts";
+import SortButton from "@components/atoms/SortButton";
 import { Checkbox } from "@components/ui/checkbox";
+import { type ColumnDef } from "@tanstack/react-table";
+import type { Doc, Id } from "@wish/convex-backend/data-model";
+import { useMemo } from "react";
+
 import type { Filter } from "@/lib/requestBoard/buildFilters";
+
+import EntityTable from "../molecules/EntityTable";
+import StatusChip from "../Status/StatusChip";
+
+import RequestDetailView from "./DetailView/RequestDeatailView";
 import RequestsEmpty from "./RequestsEmpty";
 
 interface RequestTableProps {
@@ -126,7 +129,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
     return <RequestsEmpty projectId={projectId as never} />;
 
   return (
-    <div className="w-full mt-1 flex flex-col gap-4">
+    <div className="mt-1 flex w-full flex-col gap-4">
       <EntityTable
         data={mappedRequests}
         columns={columns}

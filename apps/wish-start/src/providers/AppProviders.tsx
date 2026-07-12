@@ -1,31 +1,25 @@
-import {
-  ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from '@clerk/clerk-react'
-import type { ReactNode } from 'react'
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import type { ReactNode } from "react";
 
-import env from '@/env'
-import { Toaster } from '@/components/ui/sonner'
+import { Toaster } from "@/components/ui/sonner";
+import env from "@/env";
 
-import ConvexClientProvider from './ConvexClientProvider'
-import ThemeProvider from './ThemeProvider'
+import ConvexClientProvider from "./ConvexClientProvider";
+import ThemeProvider from "./ThemeProvider";
 
 function AuthBoundary({ children }: { children: ReactNode }) {
-  const key = env.VITE_CLERK_PUBLISHABLE_KEY
+  const key = env.VITE_CLERK_PUBLISHABLE_KEY;
 
   if (!key) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
-  return <ClerkProvider publishableKey={key}>{children}</ClerkProvider>
+  return <ClerkProvider publishableKey={key}>{children}</ClerkProvider>;
 }
 
 export function HeaderAuth() {
   if (!env.VITE_CLERK_PUBLISHABLE_KEY) {
-    return null
+    return null;
   }
 
   return (
@@ -37,7 +31,7 @@ export function HeaderAuth() {
         <SignInButton mode="modal" />
       </SignedOut>
     </>
-  )
+  );
 }
 
 export default function AppProviders({ children }: { children: ReactNode }) {
@@ -50,5 +44,5 @@ export default function AppProviders({ children }: { children: ReactNode }) {
         </ConvexClientProvider>
       </ThemeProvider>
     </AuthBoundary>
-  )
+  );
 }

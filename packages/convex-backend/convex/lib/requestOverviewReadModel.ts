@@ -1,4 +1,5 @@
 import type { Doc, Id } from "../_generated/dataModel";
+
 import { getRequestKind } from "./requestKind";
 
 type RequestOverviewReadModelInput = {
@@ -73,7 +74,8 @@ export function formatWeekLabel(timestamp: number): string {
 
 function filterOwnedRequests(requests: Doc<"requests">[], ownedProjectIds: Set<string>) {
   return requests.filter(
-    (request) => ownedProjectIds.has(request.project.toString()) && getRequestKind(request) === "request",
+    (request) =>
+      ownedProjectIds.has(request.project.toString()) && getRequestKind(request) === "request",
   );
 }
 
@@ -189,7 +191,10 @@ function buildWeeklyTrend(
     .reverse();
 
   const counts = new Map<number, RequestOverviewReadModel["weeklyTrend"][number]>(
-    bucketStarts.map((weekStart) => [weekStart, { weekStart, label: formatWeekLabel(weekStart), count: 0 }]),
+    bucketStarts.map((weekStart) => [
+      weekStart,
+      { weekStart, label: formatWeekLabel(weekStart), count: 0 },
+    ]),
   );
 
   for (const request of requests) {

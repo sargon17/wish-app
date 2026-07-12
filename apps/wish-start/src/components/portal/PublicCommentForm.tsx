@@ -1,5 +1,7 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
 import { Send } from "lucide-react";
 import type { FormEvent } from "react";
@@ -9,8 +11,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 export function PublicCommentForm({
   projectSlug,

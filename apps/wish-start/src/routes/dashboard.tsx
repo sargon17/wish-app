@@ -1,9 +1,9 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
-
-import DashboardShell from "@/components/dashboard/DashboardShell";
 import { useStoreUserEffect } from "#/hooks/useStoreUserEffect";
 import Loading from "@components/Organisms/Loading";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated } from "convex/react";
+
+import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,

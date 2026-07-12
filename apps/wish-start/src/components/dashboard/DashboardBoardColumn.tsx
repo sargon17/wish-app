@@ -1,15 +1,14 @@
 "use client";
+import useRequests from "#/hooks/useRequests";
+import type { Doc, Id } from "@wish/convex-backend/data-model";
 import { useRef, useState } from "react";
 import type { DragEvent } from "react";
-
-import type { Doc, Id } from "@wish/convex-backend/data-model";
 
 import RequestCard from "../Request/RequestCard";
 import RequestCreateEditDialog from "../Request/RequestCreateEditDialog";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
-import useRequests from "#/hooks/useRequests";
 
 interface Props {
   status: Doc<"requestStatuses">;
@@ -53,15 +52,15 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
   }
   return (
     <div
-      className=" group/board-column w-90 ring-border bg-card/90 backdrop-blur-lg ring rounded-xl h-full shrink-0 flex flex-col relative overflow-hidden"
+      className=" group/board-column relative flex h-full w-90 shrink-0 flex-col overflow-hidden rounded-xl bg-card/90 ring ring-border backdrop-blur-lg"
       onDragEnterCapture={handleDragEnter}
       onDragOverCapture={handleDragOver}
       onDragLeaveCapture={handleDragLeave}
       onDropCapture={handleDrop}
     >
-      <div className="flex justify-between items-center font-semibold p-3">
+      <div className="flex items-center justify-between p-3 font-semibold">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-xs" style={{ backgroundColor: color }} />
+          <div className="h-3 w-3 rounded-xs" style={{ backgroundColor: color }} />
           {displayName}
         </div>
         <RequestCreateEditDialog project={projectId} status={statusId}>
@@ -71,7 +70,7 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
         </RequestCreateEditDialog>
       </div>
       <Separator />
-      <ScrollArea className="relative h-full flex-1 min-h-0">
+      <ScrollArea className="relative h-full min-h-0 flex-1">
         {requestsByStatus && (
           <div className="flex flex-col gap-2 p-3">
             {requestsByStatus.map((request) => (
@@ -82,7 +81,7 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
 
         {isDraggingOver && (
           <div
-            className="absolute inset-0 z-10 rounded-3xl border border-dashed flex items-center justify-center text-xs text-muted-foreground border-accent-foreground bg-foreground/1 m-1"
+            className="absolute inset-0 z-10 m-1 flex items-center justify-center rounded-3xl border border-dashed border-accent-foreground bg-foreground/1 text-xs text-muted-foreground"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -92,7 +91,7 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
           </div>
         )}
 
-        <div className="w-full flex justify-center opacity-0 group-hover/board-column:opacity-100 transition-opacity p-3">
+        <div className="flex w-full justify-center p-3 opacity-0 transition-opacity group-hover/board-column:opacity-100">
           <RequestCreateEditDialog project={projectId} status={statusId}>
             <Button size="icon" variant="ghost">
               +

@@ -1,17 +1,17 @@
 "use client";
 
+import { arktypeResolver } from "@hookform/resolvers/arktype";
+import { api } from "@wish/convex-backend/api";
+import { type } from "arktype";
 import { useMutation } from "convex/react";
 import { useForm } from "react-hook-form";
 import type { FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
-import { type } from "arktype";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { api } from "@wish/convex-backend/api";
 import { cn } from "@/lib/utils";
-import { arktypeResolver } from "@hookform/resolvers/arktype";
 
 const waitlistSchema = type({
   email: type("string.email").configure({ message: "Use a valid email address" }),
@@ -86,7 +86,7 @@ export function WaitlistJoin({
             name="email"
             render={({ field }) => {
               return (
-                <FormItem className="w-full sm:flex-1 text-left">
+                <FormItem className="w-full text-left sm:flex-1">
                   <FormControl>
                     <Input
                       placeholder={placeholder}

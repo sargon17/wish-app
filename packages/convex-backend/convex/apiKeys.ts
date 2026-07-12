@@ -57,10 +57,7 @@ export async function createApiKeyRecord(
   return { apiKeyId, apiKey };
 }
 
-async function migrateLegacyProjectApiKey(
-  ctx: MutationCtx,
-  projectId: Id<"projects">,
-) {
+async function migrateLegacyProjectApiKey(ctx: MutationCtx, projectId: Id<"projects">) {
   const project = await ctx.db.get(projectId);
   if (!project?.apiKeyHash) {
     return { migrated: false };
@@ -185,7 +182,9 @@ export const getActiveKeysByPrefixInternal = internalQuery({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("apiKeys")
-      .withIndex("by_prefix_status", (q) => q.eq("keyPrefix", args.keyPrefix).eq("status", "active"))
+      .withIndex("by_prefix_status", (q) =>
+        q.eq("keyPrefix", args.keyPrefix).eq("status", "active"),
+      )
       .filter((q) => q.eq(q.field("projectId"), args.projectId))
       .collect();
   },

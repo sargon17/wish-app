@@ -6,10 +6,6 @@ export const STARTER_PROJECT_STATUSES = [
   { name: "done", displayName: "Done", color: "#22c55e" },
 ] as const;
 
-export const STARTER_PROJECT_STATUS_NAMES = STARTER_PROJECT_STATUSES.map((status) => status.name) as [
-  "open",
-  "under-review",
-  "planned",
-  "in-progress",
-  "done",
-];
+export const STARTER_PROJECT_STATUS_NAMES = STARTER_PROJECT_STATUSES.map(
+  (status) => status.name,
+) as ["open", "under-review", "planned", "in-progress", "done"];

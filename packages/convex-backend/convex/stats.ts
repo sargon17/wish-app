@@ -1,5 +1,5 @@
-import type { QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
 import { query } from "./_generated/server";
 import { buildRequestOverviewReadModel } from "./lib/requestOverviewReadModel";
 
@@ -32,7 +32,10 @@ export const requestOverview = query({
       const requests = (
         await Promise.all(
           ownedProjectIds.map((projectId) =>
-            ctx.db.query("requests").withIndex("by_project", (q) => q.eq("project", projectId)).collect(),
+            ctx.db
+              .query("requests")
+              .withIndex("by_project", (q) => q.eq("project", projectId))
+              .collect(),
           ),
         )
       ).flat();
@@ -56,9 +59,15 @@ export const requestOverview = query({
 
 async function loadRelevantRequestStatuses(ctx: QueryCtx, ownedProjectIds: Id<"projects">[]) {
   const statuses = await Promise.all([
-    ctx.db.query("requestStatuses").withIndex("by_project", (q) => q.eq("project", undefined)).collect(),
+    ctx.db
+      .query("requestStatuses")
+      .withIndex("by_project", (q) => q.eq("project", undefined))
+      .collect(),
     ...ownedProjectIds.map((projectId) =>
-      ctx.db.query("requestStatuses").withIndex("by_project", (q) => q.eq("project", projectId)).collect(),
+      ctx.db
+        .query("requestStatuses")
+        .withIndex("by_project", (q) => q.eq("project", projectId))
+        .collect(),
     ),
   ]);
 

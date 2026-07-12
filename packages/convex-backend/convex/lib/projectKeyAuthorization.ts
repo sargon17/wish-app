@@ -1,6 +1,7 @@
+import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+
 import { getProjectApiKeyPrefix, hasApiKeyScope, verifyProjectApiKeyHash } from "./apiKeys";
 import { createPublicError } from "./publicErrors";
 
@@ -27,7 +28,9 @@ type ProjectKeyAuthorizationFailure = {
   error: ReturnType<typeof createPublicError>;
 };
 
-export type ProjectKeyAuthorizationResult = ProjectKeyAuthorizationSuccess | ProjectKeyAuthorizationFailure;
+export type ProjectKeyAuthorizationResult =
+  | ProjectKeyAuthorizationSuccess
+  | ProjectKeyAuthorizationFailure;
 
 export function getProjectApiKeyFromRequest(c: ProjectKeyAuthorizationContext) {
   const headerKey = c.req.header("x-api-key");

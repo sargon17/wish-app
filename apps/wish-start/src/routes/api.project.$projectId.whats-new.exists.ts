@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 import env from "@/env";
+import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 
 export const Route = createFileRoute("/api/project/$projectId/whats-new/exists")({
   server: {
@@ -31,7 +31,10 @@ export const Route = createFileRoute("/api/project/$projectId/whats-new/exists")
             headers: { "content-type": "application/json" },
           });
         } catch {
-          return Response.json({ error: "Upstream unavailable", code: "upstream_unavailable" }, { status: 502 });
+          return Response.json(
+            { error: "Upstream unavailable", code: "upstream_unavailable" },
+            { status: 502 },
+          );
         }
       },
     },

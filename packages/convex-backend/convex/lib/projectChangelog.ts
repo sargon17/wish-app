@@ -17,7 +17,10 @@ export function buildProjectPublicChangelogSlug(project: Pick<Doc<"projects">, "
   return `${base}-${suffix}`;
 }
 
-export async function ensureProjectPublicChangelogSlug(ctx: MutationCtx, projectId: Id<"projects">) {
+export async function ensureProjectPublicChangelogSlug(
+  ctx: MutationCtx,
+  projectId: Id<"projects">,
+) {
   const project = await ctx.db.get(projectId);
 
   if (!project) {

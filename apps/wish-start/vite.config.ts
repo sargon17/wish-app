@@ -1,23 +1,15 @@
-import { defineConfig } from 'vite-plus'
-
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-
-import viteReact from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
-    // devtools(),
-import { nitro } from 'nitro/vite';
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+// devtools(),
+import { nitro } from "nitro/vite";
+import { defineConfig } from "vite-plus";
 
 const config = defineConfig({
-  plugins: [
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-    nitro()
-  ],
+  plugins: [tailwindcss(), tanstackStart(), viteReact(), nitro()],
   resolve: {
     tsconfigPaths: true,
   },
-})
+});
 
-export default config
+export default config;

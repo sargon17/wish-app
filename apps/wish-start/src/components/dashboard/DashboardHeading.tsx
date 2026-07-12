@@ -22,19 +22,19 @@ interface Props {
 }
 export default function DashboardHeading({ title, actions, breadcrumbs }: Props) {
   return (
-    <div className="flex flex-col gap-3 w-full pb-2 sticky top-0 md:pt-6 backdrop-blur-2xl z-50">
-      <div className="flex items-center justify-between gap-4 max-md:px-2 overflow-hidden md:pr-6 sidebar-offset-pl">
-        <div className="flex items-center gap-4 h-10 min-w-0 flex-1">
+    <div className="sticky top-0 z-50 flex w-full flex-col gap-3 pb-2 backdrop-blur-2xl md:pt-6">
+      <div className="flex items-center justify-between gap-4 overflow-hidden sidebar-offset-pl max-md:px-2 md:pr-6">
+        <div className="flex h-10 min-w-0 flex-1 items-center gap-4">
           <SidebarTrigger />
           <Separator orientation="vertical" />
-          <h1 className="flex-1 min-w-0 truncate text-2xl md:text-4xl font-bold capitalize">
+          <h1 className="min-w-0 flex-1 truncate text-2xl font-bold capitalize md:text-4xl">
             {title}
           </h1>
         </div>
-        <div className="flex shrink-0 flex-none">{actions}</div>
+        <div className="flex flex-none shrink-0">{actions}</div>
       </div>
       <Separator />
-      <Breadcrumb className="max-md:px-2 md:pr-6 sidebar-offset-pl">
+      <Breadcrumb className="sidebar-offset-pl max-md:px-2 md:pr-6">
         <BreadcrumbList>
           {breadcrumbs.map((item) => (
             <div key={item.url} className=" contents">

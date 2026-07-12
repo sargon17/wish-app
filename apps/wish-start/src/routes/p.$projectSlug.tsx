@@ -1,4 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { api } from "@wish/convex-backend/api";
 import { useQuery } from "convex/react";
 import { MessageCircle, Plus, Search } from "lucide-react";
 import type { FormEvent } from "react";
@@ -8,7 +9,13 @@ import { PublicRequestSubmitDialog } from "@/components/portal/PublicRequestSubm
 import { PublicUpvoteButton } from "@/components/portal/PublicUpvoteButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,7 +23,6 @@ import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
 import { normalizePortalSort } from "@/lib/portalSort";
 import { requestSlug } from "@/lib/slug";
 import { formatDate } from "@/lib/time";
-import { api } from "@wish/convex-backend/api";
 
 const PORTAL_PAGE_SIZE = 20;
 export const Route = createFileRoute("/p/$projectSlug")({
@@ -118,7 +124,10 @@ function SuggestionPortalPage() {
                   </Link>
                 </Button>
               ) : null}
-              <PublicRequestSubmitDialog projectSlug={projectSlug} defaultTitle={searchParams.q ?? ""}>
+              <PublicRequestSubmitDialog
+                projectSlug={projectSlug}
+                defaultTitle={searchParams.q ?? ""}
+              >
                 <Button>
                   <Plus />
                   Submit request
@@ -129,7 +138,7 @@ function SuggestionPortalPage() {
 
           <form className="flex flex-col gap-2 sm:flex-row" onSubmit={applySearch}>
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
                 value={searchText}
@@ -137,7 +146,9 @@ function SuggestionPortalPage() {
                 placeholder="Search requests"
               />
             </div>
-            <Button type="submit" variant="outline">Search</Button>
+            <Button type="submit" variant="outline">
+              Search
+            </Button>
           </form>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -195,7 +206,10 @@ function SuggestionPortalPage() {
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <PublicRequestSubmitDialog projectSlug={projectSlug} defaultTitle={searchParams.q ?? ""}>
+              <PublicRequestSubmitDialog
+                projectSlug={projectSlug}
+                defaultTitle={searchParams.q ?? ""}
+              >
                 <Button>
                   <Plus />
                   Submit request
@@ -224,7 +238,9 @@ function SuggestionPortalPage() {
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {status ? <Badge variant="secondary">{status.displayName}</Badge> : null}
-                        <time className="text-xs text-muted-foreground">{formatDate(request._creationTime)}</time>
+                        <time className="text-xs text-muted-foreground">
+                          {formatDate(request._creationTime)}
+                        </time>
                       </div>
                       <h2 className="text-lg font-semibold tracking-tight">
                         <Link
@@ -256,7 +272,11 @@ function SuggestionPortalPage() {
             })}
             {portal.page.nextCursor !== undefined ? (
               <div className="flex justify-center pt-3">
-                <Button type="button" variant="outline" onClick={() => setVisibleLimit((limit) => limit + PORTAL_PAGE_SIZE)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setVisibleLimit((limit) => limit + PORTAL_PAGE_SIZE)}
+                >
                   Load more
                 </Button>
               </div>

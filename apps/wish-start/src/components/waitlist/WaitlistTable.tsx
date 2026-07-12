@@ -1,5 +1,9 @@
 "use client";
 
+import { StatCard } from "@components/molecules/StatCard";
+import type { ColumnDef } from "@tanstack/react-table";
+import { api } from "@wish/convex-backend/api";
+import type { Doc } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
 import { ChevronDown, Check, ArrowUpDown } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -14,15 +18,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { api } from "@wish/convex-backend/api";
-import type { Doc } from "@wish/convex-backend/data-model";
-import { StatCard } from "@components/molecules/StatCard";
-import type { ColumnDef } from "@tanstack/react-table";
 
+import EntityTable from "../molecules/EntityTable";
 import CopyButton from "../Organisms/CopyButton";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import EntityTable from "../molecules/EntityTable";
 
 type WaitlistEntry = Doc<"waitlist">;
 type WaitlistId = WaitlistEntry["_id"];
@@ -56,7 +56,7 @@ function StatusBadge({
       variant={isInvited ? "secondary" : "outline"}
       className={
         isInvited
-          ? `bg-accent text-accent-foreground border-accent/70 ${className ?? ""}`
+          ? `border-accent/70 bg-accent text-accent-foreground ${className ?? ""}`
           : `border-dashed ${className ?? ""}`
       }
     >

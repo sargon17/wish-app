@@ -1,5 +1,7 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
 import { Ban, KeyRound, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -30,7 +32,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -40,17 +47,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 import { formatDate } from "@/lib/time";
 
 const API_KEY_SCOPES = ["read", "write", "admin"] as const;
 
-function ApiKeyCreateDialog({
-  projectId,
-}: {
-  projectId: Id<"projects">;
-}) {
+function ApiKeyCreateDialog({ projectId }: { projectId: Id<"projects"> }) {
   const createApiKey = useMutation(api.apiKeys.create);
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
@@ -117,7 +118,8 @@ function ApiKeyCreateDialog({
             <DialogHeader>
               <DialogTitle>API key created</DialogTitle>
               <DialogDescription>
-                This raw key is visible only once. After you close this dialog, only metadata remains.
+                This raw key is visible only once. After you close this dialog, only metadata
+                remains.
               </DialogDescription>
             </DialogHeader>
             <Alert>
@@ -246,11 +248,7 @@ function ApiKeyRevokeButton({
   );
 }
 
-export default function ProjectApiKeysManager({
-  projectId,
-}: {
-  projectId: Id<"projects">;
-}) {
+export default function ProjectApiKeysManager({ projectId }: { projectId: Id<"projects"> }) {
   const apiKeys = useQuery(api.apiKeys.listByProject, { projectId });
   const migrateLegacyApiKeys = useMutation(api.apiKeys.migrateLegacyForProject);
 

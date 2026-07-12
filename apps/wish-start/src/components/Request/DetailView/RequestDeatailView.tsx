@@ -1,14 +1,16 @@
-import { ChevronUp, Mail, User } from "lucide-react";
+import useRequests from "#/hooks/useRequests";
+import { api } from "@wish/convex-backend/api";
+import type { Doc } from "@wish/convex-backend/data-model";
 import { useQuery } from "convex/react";
+import { ChevronUp, Mail, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
 import CommentsPanel from "@/components/Request/Comments/CommentsPanel";
 import RequestUpvoteButton from "@/components/Request/RequestUpvoteButton";
+import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +19,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { api } from "@wish/convex-backend/api";
-import type { Doc } from "@wish/convex-backend/data-model";
+import { Separator } from "@/components/ui/separator";
 import { useRequestStatus } from "@/hooks/useRequestStatus";
 import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
-import useRequests from "#/hooks/useRequests";
 
 interface Props {
   children: ReactNode;
@@ -72,7 +72,7 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
       <DialogTrigger asChild className="cursor-pointer">
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-106.25 md:max-w-5xl max-h-[85vh] overflow-hidden">
+      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-106.25 md:max-w-5xl">
         <div
           className={
             hasSuggestions ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]" : "grid gap-6"
@@ -120,7 +120,7 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
                   </div>
                 </div>
                 <div>
-                  <p className="text-secondary-foreground text-sm">{activeRequest.description}</p>
+                  <p className="text-sm text-secondary-foreground">{activeRequest.description}</p>
                 </div>
               </div>
             </DialogHeader>
@@ -137,7 +137,7 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
           {hasSuggestions && (
             <div className="flex min-h-0 flex-col">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
                   Other suggestions
                 </p>
                 {!isOriginalRequest && (
@@ -167,8 +167,8 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
                       variant="ghost"
                       className={
                         isActive
-                          ? "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left text-accent-foreground hover:bg-transparent last:border-b-0"
-                          : "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left hover:bg-transparent last:border-b-0"
+                          ? "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left text-accent-foreground last:border-b-0 hover:bg-transparent"
+                          : "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left last:border-b-0 hover:bg-transparent"
                       }
                       onClick={() => setActiveRequestId(suggestion._id)}
                     >

@@ -1,5 +1,7 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
 import { AlertCircle, ExternalLink, Save } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -20,10 +22,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 export default function ProjectGeneralSettings({ projectId }: { projectId: Id<"projects"> }) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
@@ -91,7 +96,10 @@ export default function ProjectGeneralSettings({ projectId }: { projectId: Id<"p
   }
 
   const portalPath = project?.projectSlug ? `/p/${project.projectSlug}` : "";
-  const portalUrl = typeof window === "undefined" || !portalPath ? portalPath : `${window.location.origin}${portalPath}`;
+  const portalUrl =
+    typeof window === "undefined" || !portalPath
+      ? portalPath
+      : `${window.location.origin}${portalPath}`;
 
   return (
     <div className="space-y-6">
@@ -180,8 +188,8 @@ export default function ProjectGeneralSettings({ projectId }: { projectId: Id<"p
                 <AlertDialogHeader>
                   <AlertDialogTitle>Publish this Suggestion Portal?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Every request on this project will be visible to anyone with the portal link. New requests
-                    submitted through the portal will also become visible immediately.
+                    Every request on this project will be visible to anyone with the portal link.
+                    New requests submitted through the portal will also become visible immediately.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -197,7 +205,11 @@ export default function ProjectGeneralSettings({ projectId }: { projectId: Id<"p
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" disabled={!project || !isDirty || hasInvalidTitle || isSaving} onClick={handleSave}>
+        <Button
+          type="button"
+          disabled={!project || !isDirty || hasInvalidTitle || isSaving}
+          onClick={handleSave}
+        >
           <Save />
           {isSaving ? "Saving..." : "Save changes"}
         </Button>

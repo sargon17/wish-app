@@ -1,11 +1,11 @@
 "use client";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Doc } from "@wish/convex-backend/data-model";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import CommentMessage from "./CommentMessage";
 
- 
 function getAuthorKey(comment: Doc<"requestComments">) {
   if (comment.authorType === "developer") {
     return `developer:${comment.authorUserId ?? "unknown"}`;

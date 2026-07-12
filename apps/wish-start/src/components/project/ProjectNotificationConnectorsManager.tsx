@@ -1,24 +1,27 @@
 "use client";
 
+import { useAsyncAction } from "#/hooks/useAsyncAction";
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
+import { EVENT_LABELS, NOTIFICATION_EVENTS } from "@wish/convex-backend/notification-event-types";
 import { useMutation, useQuery } from "convex/react";
 import { Bot, ExternalLink, Unplug } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useAsyncAction } from "#/hooks/useAsyncAction";
-
 import CopyButton from "@/components/Organisms/CopyButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/lib/time";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
-import { EVENT_LABELS, NOTIFICATION_EVENTS } from "@wish/convex-backend/notification-event-types";
-
 
 const strings = {
   toast: {
@@ -31,8 +34,6 @@ const strings = {
   },
 };
 
-
-
 export default function ProjectNotificationConnectorsManager({
   projectId,
 }: {
@@ -40,18 +41,19 @@ export default function ProjectNotificationConnectorsManager({
 }) {
   const connectors = useQuery(api.notificationConnectors.listByProject, { projectId });
 
-  const createTelegramConnectionToken = useMutation(api.notificationConnectors.createTelegramConnectionToken);
+  const createTelegramConnectionToken = useMutation(
+    api.notificationConnectors.createTelegramConnectionToken,
+  );
   const setTelegramEnabled = useMutation(api.notificationConnectors.setTelegramEnabled);
-
 
   const [connectionToken, setConnectionToken] = useState<Awaited<
     ReturnType<typeof createTelegramConnectionToken>
   > | null>(null);
 
   const telegramConnector = connectors?.find((connector) => connector.kind === "telegram");
-  const eventTypes = telegramConnector?.eventTypes ?? NOTIFICATION_EVENTS.map((event) => event.type);
+  const eventTypes =
+    telegramConnector?.eventTypes ?? NOTIFICATION_EVENTS.map((event) => event.type);
   const telegramLinked = Boolean(telegramConnector?.telegramChatTitle);
-
 
   const telegramCreateTokenAction = useAsyncAction();
   const toggleTelegramAction = useAsyncAction();
@@ -76,7 +78,9 @@ export default function ProjectNotificationConnectorsManager({
     await toggleTelegramAction.execute(async () => {
       try {
         await setTelegramEnabled({ projectId, enabled });
-        toast.success(enabled ? strings.toast.notificationEnabled : strings.toast.notificationDisabled);
+        toast.success(
+          enabled ? strings.toast.notificationEnabled : strings.toast.notificationDisabled,
+        );
       } catch {
         toast.error(strings.toast.notificationError);
       }
@@ -92,7 +96,11 @@ export default function ProjectNotificationConnectorsManager({
             Connect the official Wish bot to receive project notifications in Telegram.
           </p>
         </div>
-        <Button type="button" disabled={telegramCreateTokenAction.isLoading} onClick={handleCreateTelegramConnectionToken}>
+        <Button
+          type="button"
+          disabled={telegramCreateTokenAction.isLoading}
+          onClick={handleCreateTelegramConnectionToken}
+        >
           <Bot />
           {telegramConnector ? "Reconnect Telegram" : "Connect Telegram"}
         </Button>
@@ -103,8 +111,16 @@ export default function ProjectNotificationConnectorsManager({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="font-medium">Telegram</h4>
-              <Badge variant={telegramConnector?.enabled ? "default" : telegramLinked ? "secondary" : "outline"}>
-                {telegramConnector?.enabled ? "Connected" : telegramLinked ? "Paused" : "Not connected"}
+              <Badge
+                variant={
+                  telegramConnector?.enabled ? "default" : telegramLinked ? "secondary" : "outline"
+                }
+              >
+                {telegramConnector?.enabled
+                  ? "Connected"
+                  : telegramLinked
+                    ? "Paused"
+                    : "Not connected"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">

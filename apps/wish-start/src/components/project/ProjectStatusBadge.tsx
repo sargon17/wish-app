@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState, type FC } from "react";
-import Color, { type ColorLike } from "color";
-import { useMutation } from "convex/react";
-import { toast } from "sonner";
 import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
+import Color, { type ColorLike } from "color";
+import { useMutation } from "convex/react";
+import { useCallback, useEffect, useState, type FC } from "react";
+import { toast } from "sonner";
+
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   ColorPicker,
   ColorPickerAlpha,
@@ -15,10 +17,9 @@ import {
   ColorPickerOutput,
   ColorPickerSelection,
 } from "../ui/shadcn-io/color-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 interface ProjectStatusBadgeProps {
-  status: Doc<'requestStatuses'>;
+  status: Doc<"requestStatuses">;
 }
 
 const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
@@ -31,7 +32,6 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
   useEffect(() => {
     setColor(initialColor);
   }, [initialColor]);
-
 
   const handleChange = useCallback((value: ColorLike) => {
     const [r, g, b] = value as number[];
@@ -56,7 +56,6 @@ const ProjectStatusBadge: FC<ProjectStatusBadgeProps> = ({ status }) => {
       setIsSaving(false);
     }
   }, [color, isChanging, isSaving, status._id, updateStatusColor]);
-
 
   const badge = (
     <Badge variant="secondary" className="flex items-center gap-2 pr-3">

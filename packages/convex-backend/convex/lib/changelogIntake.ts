@@ -1,4 +1,5 @@
 import { internal } from "../_generated/api";
+
 import type { ProjectKeyAuthorizationContext } from "./projectKeyAuthorization";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
 

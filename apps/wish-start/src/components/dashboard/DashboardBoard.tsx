@@ -1,12 +1,11 @@
 "use client";
-import { useQuery } from "convex/react";
-
+import type { BoardType } from "#/lib/requestBoard/boardType";
+import RequestKanban from "@components/Request/RequestKanban";
 import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
+import { useQuery } from "convex/react";
 
-import type { BoardType } from "#/lib/requestBoard/boardType";
 import RequestTable from "../Request/RequestTable";
-import RequestKanban from "@components/Request/RequestKanban";
 
 interface Props {
   projectId: Id<"projects">;
@@ -20,7 +19,7 @@ export default function DashboardBoard({ projectId, boardType, kind }: Props) {
 
   return (
     // <div className="sidebar-offset-pl h-full">
-    <div className="flex h-full gap-2 w-full overflow-x-scroll pt-px sidebar-offset-pl pr-6 ">
+    <div className="flex h-full w-full gap-2 overflow-x-scroll pt-px pr-6 sidebar-offset-pl ">
       {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} kind={kind} />
       ) : (

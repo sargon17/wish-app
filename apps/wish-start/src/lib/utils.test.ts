@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from "vite-plus/test";
 
-import { cn } from './utils'
+import { cn } from "./utils";
 
-describe('cn', () => {
-  it('merges class names and tailwind utilities', () => {
-    expect(cn('px-2', 'px-4')).toBe('px-4')
-  })
+describe("cn", () => {
+  it("merges class names and tailwind utilities", () => {
+    expect(cn("px-2", "px-4")).toBe("px-4");
+  });
 
-  it('ignores falsey values', () => {
-    expect(cn('foo', undefined, null)).toBe('foo')
-  })
-})
+  it("ignores falsey values", () => {
+    expect(cn("foo", undefined, null)).toBe("foo");
+  });
+});

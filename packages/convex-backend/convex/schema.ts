@@ -1,7 +1,10 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { notificationConnectorKindValidator, notificationEventTypeValidator } from "./lib/notificationTypes";
+import {
+  notificationConnectorKindValidator,
+  notificationEventTypeValidator,
+} from "./lib/notificationTypes";
 
 export default defineSchema({
   users: defineTable({
@@ -144,7 +147,6 @@ export default defineSchema({
     type: v.union(v.literal("custom"), v.literal("default")),
     color: v.optional(v.string()),
     position: v.optional(v.number()),
-
   })
     .index("by_project", ["project"])
     .index("by_project_name", ["project", "name"]),

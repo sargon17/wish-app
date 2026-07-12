@@ -6,8 +6,7 @@ export default defineConfig({
       scripts: true,
       tasks: true,
     },
-    tasks: {
-    },
+    tasks: {},
   },
   lint: {
     plugins: ["node", "jsdoc", "import", "unicorn", "react"],
@@ -29,7 +28,7 @@ export default defineConfig({
       "**/.output/**",
       "**/node_modules/**",
       "**/components/ui/**",
-      "**/_generated/*"
+      "**/_generated/*",
     ],
     experimentalTailwindcss: {
       stylesheet: "./apps/wish-start/src/styles.css",

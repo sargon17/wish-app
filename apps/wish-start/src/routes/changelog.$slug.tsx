@@ -1,11 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { api } from "@wish/convex-backend/api";
 import { useQuery } from "convex/react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { api } from "@wish/convex-backend/api";
 import { formatDate } from "@/lib/time";
 
 export const Route = createFileRoute("/changelog/$slug")({
@@ -52,7 +52,9 @@ function PublicChangelogPage() {
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-3xl px-6 py-10 md:py-14">
         <div className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{feed.project.title}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            {feed.project.title}
+          </h1>
         </div>
 
         <Separator className="mb-8" />
@@ -64,7 +66,10 @@ function PublicChangelogPage() {
             </div>
           ) : (
             feed.entries.map((entry) => (
-              <section key={`${entry.versionLabel}-${entry.publishedAt ?? 0}`} className="space-y-4 py-6 first:pt-0">
+              <section
+                key={`${entry.versionLabel}-${entry.publishedAt ?? 0}`}
+                className="space-y-4 py-6 first:pt-0"
+              >
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -76,13 +81,17 @@ function PublicChangelogPage() {
                     <h2 className="text-xl font-semibold tracking-tight">{entry.title}</h2>
                   </div>
 
-                  <time className="text-sm text-muted-foreground">{formatDate(entry.publishedAt)}</time>
+                  <time className="text-sm text-muted-foreground">
+                    {formatDate(entry.publishedAt)}
+                  </time>
                 </div>
 
-                {entry.summary ? <p className="text-base leading-7 text-muted-foreground">{entry.summary}</p> : null}
+                {entry.summary ? (
+                  <p className="text-base leading-7 text-muted-foreground">{entry.summary}</p>
+                ) : null}
 
                 {entry.body ? (
-                  <div className="whitespace-pre-wrap text-base leading-7 text-foreground/90">
+                  <div className="text-base leading-7 whitespace-pre-wrap text-foreground/90">
                     {entry.body}
                   </div>
                 ) : null}

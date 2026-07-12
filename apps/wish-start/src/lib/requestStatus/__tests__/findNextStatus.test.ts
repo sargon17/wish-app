@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vite-plus/test'
-
 import type { Doc } from "@wish/convex-backend/data-model";
+import { describe, expect, it } from "vite-plus/test";
 
 import { findNextStatus } from "../findNextStatus";
 
@@ -16,10 +15,7 @@ describe("findNextStatus", () => {
   });
 
   it("returns the current status when already at the end", () => {
-    const statuses = [
-      { _id: "status-1" },
-      { _id: "status-2" },
-    ] as Doc<"requestStatuses">[];
+    const statuses = [{ _id: "status-1" }, { _id: "status-2" }] as Doc<"requestStatuses">[];
 
     expect(findNextStatus({ current: statuses[1], statuses })).toBe(statuses[1]);
   });

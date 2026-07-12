@@ -1,8 +1,17 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+
 import { STARTER_PROJECT_STATUSES, STARTER_PROJECT_STATUS_NAMES } from "./requestStatusStarterData";
 
-export const DEFAULT_STATUS_ORDER = ["open", "planned", "under-review", "in-progress", "completed", "done", "closed"] as const;
+export const DEFAULT_STATUS_ORDER = [
+  "open",
+  "planned",
+  "under-review",
+  "in-progress",
+  "completed",
+  "done",
+  "closed",
+] as const;
 
 export function getDefaultStatusRank(name: string) {
   const index = DEFAULT_STATUS_ORDER.indexOf(name as (typeof DEFAULT_STATUS_ORDER)[number]);
@@ -15,7 +24,9 @@ export function getDefaultStatusRank(name: string) {
 }
 
 export function sortDefaultStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
-  return getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name);
+  return (
+    getDefaultStatusRank(a.name) - getDefaultStatusRank(b.name) || a.name.localeCompare(b.name)
+  );
 }
 
 function sortProjectOwnedStatuses(a: Doc<"requestStatuses">, b: Doc<"requestStatuses">) {
@@ -77,12 +88,16 @@ function applyDefaultStatusColor(status: Doc<"requestStatuses">) {
 export function isStarterProjectStatusName(
   name: string,
 ): name is (typeof STARTER_PROJECT_STATUS_NAMES)[number] {
-  return getStarterProjectStatusNames().includes(getCanonicalStatusName(name) as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
+  return getStarterProjectStatusNames().includes(
+    getCanonicalStatusName(name) as (typeof STARTER_PROJECT_STATUS_NAMES)[number],
+  );
 }
 
 export function getDefaultWorkflowStatusRank(name: string) {
   const canonical = getCanonicalStatusName(name);
-  const starterIndex = getStarterProjectStatusNames().indexOf(canonical as (typeof STARTER_PROJECT_STATUS_NAMES)[number]);
+  const starterIndex = getStarterProjectStatusNames().indexOf(
+    canonical as (typeof STARTER_PROJECT_STATUS_NAMES)[number],
+  );
 
   if (starterIndex !== -1) {
     return starterIndex;
@@ -177,9 +192,11 @@ function sortByCustomWorkflowPosition(a: Doc<"requestStatuses">, b: Doc<"request
 }
 
 export function getNextCustomStatusPosition(statuses: Doc<"requestStatuses">[]) {
-  return statuses.reduce((max, status) => {
-    return Math.max(max, status.position ?? -1);
-  }, -1) + 1;
+  return (
+    statuses.reduce((max, status) => {
+      return Math.max(max, status.position ?? -1);
+    }, -1) + 1
+  );
 }
 
 async function getRequestCountsByStatusId(ctx: QueryCtx | MutationCtx, projectId: Id<"projects">) {
@@ -198,7 +215,10 @@ async function getRequestCountsByStatusId(ctx: QueryCtx | MutationCtx, projectId
   return counts;
 }
 
-export async function getManagementStatusesForProject(ctx: QueryCtx | MutationCtx, projectId: Id<"projects">) {
+export async function getManagementStatusesForProject(
+  ctx: QueryCtx | MutationCtx,
+  projectId: Id<"projects">,
+) {
   const [statuses, counts] = await Promise.all([
     getOrderedStatusesForProject(ctx, projectId),
     getRequestCountsByStatusId(ctx, projectId),
@@ -222,7 +242,9 @@ export async function getOrderedCustomStatusesForProject(
       .withIndex("by_project", (q) => q.eq("project", projectId))
       .collect());
 
-  return projectStatuses.filter((status) => status.type === "custom").sort(sortByCustomWorkflowPosition);
+  return projectStatuses
+    .filter((status) => status.type === "custom")
+    .sort(sortByCustomWorkflowPosition);
 }
 
 export async function getOrderedStatusesForProject(
@@ -242,7 +264,9 @@ export function assertNoDuplicateStatusName(
   name: string,
   currentStatusId?: Id<"requestStatuses">,
 ) {
-  const duplicate = statuses.find((status) => status.name === name && status._id !== currentStatusId);
+  const duplicate = statuses.find(
+    (status) => status.name === name && status._id !== currentStatusId,
+  );
 
   if (duplicate) {
     throw new Error("A status with this name already exists in the project");
@@ -287,9 +311,11 @@ export function assertValidCustomOrderPayload(
 }
 
 export function getNextWorkflowStatusPosition(statuses: Doc<"requestStatuses">[]) {
-  return statuses.reduce((max, status) => {
-    return Math.max(max, status.position ?? -1);
-  }, -1) + 1;
+  return (
+    statuses.reduce((max, status) => {
+      return Math.max(max, status.position ?? -1);
+    }, -1) + 1
+  );
 }
 
 export function getStatusesWithAssignedWorkflowPositions(statuses: Doc<"requestStatuses">[]) {

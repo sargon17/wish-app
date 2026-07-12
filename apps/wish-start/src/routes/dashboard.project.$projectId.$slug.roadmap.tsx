@@ -1,10 +1,10 @@
+import DashboardPage from "@components/dashboard/DashboardPage";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import ProjectChangelogManager from "@/components/project/ProjectChangelogManager";
 import { Button } from "@/components/ui/button";
-import DashboardPage from "@components/dashboard/DashboardPage";
 
 export const Route = createFileRoute("/dashboard/project/$projectId/$slug/roadmap")({
   component: ProjectRoadmapView,

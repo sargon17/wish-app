@@ -1,4 +1,5 @@
 import type { BoardType } from "#/lib/requestBoard/boardType";
+
 import { useLocalStorage } from "./useLocalStorage";
 
 export function useBoardType() {

@@ -1,8 +1,11 @@
-import { useMutation } from 'convex/react'
-import { Ellipsis } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
+import { useMutation } from "convex/react";
+import { Ellipsis } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -11,8 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,28 +22,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 
-import { api } from '@wish/convex-backend/api'
-import type { Id } from '@wish/convex-backend/data-model'
-
-export default function DashboardProjectCardActions({ id }: { id: Id<'projects'> }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const deleteProject = useMutation(api.projects.deleteProject)
+export default function DashboardProjectCardActions({ id }: { id: Id<"projects"> }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteProject = useMutation(api.projects.deleteProject);
 
   async function handleDelete() {
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      await deleteProject({ id })
-      setIsOpen(false)
-      toast.success('Project deleted')
+      await deleteProject({ id });
+      setIsOpen(false);
+      toast.success("Project deleted");
     } catch (error) {
-      console.error(error)
-      toast.error('Unable to delete the project')
-      throw new Error('Unable to delete the project')
+      console.error(error);
+      toast.error("Unable to delete the project");
+      throw new Error("Unable to delete the project");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
   }
 
@@ -55,8 +54,8 @@ export default function DashboardProjectCardActions({ id }: { id: Id<'projects'>
             size="icon"
             className="relative z-20"
             onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
+              event.preventDefault();
+              event.stopPropagation();
             }}
           >
             <Ellipsis className="h-4 w-4 text-muted-foreground" />
@@ -68,9 +67,9 @@ export default function DashboardProjectCardActions({ id }: { id: Id<'projects'>
           <DropdownMenuItem
             variant="destructive"
             onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              setIsOpen(true)
+              event.preventDefault();
+              event.stopPropagation();
+              setIsOpen(true);
             }}
           >
             Delete
@@ -90,12 +89,17 @@ export default function DashboardProjectCardActions({ id }: { id: Id<'projects'>
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" variant="destructive" disabled={isDeleting} onClick={handleDelete}>
-              {isDeleting ? 'Deleting…' : 'Delete'}
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={handleDelete}
+            >
+              {isDeleting ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

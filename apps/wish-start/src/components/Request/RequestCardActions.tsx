@@ -1,4 +1,6 @@
 "use client";
+import { api } from "@wish/convex-backend/api";
+import type { Doc } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
@@ -12,8 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { api } from "@wish/convex-backend/api";
-import type { Doc } from "@wish/convex-backend/data-model";
 
 import { Button } from "../ui/button";
 import {
@@ -56,7 +56,7 @@ export default function RequestCardActions({
             className={
               alwaysVisible
                 ? undefined
-                : "opacity-0 group-hover/request-card:opacity-100 transition-all"
+                : "opacity-0 transition-all group-hover/request-card:opacity-100"
             }
           >
             <Ellipsis />

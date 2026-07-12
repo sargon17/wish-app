@@ -1,15 +1,15 @@
 import { Link } from "@tanstack/react-router";
+import type { Doc } from "@wish/convex-backend/data-model";
 
 import CopyButton from "@/components/Organisms/CopyButton";
-import { sluggedText } from "@/lib/slug";
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Doc } from "@wish/convex-backend/data-model";
+import { sluggedText } from "@/lib/slug";
 
 import DashboardProjectCardActions from "./DashboardProjectCardActions";
 
 export default function DashboardProjectCard({ project }: { project: Doc<"projects"> }) {
   return (
-    <Card className="relative w-full group/card" key={project._id}>
+    <Card className="group/card relative w-full" key={project._id}>
       <Link
         to="/dashboard/project/$projectId/$slug"
         params={{ projectId: project._id, slug: sluggedText(project.title) }}
@@ -17,9 +17,9 @@ export default function DashboardProjectCard({ project }: { project: Doc<"projec
       />
       <CardHeader>
         <CardTitle className="capitalize">{project.title}</CardTitle>
-        <div className="flex items-center gap-2 overflow-hidden group/description">
+        <div className="group/description flex items-center gap-2 overflow-hidden">
           <CardDescription
-            className="overflow-hidden text-ellipsis text-nowrap"
+            className="overflow-hidden text-nowrap text-ellipsis"
             onClick={(event) => event.stopPropagation()}
           >
             {`ID: ${project._id}`}

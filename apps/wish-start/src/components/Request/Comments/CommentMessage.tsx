@@ -1,7 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import type { Doc } from "@wish/convex-backend/data-model";
 import { Trash2 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Doc } from "@wish/convex-backend/data-model";
 
 export default function CommentMessage({
   authorType,
@@ -40,7 +41,7 @@ export default function CommentMessage({
                   {label}
                 </Badge>
                 {identifier && <span className="text-xs text-muted-foreground">{identifier}</span>}
-                <span className="text-[10px] text-muted-foreground ml-auto">
+                <span className="ml-auto text-[10px] text-muted-foreground">
                   {new Date(comment.createdAt).toLocaleString("en-US", {
                     month: "short",
                     day: "numeric",

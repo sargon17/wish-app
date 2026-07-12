@@ -1,7 +1,16 @@
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { api } from "@wish/convex-backend/api";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@wish/convex-backend/api";
 
 type ProjectBreakdownItem =
   (typeof api.stats.requestOverview._returnType)["projectBreakdown"][number];
@@ -37,8 +46,17 @@ export function ProjectBreakdownCard({ projects, total, className }: ProjectBrea
               <BarChart data={dataset} layout="vertical" margin={{ left: 12, right: 12 }}>
                 <CartesianGrid horizontal={false} strokeDasharray="3 3" />
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="title" tickLine={false} axisLine={false} width={120} />
-                <Tooltip cursor={{ fill: "var(--muted)" }} formatter={(value) => `${value} requests`} />
+                <YAxis
+                  type="category"
+                  dataKey="title"
+                  tickLine={false}
+                  axisLine={false}
+                  width={120}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--muted)" }}
+                  formatter={(value) => `${value} requests`}
+                />
                 <Bar dataKey="count" radius={6}>
                   {dataset.map((project) => (
                     <Cell key={project.key} fill={project.color} />

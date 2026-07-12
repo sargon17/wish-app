@@ -6,7 +6,10 @@ export const PORTAL_SORTS = ["top", "newest"] as const;
 
 export type PortalSort = (typeof PORTAL_SORTS)[number];
 
-type PortalRequest = Pick<Doc<"requests">, "_creationTime" | "description" | "text" | "upvoteCount">;
+type PortalRequest = Pick<
+  Doc<"requests">,
+  "_creationTime" | "description" | "text" | "upvoteCount"
+>;
 
 export function normalizePortalQuery(value: string | undefined) {
   return value?.trim().toLowerCase() ?? "";
@@ -32,7 +35,7 @@ export function scoreSimilarPortalRequest(request: PortalRequest, tokens: string
 }
 
 export function normalizePortalSort(value: string | undefined): PortalSort {
-  return PORTAL_SORTS.includes(value as PortalSort) ? value as PortalSort : "top";
+  return PORTAL_SORTS.includes(value as PortalSort) ? (value as PortalSort) : "top";
 }
 
 export function sortPortalRequests<T extends PortalRequest>(requests: T[], sort: PortalSort) {
@@ -47,9 +50,16 @@ export function sortPortalRequests<T extends PortalRequest>(requests: T[], sort:
   });
 }
 
-export function getPortalPage<T>(items: T[], cursor: number | undefined, requestedLimit: number | undefined) {
+export function getPortalPage<T>(
+  items: T[],
+  cursor: number | undefined,
+  requestedLimit: number | undefined,
+) {
   const safeCursor = Math.max(0, cursor ?? 0);
-  const limit = Math.max(1, Math.min(requestedLimit ?? DEFAULT_PORTAL_PAGE_SIZE, MAX_PORTAL_PAGE_SIZE));
+  const limit = Math.max(
+    1,
+    Math.min(requestedLimit ?? DEFAULT_PORTAL_PAGE_SIZE, MAX_PORTAL_PAGE_SIZE),
+  );
   const page = items.slice(safeCursor, safeCursor + limit);
   const nextCursor = safeCursor + limit < items.length ? safeCursor + limit : undefined;
 

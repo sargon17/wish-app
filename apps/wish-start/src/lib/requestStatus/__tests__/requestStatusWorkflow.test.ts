@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
-
 import type { Id } from "@wish/convex-backend/data-model";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   assertProjectCanRemoveStatus,
@@ -37,9 +36,18 @@ describe("requestStatusWorkflow", () => {
     expect(slugifyStatusName("Crème Brûlée")).toBe("creme-brulee");
     expect(normalizeLegacyStatusName("Under_Review")).toBe("under-review");
     expect(getCanonicalStatusName("completed")).toBe("done");
-    expect(getStarterProjectStatusNames()).toEqual(["open", "under-review", "planned", "in-progress", "done"]);
+    expect(getStarterProjectStatusNames()).toEqual([
+      "open",
+      "under-review",
+      "planned",
+      "in-progress",
+      "done",
+    ]);
     expect(getStarterProjectStatusColor("completed")).toBe("#22c55e");
-    expect(assertValidStatusName("  In Review  ")).toEqual({ displayName: "In Review", name: "in-review" });
+    expect(assertValidStatusName("  In Review  ")).toEqual({
+      displayName: "In Review",
+      name: "in-review",
+    });
   });
 
   it("sorts workflow statuses ahead of unknown ones by fixed rank", () => {
@@ -84,7 +92,9 @@ describe("requestStatusWorkflow", () => {
     } as any;
 
     expect(assertProjectStatusEditable(status)).toBe(status);
-    expect(() => assertProjectStatusEditable({ _id: "status-2" } as any)).toThrow("Status is not linked to a project");
+    expect(() => assertProjectStatusEditable({ _id: "status-2" } as any)).toThrow(
+      "Status is not linked to a project",
+    );
 
     const statuses = [
       { _id: "status-0", type: "default", project: projectId },
@@ -92,7 +102,13 @@ describe("requestStatusWorkflow", () => {
       { _id: "status-2", type: "custom", project: projectId },
     ] as any;
 
-    expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-0", "status-2"] as any, projectId)).not.toThrow();
+    expect(() =>
+      assertValidCustomOrderPayload(
+        statuses,
+        ["status-1", "status-0", "status-2"] as any,
+        projectId,
+      ),
+    ).not.toThrow();
     expect(() =>
       assertValidCustomOrderPayload(
         statuses,
@@ -101,15 +117,15 @@ describe("requestStatusWorkflow", () => {
       ),
     ).toThrow("Invalid status order payload");
     expect(() =>
+      assertValidCustomOrderPayload(statuses, ["status-0", "status-2"] as any, projectId),
+    ).toThrow("Invalid status order payload");
+    expect(() =>
       assertValidCustomOrderPayload(
         statuses,
-        ["status-0", "status-2"] as any,
+        ["status-1", "status-1", "status-0"] as any,
         projectId,
       ),
     ).toThrow("Invalid status order payload");
-    expect(() => assertValidCustomOrderPayload(statuses, ["status-1", "status-1", "status-0"] as any, projectId)).toThrow(
-      "Invalid status order payload",
-    );
     expect(() => assertValidCustomOrderPayload(statuses, ["status-1"] as any, projectId)).toThrow(
       "Invalid status order payload",
     );
@@ -124,7 +140,9 @@ describe("requestStatusWorkflow", () => {
     expect(() => assertProjectCanRemoveStatus([{ _id: "status-1" } as any])).toThrow(
       "A project must keep at least one status",
     );
-    expect(() => assertProjectCanRemoveStatus([{ _id: "status-1" } as any, { _id: "status-2" } as any])).not.toThrow();
+    expect(() =>
+      assertProjectCanRemoveStatus([{ _id: "status-1" } as any, { _id: "status-2" } as any]),
+    ).not.toThrow();
     expect(getNextWorkflowStatusPosition([{ position: 0 }, { position: 4 }, {}] as any)).toBe(5);
   });
 
@@ -145,10 +163,16 @@ describe("requestStatusWorkflow", () => {
     expect(() => assertReplacementStatusCanBeUsed(deletedStatus, deletedStatus, projectId)).toThrow(
       "Replacement status must be different from the status being deleted",
     );
-    expect(() => assertReplacementStatusCanBeUsed({ ...replacementStatus, project: "project-2" } as any, deletedStatus, projectId)).toThrow(
-      "Replacement status must belong to the same project",
-    );
-    expect(() => assertReplacementStatusCanBeUsed(replacementStatus, deletedStatus, projectId)).not.toThrow();
+    expect(() =>
+      assertReplacementStatusCanBeUsed(
+        { ...replacementStatus, project: "project-2" } as any,
+        deletedStatus,
+        projectId,
+      ),
+    ).toThrow("Replacement status must belong to the same project");
+    expect(() =>
+      assertReplacementStatusCanBeUsed(replacementStatus, deletedStatus, projectId),
+    ).not.toThrow();
   });
 
   it("returns only project-owned statuses ordered by workflow position and creation time", async () => {
@@ -167,7 +191,10 @@ describe("requestStatusWorkflow", () => {
     const ctx = {
       db: {
         query: () => ({
-          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+          withIndex: (
+            indexName: string,
+            predicate: (q: { eq: (field: string, value: string) => void }) => void,
+          ) => {
             withIndexArgs.push(indexName);
             predicate({
               eq: () => undefined,
@@ -175,7 +202,9 @@ describe("requestStatusWorkflow", () => {
 
             return {
               collect: async () =>
-                collected.filter((status: (typeof collected)[number]) => status.project === projectId),
+                collected.filter(
+                  (status: (typeof collected)[number]) => status.project === projectId,
+                ),
             };
           },
         }),
@@ -241,7 +270,9 @@ describe("requestStatusWorkflow", () => {
       { ...statuses[1], position: 1 },
       { ...statuses[2], position: 2 },
     ]);
-    expect(getNextWorkflowStatusPosition(getStatusesWithAssignedWorkflowPositions(statuses))).toBe(3);
+    expect(getNextWorkflowStatusPosition(getStatusesWithAssignedWorkflowPositions(statuses))).toBe(
+      3,
+    );
   });
 
   it("returns ordered management statuses with request counts", async () => {
@@ -343,8 +374,18 @@ describe("requestStatusWorkflow", () => {
         },
       ],
       requests: [
-        { _id: ids.requestDone, _creationTime: 10, project: projectId, status: ids.legacyCompleted },
-        { _id: ids.requestNeedsReview, _creationTime: 11, project: projectId, status: ids.legacyNeedsReview },
+        {
+          _id: ids.requestDone,
+          _creationTime: 10,
+          project: projectId,
+          status: ids.legacyCompleted,
+        },
+        {
+          _id: ids.requestNeedsReview,
+          _creationTime: 11,
+          project: projectId,
+          status: ids.legacyNeedsReview,
+        },
       ],
       inserts: [] as Array<{ table: string; value: any }>,
       patches: [] as Array<{ table: string; id: string; value: any }>,
@@ -353,7 +394,10 @@ describe("requestStatusWorkflow", () => {
     const ctx = {
       db: {
         query: (table: string) => ({
-          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+          withIndex: (
+            indexName: string,
+            predicate: (q: { eq: (field: string, value: string) => void }) => void,
+          ) => {
             expect(indexName).toBe("by_project");
             predicate({ eq: () => undefined });
 
@@ -424,7 +468,9 @@ describe("requestStatusWorkflow", () => {
 
     const projectStatuses = state.requestStatuses
       .filter((status) => status.project === projectId)
-      .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
+      .sort(
+        (a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER),
+      );
     expect(projectStatuses.map((status) => status.name)).toEqual([
       "open",
       "under-review",
@@ -439,9 +485,21 @@ describe("requestStatusWorkflow", () => {
       projectStatuses.find((status) => status.name === "done")?._id,
       projectStatuses.find((status) => status.name === "needs-review")?._id,
     ]);
-    expect(state.requestStatuses.some((status) => status._id === ids.legacyCompleted && status.project === undefined)).toBe(true);
-    expect(state.requestStatuses.some((status) => status._id === ids.legacyNeedsReview && status.project === undefined)).toBe(true);
-    expect(state.requestStatuses.some((status) => status._id === ids.legacyUnused && status.project === undefined)).toBe(true);
+    expect(
+      state.requestStatuses.some(
+        (status) => status._id === ids.legacyCompleted && status.project === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      state.requestStatuses.some(
+        (status) => status._id === ids.legacyNeedsReview && status.project === undefined,
+      ),
+    ).toBe(true);
+    expect(
+      state.requestStatuses.some(
+        (status) => status._id === ids.legacyUnused && status.project === undefined,
+      ),
+    ).toBe(true);
   });
 
   it("normalizes reused starter names and keeps cross-project requests on local statuses", async () => {
@@ -492,8 +550,18 @@ describe("requestStatusWorkflow", () => {
         },
       ],
       requests: [
-        { _id: ids.requestCompleted, _creationTime: 10, project: projectId, status: ids.completedStarter },
-        { _id: ids.requestCrossProject, _creationTime: 11, project: projectId, status: ids.crossProjectStatus },
+        {
+          _id: ids.requestCompleted,
+          _creationTime: 10,
+          project: projectId,
+          status: ids.completedStarter,
+        },
+        {
+          _id: ids.requestCrossProject,
+          _creationTime: 11,
+          project: projectId,
+          status: ids.crossProjectStatus,
+        },
       ],
       inserts: [] as Array<{ table: string; value: any }>,
       patches: [] as Array<{ table: string; id: string; value: any }>,
@@ -502,7 +570,10 @@ describe("requestStatusWorkflow", () => {
     const ctx = {
       db: {
         query: (table: string) => ({
-          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+          withIndex: (
+            indexName: string,
+            predicate: (q: { eq: (field: string, value: string) => void }) => void,
+          ) => {
             expect(indexName).toBe("by_project");
             predicate({ eq: () => undefined });
 
@@ -584,7 +655,11 @@ describe("requestStatusWorkflow", () => {
       projectStatuses.find((status) => status.name === "done")?._id,
       projectStatuses.find((status) => status.name === "open")?._id,
     ]);
-    expect(state.requestStatuses.some((status) => status._id === ids.crossProjectStatus && status.project === otherProjectId)).toBe(true);
+    expect(
+      state.requestStatuses.some(
+        (status) => status._id === ids.crossProjectStatus && status.project === otherProjectId,
+      ),
+    ).toBe(true);
   });
 
   it("collapses duplicate project-owned starter statuses onto the canonical starter", async () => {
@@ -634,8 +709,18 @@ describe("requestStatusWorkflow", () => {
         },
       ],
       requests: [
-        { _id: ids.requestCanonical, _creationTime: 10, project: projectId, status: ids.canonicalDone },
-        { _id: ids.requestDuplicate, _creationTime: 11, project: projectId, status: ids.duplicateCompleted },
+        {
+          _id: ids.requestCanonical,
+          _creationTime: 10,
+          project: projectId,
+          status: ids.canonicalDone,
+        },
+        {
+          _id: ids.requestDuplicate,
+          _creationTime: 11,
+          project: projectId,
+          status: ids.duplicateCompleted,
+        },
       ],
       inserts: [] as Array<{ table: string; value: any }>,
       patches: [] as Array<{ table: string; id: string; value: any }>,
@@ -644,7 +729,10 @@ describe("requestStatusWorkflow", () => {
     const ctx = {
       db: {
         query: (table: string) => ({
-          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+          withIndex: (
+            indexName: string,
+            predicate: (q: { eq: (field: string, value: string) => void }) => void,
+          ) => {
             expect(indexName).toBe("by_project");
             predicate({ eq: () => undefined });
 
@@ -781,8 +869,18 @@ describe("requestStatusWorkflow", () => {
         },
       ],
       requests: [
-        { _id: ids.requestCanonical, _creationTime: 10, project: projectId, status: ids.canonicalDone },
-        { _id: ids.requestDuplicate, _creationTime: 11, project: projectId, status: ids.duplicateCompleted },
+        {
+          _id: ids.requestCanonical,
+          _creationTime: 10,
+          project: projectId,
+          status: ids.canonicalDone,
+        },
+        {
+          _id: ids.requestDuplicate,
+          _creationTime: 11,
+          project: projectId,
+          status: ids.duplicateCompleted,
+        },
       ],
       inserts: [] as Array<{ table: string; value: any }>,
       patches: [] as Array<{ table: string; id: string; value: any }>,
@@ -791,7 +889,10 @@ describe("requestStatusWorkflow", () => {
     const ctx = {
       db: {
         query: (table: string) => ({
-          withIndex: (indexName: string, predicate: (q: { eq: (field: string, value: string) => void }) => void) => {
+          withIndex: (
+            indexName: string,
+            predicate: (q: { eq: (field: string, value: string) => void }) => void,
+          ) => {
             expect(indexName).toBe("by_project");
             predicate({ eq: () => undefined });
 
@@ -970,6 +1071,9 @@ describe("requestStatusWorkflow", () => {
 
     expect(result.projectStatusByCanonicalName.size).toBe(2);
     expect(result.legacyStatusesByCanonicalName.size).toBe(0);
-    expect(result.orderedStatuses.map((status) => status._id)).toEqual(["status-beta", "status-alpha"]);
+    expect(result.orderedStatuses.map((status) => status._id)).toEqual([
+      "status-beta",
+      "status-alpha",
+    ]);
   });
 });

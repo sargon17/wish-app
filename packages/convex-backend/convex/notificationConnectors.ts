@@ -57,7 +57,9 @@ export const createTelegramConnectionToken = mutation({
     });
 
     const botUsername = process.env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
-    const botLink = botUsername ? `https://t.me/${botUsername}?start=${encodeURIComponent(token)}` : undefined;
+    const botLink = botUsername
+      ? `https://t.me/${botUsername}?start=${encodeURIComponent(token)}`
+      : undefined;
 
     return { token, expiresAt, botLink };
   },

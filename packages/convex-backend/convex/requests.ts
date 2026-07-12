@@ -4,8 +4,8 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
-import { getRequestKind } from "./lib/requestKind";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
+import { getRequestKind } from "./lib/requestKind";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { emitNotificationEvent } from "./notificationEvents";
 

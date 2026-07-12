@@ -13,7 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 const CHANGELOG_TYPES = ["feature", "improvement", "fix"] as const;
@@ -87,7 +93,9 @@ export default function ProjectChangelogEditor({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{entry?.status === "published" ? "Edit published entry" : "Edit draft"}</DialogTitle>
+          <DialogTitle>
+            {entry?.status === "published" ? "Edit published entry" : "Edit draft"}
+          </DialogTitle>
           <DialogDescription>
             Keep the release title tight. The body should explain what changed in plain language.
           </DialogDescription>
@@ -107,7 +115,10 @@ export default function ProjectChangelogEditor({
 
             <div className="grid gap-2">
               <Label htmlFor="changelog-type">Type</Label>
-              <Select value={type} onValueChange={(value) => setType(value as (typeof CHANGELOG_TYPES)[number])}>
+              <Select
+                value={type}
+                onValueChange={(value) => setType(value as (typeof CHANGELOG_TYPES)[number])}
+              >
                 <SelectTrigger id="changelog-type">
                   <SelectValue placeholder="Select a type" />
                 </SelectTrigger>
@@ -159,7 +170,11 @@ export default function ProjectChangelogEditor({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button type="button" disabled={!entry || isSaving || isCompletelyEmpty} onClick={handleSave}>
+          <Button
+            type="button"
+            disabled={!entry || isSaving || isCompletelyEmpty}
+            onClick={handleSave}
+          >
             {isSaving ? "Saving..." : "Save changes"}
           </Button>
         </DialogFooter>

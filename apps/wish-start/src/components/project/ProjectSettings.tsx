@@ -1,14 +1,14 @@
 "use client";
-import type { ReactElement, ReactNode } from "react";
 import type { Id } from "@wish/convex-backend/data-model";
+import type { ReactElement, ReactNode } from "react";
+
+import { SettingsView, SettingsContent } from "../settings/SettingsView";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
 
 import ProjectApiKeysManager from "./ProjectApiKeysManager";
 import ProjectGeneralSettings from "./ProjectGeneralSettings";
 import ProjectNotificationConnectorsManager from "./ProjectNotificationConnectorsManager";
 import ProjectStatusesManager from "./ProjectStatusesManager";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../ui/dialog";
-import { SettingsView, SettingsContent } from "../settings/SettingsView";
-
 
 interface ProjectSettingsProps {
   projectID: Id<"projects">;
@@ -43,7 +43,7 @@ export default function ProjectSettings({ children, projectID }: ProjectSettings
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent className="max-h-[88vh] w-[96vw] overflow-y-auto sm:max-w-none sm:w-[92vw] lg:w-295 xl:w-330">
+      <DialogContent className="max-h-[88vh] w-[96vw] overflow-y-auto sm:w-[92vw] sm:max-w-none lg:w-295 xl:w-330">
         <DialogTitle className="sr-only">Project settings</DialogTitle>
         <DialogDescription className="sr-only">
           Manage the project name, statuses, API keys, and notification connectors.

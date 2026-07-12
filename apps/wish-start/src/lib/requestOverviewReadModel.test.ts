@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
-
 import type { Doc, Id } from "@wish/convex-backend/data-model";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   buildRequestOverviewReadModel,
@@ -136,7 +135,13 @@ describe("requestOverviewReadModel", () => {
     const overview = buildRequestOverviewReadModel({
       requests: [
         requestDoc("request-1", project1, statusOpen, Date.UTC(2026, 0, 19, 9, 0, 0)),
-        requestDoc("complaint-1", project1, statusClosed, Date.UTC(2026, 0, 19, 10, 0, 0), "complaint"),
+        requestDoc(
+          "complaint-1",
+          project1,
+          statusClosed,
+          Date.UTC(2026, 0, 19, 10, 0, 0),
+          "complaint",
+        ),
       ],
       ownedProjectIds: [project1],
       projects: [projectDoc(project1, "Alpha")],
@@ -250,7 +255,10 @@ describe("requestOverviewReadModel", () => {
       ],
       ownedProjectIds: [project1, project2],
       projects: [projectDoc(project1, "Alpha"), projectDoc(project2, "Beta")],
-      statuses: [statusDoc(statusOpen, "open", "Open"), statusDoc(statusClosed, "closed", "Closed")],
+      statuses: [
+        statusDoc(statusOpen, "open", "Open"),
+        statusDoc(statusClosed, "closed", "Closed"),
+      ],
       now: Date.UTC(2026, 0, 19, 12, 0, 0),
     });
 

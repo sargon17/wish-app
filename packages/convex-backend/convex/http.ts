@@ -6,7 +6,10 @@ import { cors } from "hono/cors";
 
 import { internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
+import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
 import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
+import { toPublicProject } from "./lib/projectPublic";
+import { createPublicError, publicErrorJson, toPublicErrorResponse } from "./lib/publicErrors";
 import {
   createComment,
   createRequest,
@@ -17,13 +20,6 @@ import {
   listUpvotes,
   toggleUpvote,
 } from "./lib/requestIntake";
-import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
-import { toPublicProject } from "./lib/projectPublic";
-import {
-  createPublicError,
-  publicErrorJson,
-  toPublicErrorResponse,
-} from "./lib/publicErrors";
 
 const app: HonoWithConvex<ActionCtx> = new Hono();
 
@@ -48,7 +44,10 @@ async function checkIpRateLimit(c: any) {
   });
 
   if (!ipRateLimit.allowed) {
-    return publicErrorJson(c, createPublicError("rate_limited", undefined, ipRateLimit.retryAfterMs));
+    return publicErrorJson(
+      c,
+      createPublicError("rate_limited", undefined, ipRateLimit.retryAfterMs),
+    );
   }
 
   return null;
@@ -171,7 +170,7 @@ app.get("/api/project/:id/upvotes", async (c) => {
 const RequestValidator = type({
   text: "string > 2",
   "description?": "string | undefined",
-  "kind?": "\"request\" | \"complaint\" | undefined",
+  "kind?": '"request" | "complaint" | undefined',
   "requesterEmail?": "string | undefined",
   project: "string",
   clientId: "string",
@@ -279,7 +278,8 @@ app.post("/api/telegram/webhook", async (c) => {
       token,
       chatId: String(chatId),
       chatTitle: getTelegramChatTitle(chat),
-      messageThreadId: typeof message.message_thread_id === "number" ? message.message_thread_id : undefined,
+      messageThreadId:
+        typeof message.message_thread_id === "number" ? message.message_thread_id : undefined,
       telegramUserId: typeof message.from?.id === "number" ? message.from.id : undefined,
     });
 
@@ -308,7 +308,11 @@ app.post("/api/project/:id/request/", async (c) => {
       throw createPublicError("validation_failed");
     }
 
-    if (typeof rawBody === "object" && rawBody !== null && Object.prototype.hasOwnProperty.call(rawBody, "status")) {
+    if (
+      typeof rawBody === "object" &&
+      rawBody !== null &&
+      Object.prototype.hasOwnProperty.call(rawBody, "status")
+    ) {
       throw createPublicError("validation_failed");
     }
 
@@ -372,34 +376,35 @@ app.get("/api/project/:id/request/:reqID/comments", async (c) => {
   }
 });
 
-app.post(
-  "/api/project/:id/request/:reqID/comment",
-  async (c) => {
-    const reqId = c.req.param("reqID");
-    const projectId = c.req.param("id");
-    try {
-      requirePublicId(projectId);
-      requirePublicId(reqId);
-      const body = await parsePublicBody(c, CommentValidator);
-      const trimmedBody = body.body.trim();
-      if (trimmedBody.length === 0 || trimmedBody.length > 1000 || body.clientId.trim().length === 0) {
-        throw createPublicError("validation_failed");
-      }
-
-      const result = await createComment(c, projectId, reqId, {
-        clientId: body.clientId,
-        body: trimmedBody,
-      });
-      if (!result.ok) {
-        return publicErrorJson(c, result.error);
-      }
-    } catch (error) {
-      return publicErrorJson(c, toPublicErrorResponse(error));
+app.post("/api/project/:id/request/:reqID/comment", async (c) => {
+  const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
+  try {
+    requirePublicId(projectId);
+    requirePublicId(reqId);
+    const body = await parsePublicBody(c, CommentValidator);
+    const trimmedBody = body.body.trim();
+    if (
+      trimmedBody.length === 0 ||
+      trimmedBody.length > 1000 ||
+      body.clientId.trim().length === 0
+    ) {
+      throw createPublicError("validation_failed");
     }
 
-    return c.json({}, 200);
-  },
-);
+    const result = await createComment(c, projectId, reqId, {
+      clientId: body.clientId,
+      body: trimmedBody,
+    });
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+
+  return c.json({}, 200);
+});
 
 app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
   const id = c.req.param("id");
@@ -424,29 +429,26 @@ app.delete("/api/project/:id/request/:reqID/comment/:commentId", async (c) => {
   return c.json({}, 200);
 });
 
-app.post(
-  "/api/project/:id/request/:reqID/upvote",
-  async (c) => {
-    const reqId = c.req.param("reqID");
-    const projectId = c.req.param("id");
-    try {
-      requirePublicId(projectId);
-      requirePublicId(reqId);
-      const body = await parsePublicBody(c, UpvoteValidator);
-      if (body.clientId.trim().length === 0) {
-        throw createPublicError("validation_failed");
-      }
-
-      const result = await toggleUpvote(c, projectId, reqId, body.clientId);
-      if (!result.ok) {
-        return publicErrorJson(c, result.error);
-      }
-    } catch (error) {
-      return publicErrorJson(c, toPublicErrorResponse(error));
+app.post("/api/project/:id/request/:reqID/upvote", async (c) => {
+  const reqId = c.req.param("reqID");
+  const projectId = c.req.param("id");
+  try {
+    requirePublicId(projectId);
+    requirePublicId(reqId);
+    const body = await parsePublicBody(c, UpvoteValidator);
+    if (body.clientId.trim().length === 0) {
+      throw createPublicError("validation_failed");
     }
 
-    return c.json({}, 200);
-  },
-);
+    const result = await toggleUpvote(c, projectId, reqId, body.clientId);
+    if (!result.ok) {
+      return publicErrorJson(c, result.error);
+    }
+  } catch (error) {
+    return publicErrorJson(c, toPublicErrorResponse(error));
+  }
+
+  return c.json({}, 200);
+});
 
 export default new HttpRouterWithHono(app);

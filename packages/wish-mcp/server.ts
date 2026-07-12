@@ -55,7 +55,10 @@ const actions = {
   delete_changelog_draft: ["mutation", api.changelogEntries.deleteDraft],
 
   list_notification_connectors: ["query", api.notificationConnectors.listByProject],
-  create_telegram_connection_token: ["mutation", api.notificationConnectors.createTelegramConnectionToken],
+  create_telegram_connection_token: [
+    "mutation",
+    api.notificationConnectors.createTelegramConnectionToken,
+  ],
   set_telegram_enabled: ["mutation", api.notificationConnectors.setTelegramEnabled],
 
   list_api_keys: ["query", api.apiKeys.listByProject],

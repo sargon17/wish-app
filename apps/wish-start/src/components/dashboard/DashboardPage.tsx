@@ -11,7 +11,7 @@ const DashboardPage = ({ title, actions, breadcrumbs, children }: DashboardPageP
   return (
     <div className="flex flex-col gap-4">
       <DashboardHeading title={title} actions={actions} breadcrumbs={breadcrumbs} />
-      <div className="md:pr-6 sidebar-offset-pl">{children}</div>
+      <div className="sidebar-offset-pl md:pr-6">{children}</div>
     </div>
   );
 };

@@ -10,7 +10,12 @@ import {
   sortPortalRequests,
 } from "./suggestionPortalReadModel";
 
-function request(text: string, upvoteCount: number | undefined, createdAt: number, description?: string) {
+function request(
+  text: string,
+  upvoteCount: number | undefined,
+  createdAt: number,
+  description?: string,
+) {
   return {
     text,
     description,

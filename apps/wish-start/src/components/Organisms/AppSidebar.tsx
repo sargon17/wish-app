@@ -1,5 +1,15 @@
-import { AlertTriangle, ArrowLeft, BarChart3, Cog, Home, LayoutDashboard, ListTodo, Mail, Map } from "lucide-react";
 import { Link, useLocation, useParams } from "@tanstack/react-router";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  Cog,
+  Home,
+  LayoutDashboard,
+  ListTodo,
+  Mail,
+  Map,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import ProjectSettings from "@/components/project/ProjectSettings";
@@ -41,7 +51,11 @@ const items = [
 
 const projectViews = [
   { title: "Requests", to: "/dashboard/project/$projectId/$slug/requests", icon: ListTodo },
-  { title: "Complaints", to: "/dashboard/project/$projectId/$slug/complaints", icon: AlertTriangle },
+  {
+    title: "Complaints",
+    to: "/dashboard/project/$projectId/$slug/complaints",
+    icon: AlertTriangle,
+  },
   { title: "Roadmap", to: "/dashboard/project/$projectId/$slug/roadmap", icon: Map },
 ] as const;
 

@@ -1,5 +1,5 @@
-import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 
 export async function emitNotificationEvent(
@@ -38,7 +38,9 @@ export async function emitNotificationEvent(
       updatedAt: now,
     });
 
-    await ctx.scheduler.runAfter(0, internal.telegramNotifications.dispatchInternal, { deliveryId });
+    await ctx.scheduler.runAfter(0, internal.telegramNotifications.dispatchInternal, {
+      deliveryId,
+    });
   }
 
   return eventId;

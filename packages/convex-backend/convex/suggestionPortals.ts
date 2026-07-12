@@ -3,10 +3,9 @@ import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
-import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { isRequesterClientId } from "./lib/requesterIdentity";
+import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { getRequestKind } from "./lib/requestKind";
-import { emitNotificationEvent } from "./notificationEvents";
 import {
   getPortalPage,
   normalizePortalQuery,
@@ -16,6 +15,7 @@ import {
   scoreSimilarPortalRequest,
   sortPortalRequests,
 } from "./lib/suggestionPortalReadModel";
+import { emitNotificationEvent } from "./notificationEvents";
 
 const PORTAL_REQUEST_RATE_LIMIT = { limit: 3, windowMs: 10 * 60 * 1000 };
 const PORTAL_COMMENT_RATE_LIMIT = { limit: 10, windowMs: 10 * 60 * 1000 };
@@ -91,7 +91,11 @@ async function countCommentsByRequest(ctx: QueryCtx, projectId: Id<"projects">) 
   return counts;
 }
 
-async function getViewerUpvotedRequestIds(ctx: QueryCtx, projectId: Id<"projects">, clientId: string | undefined) {
+async function getViewerUpvotedRequestIds(
+  ctx: QueryCtx,
+  projectId: Id<"projects">,
+  clientId: string | undefined,
+) {
   if (!clientId || !isRequesterClientId(clientId)) {
     return new Set<string>();
   }
@@ -125,7 +129,9 @@ export const getPublishedPortal = query({
       .query("requestStatuses")
       .withIndex("by_project", (q) => q.eq("project", project._id))
       .collect();
-    const statusOrder = new Map(statuses.map((status) => [status._id.toString(), status.position ?? 0]));
+    const statusOrder = new Map(
+      statuses.map((status) => [status._id.toString(), status.position ?? 0]),
+    );
     const statusIds = new Set(statuses.map((status) => status._id.toString()));
     const statusId = args.statusId && statusIds.has(args.statusId) ? args.statusId : undefined;
     const search = normalizePortalQuery(args.search);
@@ -190,10 +196,12 @@ export const getSimilarSuggestions = query({
       .withIndex("by_project", (q) => q.eq("project", project._id))
       .collect();
     const statusMap = new Map(statuses.map((status) => [status._id.toString(), status]));
-    const requests = (await ctx.db
-      .query("requests")
-      .withIndex("by_project", (q) => q.eq("project", project._id))
-      .collect()).filter((request) => getRequestKind(request) === "request");
+    const requests = (
+      await ctx.db
+        .query("requests")
+        .withIndex("by_project", (q) => q.eq("project", project._id))
+        .collect()
+    ).filter((request) => getRequestKind(request) === "request");
 
     return requests
       .map((request) => ({
@@ -287,7 +295,10 @@ export const createRequest = mutation({
 
     const normalized = normalizeRequestInput(args);
     if (!normalized.ok) {
-      throw new ConvexError({ code: "BAD_REQUEST", message: requestInputErrorMessage(normalized.error) });
+      throw new ConvexError({
+        code: "BAD_REQUEST",
+        message: requestInputErrorMessage(normalized.error),
+      });
     }
 
     const statuses = await ctx.db

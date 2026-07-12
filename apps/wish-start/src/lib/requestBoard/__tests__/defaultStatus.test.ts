@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
-
 import type { Doc, Id } from "@wish/convex-backend/data-model";
+import { describe, expect, it } from "vite-plus/test";
 
 import { getRequestDialogDefaultStatus } from "../defaultStatus";
 

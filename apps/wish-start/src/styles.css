@@ -64,13 +64,13 @@
     }
   }
 
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: "Geist Variable", sans-serif;
 
   --radius-2xl: calc(var(--radius) * 1.8);
 
   --radius-3xl: calc(var(--radius) * 2.2);
 
-  --radius-4xl: calc(var(--radius) * 2.6)
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
@@ -175,13 +175,14 @@
     background-size: 100% 100%;
   }
   html {
-    @apply font-sans;}
+    @apply font-sans;
+  }
 }
 
 @utility sidebar-offset-width {
-  @apply w-(--sidebar-width) group-data-[state=collapsed]/sidebar-wrapper:w-0 transition-[width] duration-200 ease-out;
+  @apply w-(--sidebar-width) transition-[width] duration-200 ease-out group-data-[state=collapsed]/sidebar-wrapper:w-0;
 }
 
 @utility sidebar-offset-pl {
-  @apply pl-[calc(1rem+var(--sidebar-width))] group-data-[state=collapsed]/sidebar-wrapper:pl-6 transition-[padding] duration-200 ease-out;
+  @apply pl-[calc(1rem+var(--sidebar-width))] transition-[padding] duration-200 ease-out group-data-[state=collapsed]/sidebar-wrapper:pl-6;
 }

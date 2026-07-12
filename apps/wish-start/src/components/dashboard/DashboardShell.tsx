@@ -1,11 +1,11 @@
 "use client";
 
+import { UserButton } from "@clerk/clerk-react";
 import type { ReactNode } from "react";
 
 import { AppSidebar } from "@/components/Organisms/AppSidebar";
 import ThemeTabs from "@/components/Organisms/ThemeTabs";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { UserButton } from "@clerk/clerk-react";
 
 export default function DashboardShell({ children }: { children: ReactNode }) {
   return (

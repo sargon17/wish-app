@@ -1,5 +1,6 @@
-import DashboardBoard from "@/components/dashboard/DashboardBoard";
 import type { Id } from "@wish/convex-backend/data-model";
+
+import DashboardBoard from "@/components/dashboard/DashboardBoard";
 
 interface Props {
   id: string;

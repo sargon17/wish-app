@@ -41,7 +41,9 @@ export const consumeConnectionTokenInternal = internalMutation({
 
       const existingConnector = await ctx.db
         .query("notificationConnectors")
-        .withIndex("by_project_kind", (q) => q.eq("projectId", candidate.projectId).eq("kind", "telegram"))
+        .withIndex("by_project_kind", (q) =>
+          q.eq("projectId", candidate.projectId).eq("kind", "telegram"),
+        )
         .unique();
       const connectorPatch = {
         enabled: true,

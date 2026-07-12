@@ -45,8 +45,10 @@ export function buildProjectStatusMigrationOrder(
 
     if (
       !current ||
-      (current.position ?? Number.MAX_SAFE_INTEGER) > (status.position ?? Number.MAX_SAFE_INTEGER) ||
-      ((current.position ?? Number.MAX_SAFE_INTEGER) === (status.position ?? Number.MAX_SAFE_INTEGER) &&
+      (current.position ?? Number.MAX_SAFE_INTEGER) >
+        (status.position ?? Number.MAX_SAFE_INTEGER) ||
+      ((current.position ?? Number.MAX_SAFE_INTEGER) ===
+        (status.position ?? Number.MAX_SAFE_INTEGER) &&
         current._creationTime > status._creationTime)
     ) {
       projectStatusByCanonicalName.set(canonicalName, status);
@@ -125,7 +127,10 @@ export const getByProjectInternal = internalQuery({
   },
 });
 
-function getLegacyReferencedStatusesForProject(projectStatuses: Doc<"requestStatuses">[], requests: Doc<"requests">[]) {
+function getLegacyReferencedStatusesForProject(
+  projectStatuses: Doc<"requestStatuses">[],
+  requests: Doc<"requests">[],
+) {
   const projectStatusIds = new Set(projectStatuses.map((status) => status._id.toString()));
   const referencedLegacyIds = new Set<string>();
 
@@ -148,7 +153,10 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
     .withIndex("by_project", (q) => q.eq("project", projectId))
     .collect();
 
-  const referencedLegacyIds = getLegacyReferencedStatusesForProject(existingProjectStatuses, projectRequests);
+  const referencedLegacyIds = getLegacyReferencedStatusesForProject(
+    existingProjectStatuses,
+    projectRequests,
+  );
   const legacyStatusesInUse: Doc<"requestStatuses">[] = [];
 
   for (const statusId of referencedLegacyIds) {
@@ -161,10 +169,17 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
   }
 
   const sortedLegacyStatusesInUse = sortLegacyStatusesForMigration(legacyStatusesInUse);
-  const migrationPlan = buildProjectStatusMigrationOrder(existingProjectStatuses, sortedLegacyStatusesInUse);
+  const migrationPlan = buildProjectStatusMigrationOrder(
+    existingProjectStatuses,
+    sortedLegacyStatusesInUse,
+  );
   const projectStatusIdByCanonicalName = new Map<string, Id<"requestStatuses">>();
-  const projectOwnedStatusIds = new Set(existingProjectStatuses.map((status) => status._id.toString()));
-  const legacyStatusById = new Map(legacyStatusesInUse.map((status) => [status._id.toString(), status] as const));
+  const projectOwnedStatusIds = new Set(
+    existingProjectStatuses.map((status) => status._id.toString()),
+  );
+  const legacyStatusById = new Map(
+    legacyStatusesInUse.map((status) => [status._id.toString(), status] as const),
+  );
   const orderedLegacyCanonicalNames: string[] = [];
   const duplicateStarterStatuses: Doc<"requestStatuses">[] = [];
   const selectedStarterStatusByCanonicalName = new Map<string, Doc<"requestStatuses">>();
@@ -184,7 +199,9 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
   for (const [position, starterStatus] of STARTER_PROJECT_STATUSES.entries()) {
     const canonicalName = starterStatus.name;
-    const existingStatus = selectedStarterStatusByCanonicalName.get(canonicalName) ?? migrationPlan.projectStatusByCanonicalName.get(canonicalName);
+    const existingStatus =
+      selectedStarterStatusByCanonicalName.get(canonicalName) ??
+      migrationPlan.projectStatusByCanonicalName.get(canonicalName);
 
     if (existingStatus) {
       const needsNormalization =
@@ -307,7 +324,9 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       continue;
     }
 
-    const duplicateStarter = duplicateStarterStatuses.find((status) => status._id.toString() === request.status.toString());
+    const duplicateStarter = duplicateStarterStatuses.find(
+      (status) => status._id.toString() === request.status.toString(),
+    );
     if (duplicateStarter) {
       const canonicalName = getCanonicalStatusName(duplicateStarter.name);
       const replacementStatusId = projectStatusIdByCanonicalName.get(canonicalName);
@@ -317,19 +336,22 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       continue;
     }
 
-    const legacyStatus = legacyStatusById.get(request.status.toString()) ?? await ctx.db.get(request.status);
+    const legacyStatus =
+      legacyStatusById.get(request.status.toString()) ?? (await ctx.db.get(request.status));
     const canonicalName =
       legacyStatus && !legacyStatus.project ? getCanonicalStatusName(legacyStatus.name) : undefined;
     const replacementStatusId = canonicalName
       ? projectStatusIdByCanonicalName.get(canonicalName)
-      : projectStatusIdByCanonicalName.get("open") ?? projectStatusIdByCanonicalName.get("done");
+      : (projectStatusIdByCanonicalName.get("open") ?? projectStatusIdByCanonicalName.get("done"));
 
     if (replacementStatusId && replacementStatusId !== request.status) {
       requestPatches.push({ id: request._id, status: replacementStatusId });
     }
   }
 
-  await Promise.all(requestPatches.map((patch) => ctx.db.patch(patch.id, { status: patch.status })));
+  await Promise.all(
+    requestPatches.map((patch) => ctx.db.patch(patch.id, { status: patch.status })),
+  );
   if (requestPatches.length > 0) {
     changed = true;
   }
@@ -343,7 +365,10 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       continue;
     }
 
-    const status = existingProjectStatuses.find((item) => item._id === statusId) ?? (await ctx.db.get(statusId) ?? undefined);
+    const status =
+      existingProjectStatuses.find((item) => item._id === statusId) ??
+      (await ctx.db.get(statusId)) ??
+      undefined;
     if (!status || seen.has(status._id.toString())) {
       continue;
     }
@@ -358,7 +383,10 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
       continue;
     }
 
-    const status = existingProjectStatuses.find((item) => item._id === statusId) ?? (await ctx.db.get(statusId) ?? undefined);
+    const status =
+      existingProjectStatuses.find((item) => item._id === statusId) ??
+      (await ctx.db.get(statusId)) ??
+      undefined;
     if (!status || seen.has(status._id.toString())) {
       continue;
     }
@@ -371,7 +399,9 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
     const canonicalName = getCanonicalStatusName(duplicateStarterStatus.name);
     const selectedStarterStatusId = projectStatusIdByCanonicalName.get(canonicalName);
     const selectedStarterStatus = selectedStarterStatusId
-      ? (existingProjectStatuses.find((item) => item._id === selectedStarterStatusId) ?? (await ctx.db.get(selectedStarterStatusId) ?? undefined))
+      ? (existingProjectStatuses.find((item) => item._id === selectedStarterStatusId) ??
+        (await ctx.db.get(selectedStarterStatusId)) ??
+        undefined)
       : undefined;
 
     if (!selectedStarterStatus || duplicateStarterStatus._id === selectedStarterStatus._id) {
@@ -384,7 +414,9 @@ export async function migrateProjectStatuses(ctx: MutationCtx, projectId: Id<"pr
 
     while (
       finalOrderedStatuses.some((status) => status.name === renamedName) ||
-      existingProjectStatuses.some((status) => status._id !== duplicateStarterStatus._id && status.name === renamedName)
+      existingProjectStatuses.some(
+        (status) => status._id !== duplicateStarterStatus._id && status.name === renamedName,
+      )
     ) {
       renamedName = `${canonicalName}-legacy-${suffix}-${attempt}`;
       attempt += 1;
@@ -460,7 +492,10 @@ export const repairAllProjectDefaultsInternal = internalMutation({
       summaries.push(await migrateProjectStatuses(ctx, project._id));
     }
 
-    const statusesReindexed = summaries.reduce((total, summary) => total + summary.statusesReindexed, 0);
+    const statusesReindexed = summaries.reduce(
+      (total, summary) => total + summary.statusesReindexed,
+      0,
+    );
     const changed = summaries.some((summary) => summary.changed);
 
     return {
@@ -496,7 +531,9 @@ export const create = mutation({
     const nextPosition = getNextWorkflowStatusPosition(normalizedStatuses);
 
     if (normalizedStatuses !== statuses) {
-      const originalPositions = new Map(statuses.map((status) => [status._id.toString(), status.position]));
+      const originalPositions = new Map(
+        statuses.map((status) => [status._id.toString(), status.position]),
+      );
 
       await Promise.all(
         normalizedStatuses.map((status) => {
@@ -596,7 +633,11 @@ export const remove = mutation({
         throw new Error("Choose a replacement status to delete this status");
       }
 
-      await Promise.all(linkedRequests.map((request) => ctx.db.patch(request._id, { status: replacementStatus._id })));
+      await Promise.all(
+        linkedRequests.map((request) =>
+          ctx.db.patch(request._id, { status: replacementStatus._id }),
+        ),
+      );
     }
 
     await ctx.db.delete(args.statusId);

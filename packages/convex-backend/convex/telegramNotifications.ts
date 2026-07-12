@@ -35,7 +35,12 @@ export const buildMessageInternal = internalQuery({
     }
 
     const connector = await ctx.db.get(delivery.connectorId);
-    if (!connector || connector.kind !== "telegram" || !connector.enabled || !connector.telegramChatId) {
+    if (
+      !connector ||
+      connector.kind !== "telegram" ||
+      !connector.enabled ||
+      !connector.telegramChatId
+    ) {
       return null;
     }
 

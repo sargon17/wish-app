@@ -1,7 +1,6 @@
 "use client";
-import { useQuery } from "convex/react";
-
 import { api } from "@wish/convex-backend/api";
+import { useQuery } from "convex/react";
 
 import { ProjectBreakdownCard } from "./ProjectBreakdownCard";
 import { RequestsSummaryCards } from "./RequestsSummaryCards";

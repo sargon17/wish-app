@@ -47,7 +47,11 @@ export class EmbedApiError extends Error {
   }
 }
 
-async function embedFetch(config: EmbedApiConfig, path: string, init?: { method: string; body: string }) {
+async function embedFetch(
+  config: EmbedApiConfig,
+  path: string,
+  init?: { method: string; body: string },
+) {
   const url = `${config.baseUrl}/api/project/${encodeURIComponent(config.projectId)}${path}`;
 
   let response: Response;
@@ -86,7 +90,10 @@ export async function listEmbedRequests(config: EmbedApiConfig): Promise<EmbedRe
 }
 
 export async function listEmbedUpvotedRequestIds(config: EmbedApiConfig): Promise<Set<string>> {
-  const payload = await embedFetch(config, `/upvotes?clientId=${encodeURIComponent(config.clientId)}`);
+  const payload = await embedFetch(
+    config,
+    `/upvotes?clientId=${encodeURIComponent(config.clientId)}`,
+  );
   // The API returns request ids as strings, not upvote documents.
   const upvotes: string[] = Array.isArray(payload?.upvotes) ? payload.upvotes : [];
   return new Set(upvotes);
@@ -108,7 +115,10 @@ export async function createEmbedRequest(
   });
 }
 
-export async function listEmbedComments(config: EmbedApiConfig, requestId: string): Promise<EmbedComment[]> {
+export async function listEmbedComments(
+  config: EmbedApiConfig,
+  requestId: string,
+): Promise<EmbedComment[]> {
   const payload = await embedFetch(config, `/request/${encodeURIComponent(requestId)}/comments`);
   return Array.isArray(payload?.comments) ? payload.comments : [];
 }

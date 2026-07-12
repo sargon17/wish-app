@@ -1,6 +1,8 @@
-import { Link } from '@tanstack/react-router'
-import { HeaderAuth } from '@/providers/AppProviders'
-import ThemeToggle from './ThemeToggle'
+import { Link } from "@tanstack/react-router";
+
+import { HeaderAuth } from "@/providers/AppProviders";
+
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   return (
@@ -21,14 +23,14 @@ export default function Header() {
             <Link
               to="/"
               className="text-muted-foreground no-underline transition-colors hover:text-foreground"
-              activeProps={{ className: 'text-foreground' }}
+              activeProps={{ className: "text-foreground" }}
             >
               Home
             </Link>
             <Link
               to="/dashboard"
               className="text-muted-foreground no-underline transition-colors hover:text-foreground"
-              activeProps={{ className: 'text-foreground' }}
+              activeProps={{ className: "text-foreground" }}
             >
               Dashboard
             </Link>
@@ -38,5 +40,5 @@ export default function Header() {
         </div>
       </nav>
     </header>
-  )
+  );
 }

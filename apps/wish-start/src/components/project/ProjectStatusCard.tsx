@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, PencilLine, Trash2 } from "lucide-react";
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
+import { ArrowDown, ArrowUp, PencilLine, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -18,14 +20,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { slugifyStatusName } from "@/lib/requestStatus/slugifyStatusName";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 export default function ProjectStatusCard({
   status,
@@ -86,9 +100,13 @@ export default function ProjectStatusCard({
   const cleanDescription = description.trim();
   const isInvalidName = cleanDisplayName.length < 2 || !slugifyStatusName(cleanDisplayName);
   const isDirty =
-    cleanDisplayName !== status.displayName || cleanDescription !== (status.description ?? "") || color !== (status.color ?? "#f97316");
+    cleanDisplayName !== status.displayName ||
+    cleanDescription !== (status.description ?? "") ||
+    color !== (status.color ?? "#f97316");
   const visibleDescription = status.description?.trim();
-  const replacementOptions = replacementCandidates.filter((candidate) => candidate._id !== status._id);
+  const replacementOptions = replacementCandidates.filter(
+    (candidate) => candidate._id !== status._id,
+  );
 
   async function handleSave() {
     if (isSaving || isInvalidName || !isDirty) {
@@ -150,16 +168,32 @@ export default function ProjectStatusCard({
               <h4 className="truncate text-sm font-medium text-foreground">{status.displayName}</h4>
               {requestCount > 0 ? <Badge variant="secondary">{requestCount} requests</Badge> : null}
             </div>
-            {visibleDescription ? <p className="line-clamp-1 text-xs text-muted-foreground">{visibleDescription}</p> : null}
+            {visibleDescription ? (
+              <p className="line-clamp-1 text-xs text-muted-foreground">{visibleDescription}</p>
+            ) : null}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="icon" className="size-8" disabled={!canMoveUp || isReordering} onClick={() => void onMoveUp?.()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            disabled={!canMoveUp || isReordering}
+            onClick={() => void onMoveUp?.()}
+          >
             <ArrowUp className="size-4" />
             <span className="sr-only">Move {status.displayName} up</span>
           </Button>
-          <Button type="button" variant="outline" size="icon" className="size-8" disabled={!canMoveDown || isReordering} onClick={() => void onMoveDown?.()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            disabled={!canMoveDown || isReordering}
+            onClick={() => void onMoveDown?.()}
+          >
             <ArrowDown className="size-4" />
             <span className="sr-only">Move {status.displayName} down</span>
           </Button>
@@ -174,7 +208,9 @@ export default function ProjectStatusCard({
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Edit status</DialogTitle>
-                <DialogDescription>Update the name, description, and color for this project status.</DialogDescription>
+                <DialogDescription>
+                  Update the name, description, and color for this project status.
+                </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-4 py-2">
@@ -187,7 +223,9 @@ export default function ProjectStatusCard({
                     aria-invalid={isInvalidName}
                     placeholder="In review"
                   />
-                  {isInvalidName ? <p className="text-xs text-destructive">Use at least 2 readable characters.</p> : null}
+                  {isInvalidName ? (
+                    <p className="text-xs text-destructive">Use at least 2 readable characters.</p>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-2">
@@ -210,7 +248,9 @@ export default function ProjectStatusCard({
                       onChange={(event) => setColor(event.target.value)}
                       className="h-9 w-11 cursor-pointer rounded border-0 bg-transparent p-0 disabled:cursor-not-allowed"
                     />
-                    <span className="font-mono text-xs text-muted-foreground">{color.toLowerCase()}</span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {color.toLowerCase()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -219,7 +259,11 @@ export default function ProjectStatusCard({
                 <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="button" disabled={!isDirty || isSaving || isInvalidName} onClick={() => void handleSave()}>
+                <Button
+                  type="button"
+                  disabled={!isDirty || isSaving || isInvalidName}
+                  onClick={() => void handleSave()}
+                >
                   {isSaving ? "Saving..." : "Save changes"}
                 </Button>
               </DialogFooter>
@@ -237,11 +281,19 @@ export default function ProjectStatusCard({
           >
             {isLastStatus ? (
               <div className="flex flex-col items-start gap-1">
-                <Button type="button" variant="outline" size="sm" disabled title="This project must keep at least one status.">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  title="This project must keep at least one status."
+                >
                   <Trash2 className="size-4" />
                   Delete
                 </Button>
-                <p className="max-w-48 text-left text-xs text-muted-foreground">This project must keep at least one status.</p>
+                <p className="max-w-48 text-left text-xs text-muted-foreground">
+                  This project must keep at least one status.
+                </p>
               </div>
             ) : (
               <AlertDialogTrigger asChild>
@@ -267,7 +319,9 @@ export default function ProjectStatusCard({
                   <Label htmlFor={`status-replacement-${status._id}`}>Move requests to</Label>
                   <Select
                     value={replacementStatusId}
-                    onValueChange={(value) => setReplacementStatusId(value as Id<"requestStatuses"> | "")}
+                    onValueChange={(value) =>
+                      setReplacementStatusId(value as Id<"requestStatuses"> | "")
+                    }
                   >
                     <SelectTrigger id={`status-replacement-${status._id}`}>
                       <SelectValue placeholder="Select another status" />
@@ -276,7 +330,10 @@ export default function ProjectStatusCard({
                       {replacementOptions.map((candidate) => (
                         <SelectItem key={candidate._id} value={candidate._id}>
                           <span className="flex items-center gap-2">
-                            <span className="size-2.5 rounded-full" style={{ backgroundColor: candidate.color ?? "#f97316" }} />
+                            <span
+                              className="size-2.5 rounded-full"
+                              style={{ backgroundColor: candidate.color ?? "#f97316" }}
+                            />
                             {candidate.displayName}
                           </span>
                         </SelectItem>

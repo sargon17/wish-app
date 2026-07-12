@@ -1,7 +1,7 @@
+import { api } from "@wish/convex-backend/api";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@wish/convex-backend/api";
 
 type StatusBreakdownItem =
   (typeof api.stats.requestOverview._returnType)["statusBreakdown"][number];
@@ -73,7 +73,7 @@ export function StatusBreakdownCard({ statuses, total, className }: StatusBreakd
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex w-full flex-col gap-2 md:w-[40%] md:max-h-[320px] md:overflow-y-auto">
+            <div className="flex w-full flex-col gap-2 md:max-h-[320px] md:w-[40%] md:overflow-y-auto">
               <div className="flex flex-col gap-2">
                 {legendItems.map((item) => (
                   <div

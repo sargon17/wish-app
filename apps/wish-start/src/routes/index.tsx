@@ -1,42 +1,42 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { Authenticated, Unauthenticated } from 'convex/react'
-import { Clock3, ShieldCheck, Sparkles } from 'lucide-react'
+import { SignInButton, UserButton } from "@clerk/clerk-react";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { Clock3, ShieldCheck, Sparkles } from "lucide-react";
 
-import { Chip } from '@/components/atoms/chip'
-import { HighlightCard } from '@/components/molecules/HighlightCard'
-import { WaitlistJoin } from '@/components/Organisms/WaitlistJoin'
-import { Button } from '@/components/ui/button'
-import { useStoreUserEffect } from '@/hooks/useStoreUserEffect'
-import { SignInButton, UserButton } from '@clerk/clerk-react'
+import { Chip } from "@/components/atoms/chip";
+import { HighlightCard } from "@/components/molecules/HighlightCard";
+import { WaitlistJoin } from "@/components/Organisms/WaitlistJoin";
+import { Button } from "@/components/ui/button";
+import { useStoreUserEffect } from "@/hooks/useStoreUserEffect";
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute("/")({ component: Home });
 
 const highlights = [
   {
     icon: Sparkles,
-    title: 'Capture every request',
-    description: 'Pull feedback into one wishlist so nothing slips through the cracks.',
+    title: "Capture every request",
+    description: "Pull feedback into one wishlist so nothing slips through the cracks.",
   },
   {
     icon: ShieldCheck,
-    title: 'Prioritize with confidence',
-    description: 'Turn noise into a clear ranking so the next sprint is obvious.',
+    title: "Prioritize with confidence",
+    description: "Turn noise into a clear ranking so the next sprint is obvious.",
   },
   {
     icon: Clock3,
-    title: 'Ship the right thing',
-    description: 'Align stakeholders and deliver updates customers actually asked for.',
+    title: "Ship the right thing",
+    description: "Align stakeholders and deliver updates customers actually asked for.",
   },
-]
+];
 
 function Home() {
-  const { isAuthenticated } = useStoreUserEffect()
+  const { isAuthenticated } = useStoreUserEffect();
 
   return (
     <div className="min-h-[300vh] bg-background text-foreground">
-      <div className="fixed inset-0 z-0 gradient-homepage" />
+      <div className="gradient-homepage fixed inset-0 z-0" />
 
-      <header className="sticky top-0 z-10 border-b border-b-background/40 bg-background/20 pb-4 pt-4 backdrop-blur-lg">
+      <header className="sticky top-0 z-10 border-b border-b-background/40 bg-background/20 pt-4 pb-4 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-accent/10 text-sm font-semibold text-accent-foreground">
@@ -106,5 +106,5 @@ function Home() {
         </section>
       </main>
     </div>
-  )
+  );
 }

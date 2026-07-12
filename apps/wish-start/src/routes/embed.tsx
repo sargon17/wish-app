@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import env from "@/env";
 import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 import {
   createEmbedComment,
@@ -24,14 +25,10 @@ import {
   type EmbedRequest,
 } from "@/lib/embedApi";
 import { formatDate } from "@/lib/time";
-import env from "@/env";
 
 export const Route = createFileRoute("/embed")({
   head: () => ({
-    meta: [
-      { title: "Feedback - Wish" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
+    meta: [{ title: "Feedback - Wish" }, { name: "robots", content: "noindex,nofollow" }],
   }),
   validateSearch: (search) => ({
     projectId: typeof search.projectId === "string" ? search.projectId : undefined,
@@ -48,10 +45,7 @@ export const Route = createFileRoute("/embed")({
   component: EmbedPage,
 });
 
-type EmbedScreen =
-  | { name: "list" }
-  | { name: "new" }
-  | { name: "detail"; requestId: string };
+type EmbedScreen = { name: "list" } | { name: "new" } | { name: "detail"; requestId: string };
 
 function useEmbedResource<T>(loader: () => Promise<T>) {
   const [data, setData] = useState<T | undefined>();
@@ -147,7 +141,10 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
         upvoted: nextUpvoted,
         requests: current.requests.map((request) =>
           request._id === requestId
-            ? { ...request, upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + (wasUpvoted ? -1 : 1)) }
+            ? {
+                ...request,
+                upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + (wasUpvoted ? -1 : 1)),
+              }
             : request,
         ),
       };
@@ -211,7 +208,12 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
           />
         ) : (
           <EmbedNotice title="Request not found" description="This request is no longer available.">
-            <Button type="button" variant="outline" size="sm" onClick={() => setScreen({ name: "list" })}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setScreen({ name: "list" })}
+            >
               Back to requests
             </Button>
           </EmbedNotice>
@@ -233,10 +235,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
       <Separator className="my-4" />
 
       {requests.length === 0 ? (
-        <EmbedNotice
-          title="No requests yet"
-          description="Be the first to suggest an improvement."
-        >
+        <EmbedNotice title="No requests yet" description="Be the first to suggest an improvement.">
           <Button type="button" size="sm" onClick={() => setScreen({ name: "new" })}>
             <Plus />
             New request
@@ -260,11 +259,15 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
                   {request.computedStatus ? (
                     <Badge variant="secondary">{request.computedStatus.displayName}</Badge>
                   ) : null}
-                  <time className="text-xs text-muted-foreground">{formatDate(request._creationTime)}</time>
+                  <time className="text-xs text-muted-foreground">
+                    {formatDate(request._creationTime)}
+                  </time>
                 </div>
                 <h2 className="text-sm font-semibold tracking-tight">{request.text}</h2>
                 {request.description ? (
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{request.description}</p>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">
+                    {request.description}
+                  </p>
                 ) : null}
               </button>
             </article>
@@ -292,8 +295,15 @@ function EmbedRequestDetail({
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const loadComments = useCallback(() => listEmbedComments(config, request._id), [config, request._id]);
-  const { data: comments, loadError: commentsError, reload: reloadComments } = useEmbedResource(loadComments);
+  const loadComments = useCallback(
+    () => listEmbedComments(config, request._id),
+    [config, request._id],
+  );
+  const {
+    data: comments,
+    loadError: commentsError,
+    reload: reloadComments,
+  } = useEmbedResource(loadComments);
 
   async function submitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -323,17 +333,25 @@ function EmbedRequestDetail({
       </Button>
 
       <div className="flex gap-3">
-        <UpvoteButton upvoteCount={request.upvoteCount ?? 0} isUpvoted={isUpvoted} onClick={onUpvote} />
+        <UpvoteButton
+          upvoteCount={request.upvoteCount ?? 0}
+          isUpvoted={isUpvoted}
+          onClick={onUpvote}
+        />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             {request.computedStatus ? (
               <Badge variant="secondary">{request.computedStatus.displayName}</Badge>
             ) : null}
-            <time className="text-xs text-muted-foreground">{formatDate(request._creationTime)}</time>
+            <time className="text-xs text-muted-foreground">
+              {formatDate(request._creationTime)}
+            </time>
           </div>
           <h1 className="text-lg font-semibold tracking-tight">{request.text}</h1>
           {request.description ? (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{request.description}</p>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+              {request.description}
+            </p>
           ) : null}
         </div>
       </div>
@@ -368,7 +386,7 @@ function EmbedRequestDetail({
                   </span>
                   <time>{formatDate(comment.createdAt)}</time>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{comment.body}</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{comment.body}</p>
               </div>
             ))}
           </div>
@@ -488,7 +506,9 @@ function EmbedChangelogApp({ config }: { config: EmbedApiConfig }) {
     <EmbedShell>
       <div>
         <h1 className="text-lg font-semibold tracking-tight">What's new</h1>
-        {feed.project.title ? <p className="text-sm text-muted-foreground">{feed.project.title}</p> : null}
+        {feed.project.title ? (
+          <p className="text-sm text-muted-foreground">{feed.project.title}</p>
+        ) : null}
       </div>
 
       <Separator className="my-4" />
@@ -518,7 +538,9 @@ function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
       </div>
       <h2 className="text-sm font-semibold tracking-tight">{entry.title}</h2>
       {entry.summary ? <p className="text-sm text-muted-foreground">{entry.summary}</p> : null}
-      {entry.body ? <div className="whitespace-pre-wrap text-sm text-foreground/90">{entry.body}</div> : null}
+      {entry.body ? (
+        <div className="text-sm whitespace-pre-wrap text-foreground/90">{entry.body}</div>
+      ) : null}
     </article>
   );
 }

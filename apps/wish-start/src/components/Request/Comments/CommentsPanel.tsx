@@ -1,5 +1,7 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Doc } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
 import { ArrowUp, MessageSquareText } from "lucide-react";
 import type { FormEvent } from "react";
@@ -14,8 +16,6 @@ import {
   InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@wish/convex-backend/api";
-import type { Doc } from "@wish/convex-backend/data-model";
 
 import CommentsList from "./CommentsList";
 
@@ -73,7 +73,7 @@ export default function CommentsPanel({ request }: { request: Doc<"requests"> })
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageSquareText className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comments</p>
+          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Comments</p>
         </div>
         <Badge variant="secondary" className="text-[10px]">
           {commentCount}
@@ -100,12 +100,12 @@ export default function CommentsPanel({ request }: { request: Doc<"requests"> })
               size="icon-sm"
               disabled={isSubmitting}
               aria-label="Send comment"
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-              </form>
+            >
+              <ArrowUp className="h-4 w-4" />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </form>
     </div>
   );
 }

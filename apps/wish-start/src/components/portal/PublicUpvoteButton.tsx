@@ -1,5 +1,7 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
 import { ArrowBigUp } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -8,8 +10,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
 import { cn } from "@/lib/utils";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
 
 export function PublicUpvoteButton({
   projectSlug,

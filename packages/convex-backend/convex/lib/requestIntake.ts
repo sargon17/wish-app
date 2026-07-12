@@ -1,8 +1,9 @@
 import { api, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
-import { createPublicError } from "./publicErrors";
+
 import type { ProjectKeyAuthorizationContext } from "./projectKeyAuthorization";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
+import { createPublicError } from "./publicErrors";
 
 export async function listRequests(c: ProjectKeyAuthorizationContext, projectId: string) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
@@ -21,7 +22,9 @@ export async function listRequests(c: ProjectKeyAuthorizationContext, projectId:
     ok: true as const,
     project: authorization.project,
     requests: requests.map((request: Doc<"requests">) => {
-      const computedStatus = requestStatuses.find((status: Doc<"requestStatuses">) => status._id === request.status)!;
+      const computedStatus = requestStatuses.find(
+        (status: Doc<"requestStatuses">) => status._id === request.status,
+      )!;
       return { ...request, computedStatus };
     }),
   };
@@ -83,7 +86,11 @@ export async function createRequest(
   return { ok: true as const };
 }
 
-export async function deleteRequest(c: ProjectKeyAuthorizationContext, projectId: string, requestId: string) {
+export async function deleteRequest(
+  c: ProjectKeyAuthorizationContext,
+  projectId: string,
+  requestId: string,
+) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "admin");
   if (!authorization.ok) {
     return authorization;
@@ -98,7 +105,11 @@ export async function deleteRequest(c: ProjectKeyAuthorizationContext, projectId
   return { ok: true as const };
 }
 
-export async function listComments(c: ProjectKeyAuthorizationContext, projectId: string, requestId: string) {
+export async function listComments(
+  c: ProjectKeyAuthorizationContext,
+  projectId: string,
+  requestId: string,
+) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
   if (!authorization.ok) {
     return authorization;
@@ -154,7 +165,11 @@ export async function deleteComment(
   });
 }
 
-export async function listUpvotes(c: ProjectKeyAuthorizationContext, projectId: string, clientId: string | undefined) {
+export async function listUpvotes(
+  c: ProjectKeyAuthorizationContext,
+  projectId: string,
+  clientId: string | undefined,
+) {
   const authorization = await authorizeProjectKeyRequest(c, projectId, "read");
   if (!authorization.ok) {
     return authorization;

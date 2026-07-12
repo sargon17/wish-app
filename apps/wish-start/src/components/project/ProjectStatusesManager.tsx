@@ -1,16 +1,17 @@
 "use client";
 
+import { api } from "@wish/convex-backend/api";
+import type { Id } from "@wish/convex-backend/data-model";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import StatusCreationView from "../Status/StatusCreationView";
-import ProjectStatusCard from "./ProjectStatusCard";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription } from "../ui/card";
-import { api } from "@wish/convex-backend/api";
-import type { Id } from "@wish/convex-backend/data-model";
+
+import ProjectStatusCard from "./ProjectStatusCard";
 
 export default function ProjectStatusesManager({ projectID }: { projectID: Id<"projects"> }) {
   const statuses = useQuery(api.requestStatuses.getManagementByProject, { id: projectID });
@@ -93,7 +94,9 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
 
       <Card className="border-border/70 bg-gradient-to-b from-card to-card/80">
         <CardContent>
-          <CardDescription className="mb-4">Manage one ordered workflow list for this project.</CardDescription>
+          <CardDescription className="mb-4">
+            Manage one ordered workflow list for this project.
+          </CardDescription>
           <ol className="space-y-3">
             {projectStatuses.map((status, index) => (
               <li key={status._id}>
@@ -111,7 +114,9 @@ export default function ProjectStatusesManager({ projectID }: { projectID: Id<"p
               </li>
             ))}
           </ol>
-          {projectStatuses.length === 0 ? <CardDescription>No project statuses found.</CardDescription> : null}
+          {projectStatuses.length === 0 ? (
+            <CardDescription>No project statuses found.</CardDescription>
+          ) : null}
         </CardContent>
       </Card>
     </div>

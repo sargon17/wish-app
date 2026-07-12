@@ -1,3 +1,5 @@
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@components/ui/empty";
+import { Input } from "@components/ui/input";
 import {
   Table,
   TableBody,
@@ -15,13 +17,12 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { TableProperties } from "lucide-react";
+import { useMemo, useState, type ComponentProps } from "react";
 
 import { Skeleton } from "../ui/skeleton";
-import { Input } from "@components/ui/input";
-import { useMemo, useState, type ComponentProps } from "react";
+
 import FilterList from "./FilterList";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@components/ui/empty";
-import { TableProperties } from "lucide-react";
 
 type FieldsFN<T> = (row: T) => Array<string | undefined | null>;
 
@@ -80,7 +81,7 @@ const EntityTable = <T,>({
   });
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="flex h-full flex-col gap-4">
       <div>
         <Input
           className="max-w-80"
@@ -90,7 +91,7 @@ const EntityTable = <T,>({
         />
       </div>
       <FilterList active={activeFilter} onChange={(v) => setActiveFilter(v)} filters={filters} />
-      <div className="outline rounded-md overflow-hidden">
+      <div className="overflow-hidden rounded-md outline">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

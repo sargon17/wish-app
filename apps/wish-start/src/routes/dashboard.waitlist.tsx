@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { WaitlistTable } from "@/components/waitlist/WaitlistTable";
 import DashboardPage from "@components/dashboard/DashboardPage";
+import { createFileRoute } from "@tanstack/react-router";
+
+import { WaitlistTable } from "@/components/waitlist/WaitlistTable";
 
 export const Route = createFileRoute("/dashboard/waitlist")({ component: WaitlistPage });
 

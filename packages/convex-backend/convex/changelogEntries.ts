@@ -321,7 +321,9 @@ export const listPublishedByProjectInternal = internalQuery({
   handler: async (ctx, args) => {
     const entries = await ctx.db
       .query("changelogEntries")
-      .withIndex("by_project_status", (q) => q.eq("projectId", args.projectId).eq("status", "published"))
+      .withIndex("by_project_status", (q) =>
+        q.eq("projectId", args.projectId).eq("status", "published"),
+      )
       .collect();
 
     return entries.sort(sortEntriesByRecent).map((entry) => toPublicChangelogEntry(entry));
