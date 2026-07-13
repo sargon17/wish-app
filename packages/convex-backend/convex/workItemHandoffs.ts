@@ -70,6 +70,29 @@ export const get = query({
   handler: async (ctx, args) => await getOwnedHandoff(ctx, args),
 });
 
+export const getSurface = query({
+  args: {
+    projectId: v.id("projects"),
+    requestId: v.id("requests"),
+    provider: workTrackerProviderValidator,
+  },
+  handler: async (ctx, args) => {
+    const handoff = await getOwnedHandoff(ctx, args);
+    const connection = await ctx.db
+      .query("workTrackerConnections")
+      .withIndex("by_project_provider", (q) =>
+        q.eq("projectId", args.projectId).eq("provider", args.provider),
+      )
+      .unique();
+    return {
+      connection: connection
+        ? { health: connection.health, destinationLabel: connection.destinationLabel }
+        : null,
+      handoff,
+    };
+  },
+});
+
 export const getOwnedInternal = internalQuery({
   args: {
     projectId: v.id("projects"),

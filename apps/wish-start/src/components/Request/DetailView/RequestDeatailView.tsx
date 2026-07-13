@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import CommentsPanel from "@/components/Request/Comments/CommentsPanel";
+import WorkItemHandoffAction from "@/components/Request/DetailView/WorkItemHandoffAction";
 import RequestUpvoteButton from "@/components/Request/RequestUpvoteButton";
 import StatusForwardBadge from "@/components/Status/StatusForwardBadge";
 import { Badge } from "@/components/ui/badge";
@@ -102,6 +103,9 @@ export default function RequestDetailView({
                   />
                 ) : null}
                 {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
+                <div className="ml-auto">
+                  <WorkItemHandoffAction request={activeRequest} />
+                </div>
               </div>
               <div>
                 <div className="mb-8 flex flex-wrap gap-3 text-sm text-foreground/50 *:flex *:items-center *:gap-2">
