@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
-import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   getLinearConfig,
@@ -17,8 +17,12 @@ import {
   refreshLinearCredentials,
   revokeLinearCredentials,
 } from "./lib/linearOAuth";
-import { isWorkTrackerCredentialLeaseActive } from "./lib/workTrackerConnection";
-import { assertNoBlockingLinearHandoffs } from "./lib/workTrackerGuards";
+import {
+  isWorkTrackerCredentialLeaseActive,
+  linearConnectionOrNull,
+  linearSetupOrNull,
+} from "./lib/workTrackerConnection";
+import { assertNoBlockingWorkTrackerHandoffs } from "./lib/workTrackerGuards";
 import { decryptWorkTrackerSecret, encryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 
 export const selectLinearTeamInternal = internalMutation({
@@ -38,7 +42,7 @@ export const selectLinearTeamInternal = internalMutation({
   }> => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    const setup = await ctx.db.get(args.setupId);
+    const setup = linearSetupOrNull(await ctx.db.get(args.setupId));
     const authorization = setup?.data.stage === "ready" ? setup.data.authorization : undefined;
     const encryptedCredentials =
       setup?.data.stage === "ready" ? setup.data.encryptedCredentials : undefined;
@@ -57,12 +61,14 @@ export const selectLinearTeamInternal = internalMutation({
       throw new Error("Linear team is not available");
     }
 
-    const existing = await ctx.db
-      .query("workTrackerConnections")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.projectId).eq("provider", "linear"),
-      )
-      .unique();
+    const existing = linearConnectionOrNull(
+      await ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", args.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
     const now = Date.now();
     if (isWorkTrackerCredentialLeaseActive(existing?.data.credentialLease, now)) {
       throw new Error("Linear credentials are busy; try again shortly");
@@ -74,7 +80,12 @@ export const selectLinearTeamInternal = internalMutation({
       const sameDestination =
         authorization.organization.id === existing.data.organizationId &&
         team.id === existing.data.teamId;
-      await assertNoBlockingLinearHandoffs(ctx, args.projectId, sameDestination);
+      await assertNoBlockingWorkTrackerHandoffs(
+        ctx,
+        args.projectId,
+        "linear",
+        sameDestination,
+      );
     }
 
     const data = {
@@ -125,7 +136,7 @@ export const clearLinearPendingRevocationInternal = internalMutation({
     ciphertext: v.string(),
   },
   handler: async (ctx, args) => {
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext) {
       return;
     }
@@ -183,12 +194,14 @@ export const getLinearConnectionForActionInternal = internalQuery({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    return await ctx.db
-      .query("workTrackerConnections")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.projectId).eq("provider", "linear"),
-      )
-      .unique();
+    return linearConnectionOrNull(
+      await ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", args.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
   },
 });
 
@@ -201,7 +214,7 @@ export const claimLinearRefreshInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       throw new Error("Linear connection not found");
     }
@@ -234,7 +247,7 @@ export const completeLinearRefreshInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       throw new Error("Linear connection not found");
     }
@@ -263,7 +276,7 @@ export const failLinearRefreshInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       return;
     }
@@ -399,7 +412,7 @@ export const syncLinearDiscoveryInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       throw new Error("Linear connection not found");
     }
@@ -441,7 +454,7 @@ export const markLinearConnectionNeedsAttentionInternal = internalMutation({
   args: { connectionId: v.id("workTrackerConnections"), credentialCiphertext: v.string() },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       return;
     }
@@ -512,7 +525,7 @@ export const changeLinearTeamInternal = internalMutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection || connection.projectId !== args.projectId) {
       throw new Error("Linear connection not found");
     }
@@ -524,7 +537,7 @@ export const changeLinearTeamInternal = internalMutation({
       throw new Error("Linear connection changed; reload and try again");
     }
     if (connection.data.teamId !== args.team.id) {
-      await assertNoBlockingLinearHandoffs(ctx, args.projectId);
+      await assertNoBlockingWorkTrackerHandoffs(ctx, args.projectId, "linear");
     }
     await ctx.db.patch(connection._id, {
       health: "active",
@@ -579,13 +592,15 @@ export const beginLinearDisconnectInternal = internalMutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    await assertNoBlockingLinearHandoffs(ctx, args.projectId);
-    const connection = await ctx.db
-      .query("workTrackerConnections")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.projectId).eq("provider", "linear"),
-      )
-      .unique();
+    await assertNoBlockingWorkTrackerHandoffs(ctx, args.projectId, "linear");
+    const connection = linearConnectionOrNull(
+      await ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", args.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
     if (!connection) {
       return null;
     }
@@ -620,7 +635,7 @@ export const finalizeLinearDisconnectInternal = internalMutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (!connection) {
       return { disconnected: true };
     }

@@ -3,9 +3,13 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
-import { getWorkTrackerEncryptionKey, parseStoredCredentials } from "./lib/linearConnection";
+import { parseStoredCredentials } from "./lib/linearConnection";
 import { findLinearIssue } from "./lib/linearIssue";
-import { isWorkTrackerCredentialLeaseActive } from "./lib/workTrackerConnection";
+import {
+  isWorkTrackerCredentialLeaseActive,
+  linearConnectionOrNull,
+} from "./lib/workTrackerConnection";
+import { getWorkTrackerEncryptionKey } from "./lib/workTrackerConfig";
 import { decryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 import { getFreshLinearConnection } from "./workTrackerConnections";
 
@@ -16,12 +20,14 @@ export const getForReconciliationInternal = internalQuery({
     if (!handoff || handoff.provider !== "linear" || handoff.lifecycle.state !== "unknown") {
       return null;
     }
-    const connection = await ctx.db
-      .query("workTrackerConnections")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", handoff.projectId).eq("provider", "linear"),
-      )
-      .unique();
+    const connection = linearConnectionOrNull(
+      await ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", handoff.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
     return connection ? { connection, handoff } : null;
   },
 });
@@ -29,7 +35,7 @@ export const getForReconciliationInternal = internalQuery({
 export const markConnectionNeedsAttentionInternal = internalMutation({
   args: { connectionId: v.id("workTrackerConnections"), credentialCiphertext: v.string() },
   handler: async (ctx, args) => {
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     const now = Date.now();
     if (
       !connection ||

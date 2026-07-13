@@ -8,6 +8,7 @@ import {
 import {
   workItemHandoffLifecycleValidator,
   workItemHandoffRecoveryValidator,
+  workTrackerConnectionProviderValidator,
   workTrackerConnectionDataValidator,
   workTrackerConnectionHealthValidator,
   workTrackerOAuthSetupDataValidator,
@@ -121,7 +122,7 @@ export default defineSchema({
 
   workTrackerConnections: defineTable({
     projectId: v.id("projects"),
-    provider: workTrackerProviderValidator,
+    provider: workTrackerConnectionProviderValidator,
     health: workTrackerConnectionHealthValidator,
     destinationLabel: v.string(),
     data: workTrackerConnectionDataValidator,
@@ -131,11 +132,12 @@ export default defineSchema({
   })
     .index("by_project", ["projectId"])
     .index("by_project_provider", ["projectId", "provider"])
+    .index("by_github_installation", ["data.installationId"])
     .index("by_pending_revocation", ["data.pendingRevocation.retryAt"]),
 
   workTrackerOAuthSetups: defineTable({
     projectId: v.id("projects"),
-    provider: workTrackerProviderValidator,
+    provider: workTrackerConnectionProviderValidator,
     stateHash: v.string(),
     data: workTrackerOAuthSetupDataValidator,
     createdBy: v.id("users"),
@@ -144,7 +146,9 @@ export default defineSchema({
     consumedAt: v.optional(v.number()),
   })
     .index("by_state_hash", ["stateHash"])
+    .index("by_project", ["projectId"])
     .index("by_project_provider", ["projectId", "provider"])
+    .index("by_github_installation", ["data.installationId"])
     .index("by_expires_at", ["expiresAt"]),
 
   workItemHandoffs: defineTable({

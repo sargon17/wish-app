@@ -238,15 +238,22 @@ export const deleteProject = mutation({
       .query("changelogEntries")
       .withIndex("by_project", (q) => q.eq("projectId", args.id))
       .collect();
-    const workTrackerConnection = await ctx.db
+    const workTrackerConnections = await ctx.db
       .query("workTrackerConnections")
       .withIndex("by_project", (q) => q.eq("projectId", args.id))
-      .first();
-    const workTrackerSetup = await ctx.db
+      .collect();
+    const workTrackerSetups = await ctx.db
       .query("workTrackerOAuthSetups")
-      .withIndex("by_project_provider", (q) => q.eq("projectId", args.id).eq("provider", "linear"))
-      .unique();
-    if (workTrackerConnection || (workTrackerSetup && workTrackerSetup.data.stage !== "pending")) {
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .collect();
+    const hasCredentialBearingSetup = workTrackerSetups.some((setup) => {
+      if (setup.data.provider === "linear") return setup.data.stage !== "pending";
+      return (
+        setup.data.stage === "discarding" ||
+        (setup.data.stage === "pending" && Boolean(setup.consumedAt))
+      );
+    });
+    if (workTrackerConnections.length > 0 || hasCredentialBearingSetup) {
       throw new Error("Disconnect Work Trackers before deleting this project");
     }
 
@@ -273,7 +280,7 @@ export const deleteProject = mutation({
     await Promise.all(apiKeys.map((apiKey) => ctx.db.delete(apiKey._id)));
     await Promise.all(changelogEntries.map((entry) => ctx.db.delete(entry._id)));
     await Promise.all(handoffs.map((handoff) => ctx.db.delete(handoff._id)));
-    if (workTrackerSetup) await ctx.db.delete(workTrackerSetup._id);
+    await Promise.all(workTrackerSetups.map((setup) => ctx.db.delete(setup._id)));
 
     await ctx.db.delete(args.id);
   },

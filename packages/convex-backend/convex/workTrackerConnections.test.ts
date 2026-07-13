@@ -3,6 +3,10 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import { parseStoredCredentials } from "./lib/linearConnection";
+import {
+  linearConnectionOrNull,
+  linearSetupOrNull,
+} from "./lib/workTrackerConnection";
 import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import schema from "./schema";
 
@@ -258,7 +262,7 @@ describe("Work Tracker connections", () => {
   it("blocks same-destination credential replacement while a Handoff is pending", async () => {
     const { ids, owner, t } = await seed();
     await t.run(async (ctx) => {
-      const setup = await ctx.db.get(ids.setupId);
+      const setup = linearSetupOrNull(await ctx.db.get(ids.setupId));
       if (setup?.data.stage !== "ready") throw new Error("Expected ready setup");
       await ctx.db.patch(ids.setupId, {
         data: {
@@ -294,7 +298,7 @@ describe("Work Tracker connections", () => {
   it("allows same-destination credential repair for an unknown Handoff", async () => {
     const { ids, owner, t } = await seed();
     await t.run(async (ctx) => {
-      const setup = await ctx.db.get(ids.setupId);
+      const setup = linearSetupOrNull(await ctx.db.get(ids.setupId));
       if (setup?.data.stage !== "ready") throw new Error("Expected ready setup");
       await ctx.db.patch(ids.setupId, {
         data: {
@@ -419,7 +423,7 @@ describe("Work Tracker connections", () => {
     });
 
     await t.run(async (ctx) => {
-      const connection = await ctx.db.get(ids.connectionId);
+      const connection = linearConnectionOrNull(await ctx.db.get(ids.connectionId));
       await ctx.db.patch(ids.connectionId, {
         data: { ...connection!.data, credentialLease: undefined },
       });
@@ -465,7 +469,9 @@ describe("Work Tracker connections", () => {
         now: Date.now(),
       }),
     ).resolves.toBe(false);
-    const connection = await t.run(async (ctx) => ctx.db.get(ids.connectionId));
+    const connection = linearConnectionOrNull(
+      await t.run(async (ctx) => ctx.db.get(ids.connectionId)),
+    );
     expect(connection).toMatchObject({ data: { encryptedCredentials } });
     expect(connection?.data.credentialLease).toBeUndefined();
   });
@@ -515,7 +521,9 @@ describe("Work Tracker connections", () => {
   it("clears an expired refresh lease and restores Handoff reservation", async () => {
     const ownerFinishes = await seed();
     await ownerFinishes.t.run(async (ctx) => {
-      const connection = await ctx.db.get(ownerFinishes.ids.connectionId);
+      const connection = linearConnectionOrNull(
+        await ctx.db.get(ownerFinishes.ids.connectionId),
+      );
       await ctx.db.patch(ownerFinishes.ids.connectionId, {
         data: {
           ...connection!.data,
@@ -534,7 +542,9 @@ describe("Work Tracker connections", () => {
 
     const reservationWins = await seed();
     await reservationWins.t.run(async (ctx) => {
-      const connection = await ctx.db.get(reservationWins.ids.connectionId);
+      const connection = linearConnectionOrNull(
+        await ctx.db.get(reservationWins.ids.connectionId),
+      );
       await ctx.db.patch(reservationWins.ids.connectionId, {
         data: {
           ...connection!.data,
@@ -553,8 +563,11 @@ describe("Work Tracker connections", () => {
       }),
     ).resolves.toMatchObject({ handoff: { lifecycle: { state: "pending" } } });
     expect(
-      (await reservationWins.t.run(async (ctx) => ctx.db.get(reservationWins.ids.connectionId)))
-        ?.data.credentialLease,
+      linearConnectionOrNull(
+        await reservationWins.t.run(async (ctx) =>
+          ctx.db.get(reservationWins.ids.connectionId),
+        ),
+      )?.data.credentialLease,
     ).toBeUndefined();
     await expect(
       reservationWins.owner.mutation(

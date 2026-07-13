@@ -3,8 +3,13 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
-import { getWorkTrackerEncryptionKey, parseStoredCredentials } from "./lib/linearConnection";
+import { parseStoredCredentials } from "./lib/linearConnection";
 import { revokeLinearCredentials } from "./lib/linearOAuth";
+import {
+  linearConnectionOrNull,
+  linearSetupOrNull,
+} from "./lib/workTrackerConnection";
+import { getWorkTrackerEncryptionKey } from "./lib/workTrackerConfig";
 import { decryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 
 const REVOCATION_RETRY_MS = 5 * 60 * 1000;
@@ -15,6 +20,7 @@ export const getExpiredLinearSetupsInternal = internalQuery({
     return await ctx.db
       .query("workTrackerOAuthSetups")
       .withIndex("by_expires_at", (q) => q.lt("expiresAt", args.now))
+      .filter((q) => q.eq(q.field("provider"), "linear"))
       .take(10);
   },
 });
@@ -22,8 +28,8 @@ export const getExpiredLinearSetupsInternal = internalQuery({
 export const deleteExpiredLinearSetupInternal = internalMutation({
   args: { setupId: v.id("workTrackerOAuthSetups"), now: v.number() },
   handler: async (ctx, args) => {
-    const setup = await ctx.db.get(args.setupId);
-    if (setup && setup.provider === "linear" && setup.expiresAt < args.now) {
+    const setup = linearSetupOrNull(await ctx.db.get(args.setupId));
+    if (setup && setup.expiresAt < args.now) {
       await ctx.db.delete(setup._id);
     }
   },
@@ -32,8 +38,8 @@ export const deleteExpiredLinearSetupInternal = internalMutation({
 export const rescheduleLinearSetupRevocationInternal = internalMutation({
   args: { setupId: v.id("workTrackerOAuthSetups"), retryAt: v.number() },
   handler: async (ctx, args) => {
-    const setup = await ctx.db.get(args.setupId);
-    if (setup && setup.provider === "linear" && setup.data.stage !== "pending") {
+    const setup = linearSetupOrNull(await ctx.db.get(args.setupId));
+    if (setup && setup.data.stage !== "pending") {
       await ctx.db.patch(setup._id, { expiresAt: args.retryAt });
     }
   },
@@ -60,7 +66,7 @@ export const reschedulePendingLinearRevocationInternal = internalMutation({
     retryAt: v.number(),
   },
   handler: async (ctx, args) => {
-    const connection = await ctx.db.get(args.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(args.connectionId));
     if (
       connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext
     ) {
@@ -84,7 +90,12 @@ export const cleanupExpiredLinearSetupsInternal = internalAction({
       { now },
     );
     for (const setup of setups) {
-      const encrypted = setup.data.stage === "pending" ? undefined : setup.data.encryptedCredentials;
+      const linearSetup = linearSetupOrNull(setup);
+      if (!linearSetup) continue;
+      const encrypted =
+        linearSetup.data.stage === "pending"
+          ? undefined
+          : linearSetup.data.encryptedCredentials;
       let revoked = !encrypted;
       if (encrypted) {
         try {
@@ -122,7 +133,9 @@ export const cleanupPendingLinearRevocationsInternal = internalAction({
       {},
     );
     for (const connection of connections) {
-      const encrypted = connection.data.pendingRevocation?.encryptedCredentials;
+      const linearConnection = linearConnectionOrNull(connection);
+      if (!linearConnection) continue;
+      const encrypted = linearConnection.data.pendingRevocation?.encryptedCredentials;
       if (!encrypted) continue;
       try {
         const credentials = parseStoredCredentials(

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import { serializeCredentials } from "./lib/linearConnection";
+import { linearConnectionOrNull } from "./lib/workTrackerConnection";
 import {
   handoffCreationDisabledError,
   unresolvedWorkItemHandoffError,
@@ -113,7 +114,7 @@ async function configureLinearDelivery(
     encryptionKey,
   );
   await t.run(async (ctx) => {
-    const connection = await ctx.db.get(ids.connectionId);
+    const connection = linearConnectionOrNull(await ctx.db.get(ids.connectionId));
     if (!connection) throw new Error("Expected connection");
     await ctx.db.patch(connection._id, {
       data: { ...connection.data, encryptedCredentials },
