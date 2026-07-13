@@ -167,11 +167,14 @@ export const reserveInternal = internalMutation({
       connection.provider !== args.provider ||
       connection.updatedAt !== args.connectionUpdatedAt ||
       connection.health !== "active" ||
-      isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, now)
+      isWorkTrackerCredentialLeaseActive(
+        connection.data.provider === "linear" ? connection.data.credentialLease : undefined,
+        now,
+      )
     ) {
       throw new Error("Work Tracker connection changed; reload and try again");
     }
-    if (connection.data.credentialLease) {
+    if (connection.data.provider === "linear" && connection.data.credentialLease) {
       await ctx.db.patch(connection._id, {
         data: { ...connection.data, credentialLease: undefined },
         updatedAt: now,
