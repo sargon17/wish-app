@@ -2,8 +2,8 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
-import schema from "./schema";
 import { parseStoredCredentials } from "./lib/linearConnection";
+import schema from "./schema";
 
 const modules = {
   "./_generated/server.ts": () => import("./_generated/server"),
@@ -254,7 +254,7 @@ describe("Work Tracker connections", () => {
     ).rejects.toThrow("Work Tracker change is blocked");
   });
 
-  it("blocks same-destination credential replacement while a Handoff is unresolved", async () => {
+  it("blocks same-destination credential replacement while a Handoff is pending", async () => {
     const { ids, owner, t } = await seed();
     await t.run(async (ctx) => {
       const setup = await ctx.db.get(ids.setupId);
@@ -290,6 +290,49 @@ describe("Work Tracker connections", () => {
     ).rejects.toThrow("Work Tracker change is blocked");
   });
 
+  it("allows same-destination credential repair for an unknown Handoff", async () => {
+    const { ids, owner, t } = await seed();
+    await t.run(async (ctx) => {
+      const setup = await ctx.db.get(ids.setupId);
+      if (setup?.data.stage !== "ready") throw new Error("Expected ready setup");
+      await ctx.db.patch(ids.setupId, {
+        data: {
+          ...setup.data,
+          authorization: {
+            organization: { id: "org-1", name: "Old workspace", urlKey: "old" },
+            teams: [{ id: "team-1", key: "OLD", name: "Old team" }],
+          },
+        },
+      });
+      await ctx.db.insert("workItemHandoffs", {
+        projectId: ids.projectId,
+        requestId: ids.requestId,
+        provider: "linear",
+        attemptCount: 1,
+        reconciliationCount: 0,
+        recovery: { provider: "linear", issueId: crypto.randomUUID() },
+        lifecycle: { state: "unknown" },
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    });
+
+    await owner.mutation(internal.workTrackerConnections.selectLinearTeamInternal, {
+      projectId: ids.projectId,
+      setupId: ids.setupId,
+      teamId: "team-1",
+    });
+
+    expect(await t.run(async (ctx) => ctx.db.get(ids.connectionId))).toMatchObject({
+      health: "active",
+      data: {
+        organizationId: "org-1",
+        teamId: "team-1",
+        encryptedCredentials,
+      },
+    });
+  });
+
   it("atomically replaces a settled connection and consumes its setup", async () => {
     const { ids, owner, t } = await seed();
 
@@ -323,10 +366,10 @@ describe("Work Tracker connections", () => {
   it("serializes setup discard against destination selection", async () => {
     const first = await seed();
     await expect(
-      first.owner.mutation(
-        internal.linearWorkTrackerOAuth.claimLinearOAuthSetupDiscardInternal,
-        { projectId: first.ids.projectId, setupId: first.ids.setupId },
-      ),
+      first.owner.mutation(internal.linearWorkTrackerOAuth.claimLinearOAuthSetupDiscardInternal, {
+        projectId: first.ids.projectId,
+        setupId: first.ids.setupId,
+      }),
     ).resolves.toMatchObject({ encryptedCredentials });
     await expect(
       first.owner.mutation(internal.workTrackerConnections.selectLinearTeamInternal, {
@@ -346,10 +389,10 @@ describe("Work Tracker connections", () => {
       teamId: "team-2",
     });
     await expect(
-      second.owner.mutation(
-        internal.linearWorkTrackerOAuth.claimLinearOAuthSetupDiscardInternal,
-        { projectId: second.ids.projectId, setupId: second.ids.setupId },
-      ),
+      second.owner.mutation(internal.linearWorkTrackerOAuth.claimLinearOAuthSetupDiscardInternal, {
+        projectId: second.ids.projectId,
+        setupId: second.ids.setupId,
+      }),
     ).resolves.toBeNull();
   });
 
@@ -358,6 +401,7 @@ describe("Work Tracker connections", () => {
     await expect(
       owner.mutation(internal.workTrackerConnections.claimLinearRefreshInternal, {
         connectionId: ids.connectionId,
+        expectedCredentialCiphertext: oldEncryptedCredentials.ciphertext,
         leaseId: "refresh-a",
         now: Date.now(),
       }),
@@ -398,6 +442,33 @@ describe("Work Tracker connections", () => {
     expect(await t.run(async (ctx) => await ctx.db.get(ids.connectionId))).not.toBeNull();
   });
 
+  it("rejects a stale refresh claim after credentials rotate", async () => {
+    const { ids, owner, t } = await seed();
+    await owner.mutation(internal.workTrackerConnections.claimLinearRefreshInternal, {
+      connectionId: ids.connectionId,
+      expectedCredentialCiphertext: oldEncryptedCredentials.ciphertext,
+      leaseId: "refresh-a",
+      now: Date.now(),
+    });
+    await owner.mutation(internal.workTrackerConnections.completeLinearRefreshInternal, {
+      connectionId: ids.connectionId,
+      encryptedCredentials,
+      leaseId: "refresh-a",
+    });
+
+    await expect(
+      owner.mutation(internal.workTrackerConnections.claimLinearRefreshInternal, {
+        connectionId: ids.connectionId,
+        expectedCredentialCiphertext: oldEncryptedCredentials.ciphertext,
+        leaseId: "refresh-b",
+        now: Date.now(),
+      }),
+    ).resolves.toBe(false);
+    const connection = await t.run(async (ctx) => ctx.db.get(ids.connectionId));
+    expect(connection).toMatchObject({ data: { encryptedCredentials } });
+    expect(connection?.data.credentialLease).toBeUndefined();
+  });
+
   it("serializes Handoff reservation against disconnect", async () => {
     const disconnectFirst = await seed();
     await disconnectFirst.owner.mutation(
@@ -408,29 +479,35 @@ describe("Work Tracker connections", () => {
         now: Date.now(),
       },
     );
+    const disconnectingConnection = await disconnectFirst.t.run(async (ctx) =>
+      ctx.db.get(disconnectFirst.ids.connectionId),
+    );
     await expect(
-      disconnectFirst.t.mutation(internal.workItemHandoffs.reserveInternal, {
+      disconnectFirst.owner.mutation(internal.workItemHandoffs.reserveInternal, {
         projectId: disconnectFirst.ids.projectId,
         requestId: disconnectFirst.ids.requestId,
         provider: "linear",
+        connectionId: disconnectFirst.ids.connectionId,
+        connectionUpdatedAt: disconnectingConnection!.updatedAt,
+        recovery: { provider: "linear", issueId: crypto.randomUUID() },
       }),
-    ).rejects.toThrow("Work Tracker connection is not available");
+    ).rejects.toThrow("Work Tracker connection changed");
 
     const handoffFirst = await seed();
-    await handoffFirst.t.mutation(internal.workItemHandoffs.reserveInternal, {
+    await handoffFirst.owner.mutation(internal.workItemHandoffs.reserveInternal, {
       projectId: handoffFirst.ids.projectId,
       requestId: handoffFirst.ids.requestId,
       provider: "linear",
+      connectionId: handoffFirst.ids.connectionId,
+      connectionUpdatedAt: 1,
+      recovery: { provider: "linear", issueId: crypto.randomUUID() },
     });
     await expect(
-      handoffFirst.owner.mutation(
-        internal.workTrackerConnections.beginLinearDisconnectInternal,
-        {
-          projectId: handoffFirst.ids.projectId,
-          leaseId: "disconnect-second",
-          now: Date.now(),
-        },
-      ),
+      handoffFirst.owner.mutation(internal.workTrackerConnections.beginLinearDisconnectInternal, {
+        projectId: handoffFirst.ids.projectId,
+        leaseId: "disconnect-second",
+        now: Date.now(),
+      }),
     ).rejects.toThrow("Work Tracker change is blocked");
   });
 
@@ -465,18 +542,18 @@ describe("Work Tracker connections", () => {
       });
     });
     await expect(
-      reservationWins.t.mutation(internal.workItemHandoffs.reserveInternal, {
+      reservationWins.owner.mutation(internal.workItemHandoffs.reserveInternal, {
         projectId: reservationWins.ids.projectId,
         requestId: reservationWins.ids.requestId,
         provider: "linear",
+        connectionId: reservationWins.ids.connectionId,
+        connectionUpdatedAt: 1,
+        recovery: { provider: "linear", issueId: crypto.randomUUID() },
       }),
-    ).resolves.toMatchObject({ lifecycle: { state: "pending" } });
+    ).resolves.toMatchObject({ handoff: { lifecycle: { state: "pending" } } });
     expect(
-      (
-        await reservationWins.t.run(async (ctx) =>
-          ctx.db.get(reservationWins.ids.connectionId),
-        )
-      )?.data.credentialLease,
+      (await reservationWins.t.run(async (ctx) => ctx.db.get(reservationWins.ids.connectionId)))
+        ?.data.credentialLease,
     ).toBeUndefined();
     await expect(
       reservationWins.owner.mutation(

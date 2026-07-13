@@ -3,12 +3,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
-import {
-  action,
-  internalMutation,
-  internalQuery,
-  mutation,
-} from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   getLinearConfig,
@@ -22,13 +17,9 @@ import {
   refreshLinearCredentials,
   revokeLinearCredentials,
 } from "./lib/linearOAuth";
-import {
-  decryptWorkTrackerSecret,
-  encryptWorkTrackerSecret,
-} from "./lib/workTrackerSecrets";
-import { assertNoBlockingLinearHandoffs } from "./lib/workTrackerGuards";
 import { isWorkTrackerCredentialLeaseActive } from "./lib/workTrackerConnection";
-
+import { assertNoBlockingLinearHandoffs } from "./lib/workTrackerGuards";
+import { decryptWorkTrackerSecret, encryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 
 export const selectLinearTeamInternal = internalMutation({
   args: {
@@ -80,7 +71,10 @@ export const selectLinearTeamInternal = internalMutation({
       throw new Error("The previous Linear authorization is still being revoked");
     }
     if (existing) {
-      await assertNoBlockingLinearHandoffs(ctx, args.projectId);
+      const sameDestination =
+        authorization.organization.id === existing.data.organizationId &&
+        team.id === existing.data.teamId;
+      await assertNoBlockingLinearHandoffs(ctx, args.projectId, sameDestination);
     }
 
     const data = {
@@ -132,9 +126,7 @@ export const clearLinearPendingRevocationInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const connection = await ctx.db.get(args.connectionId);
-    if (
-      connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext
-    ) {
+    if (connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext) {
       return;
     }
     await ctx.db.patch(connection._id, {
@@ -201,7 +193,12 @@ export const getLinearConnectionForActionInternal = internalQuery({
 });
 
 export const claimLinearRefreshInternal = internalMutation({
-  args: { connectionId: v.id("workTrackerConnections"), leaseId: v.string(), now: v.number() },
+  args: {
+    connectionId: v.id("workTrackerConnections"),
+    expectedCredentialCiphertext: v.string(),
+    leaseId: v.string(),
+    now: v.number(),
+  },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const connection = await ctx.db.get(args.connectionId);
@@ -209,7 +206,10 @@ export const claimLinearRefreshInternal = internalMutation({
       throw new Error("Linear connection not found");
     }
     await assertProjectOwner(ctx, connection.projectId, user._id);
-    if (isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, args.now)) {
+    if (
+      connection.data.encryptedCredentials.ciphertext !== args.expectedCredentialCiphertext ||
+      isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, args.now)
+    ) {
       return false;
     }
     await ctx.db.patch(connection._id, {
@@ -279,7 +279,11 @@ export const failLinearRefreshInternal = internalMutation({
   },
 });
 
-async function getFreshLinearConnection(ctx: ActionCtx, projectId: Id<"projects">) {
+export async function getFreshLinearConnection(
+  ctx: ActionCtx,
+  projectId: Id<"projects">,
+  forceRefresh = false,
+) {
   const config = getLinearConfig();
   let connection = await ctx.runQuery(
     internal.workTrackerConnections.getLinearConnectionForActionInternal,
@@ -291,14 +295,20 @@ async function getFreshLinearConnection(ctx: ActionCtx, projectId: Id<"projects"
   let credentials = parseStoredCredentials(
     await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
   );
-  if (credentials.expiresAt > Date.now() + LINEAR_REFRESH_EARLY_MS) {
+  if (!forceRefresh && credentials.expiresAt > Date.now() + LINEAR_REFRESH_EARLY_MS) {
     return { connection, credentials };
   }
 
+  const credentialCiphertext = connection.data.encryptedCredentials.ciphertext;
   const leaseId = crypto.randomUUID();
   const claimed = await ctx.runMutation(
     internal.workTrackerConnections.claimLinearRefreshInternal,
-    { connectionId: connection._id, leaseId, now: Date.now() },
+    {
+      connectionId: connection._id,
+      expectedCredentialCiphertext: credentialCiphertext,
+      leaseId,
+      now: Date.now(),
+    },
   );
   if (!claimed) {
     connection = await ctx.runQuery(
@@ -311,7 +321,10 @@ async function getFreshLinearConnection(ctx: ActionCtx, projectId: Id<"projects"
     credentials = parseStoredCredentials(
       await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
     );
-    if (credentials.expiresAt <= Date.now() + LINEAR_REFRESH_EARLY_MS) {
+    if (
+      (forceRefresh && connection.data.encryptedCredentials.ciphertext === credentialCiphertext) ||
+      (!forceRefresh && credentials.expiresAt <= Date.now() + LINEAR_REFRESH_EARLY_MS)
+    ) {
       throw new Error("Linear credentials are already refreshing");
     }
     return { connection, credentials };
@@ -364,8 +377,7 @@ async function getFreshLinearConnection(ctx: ActionCtx, projectId: Id<"projects"
     }
     const needsAttention =
       Boolean(rotatedRefreshToken && !stored) ||
-      (error instanceof Error &&
-        error.message === "Linear authorization is invalid");
+      (error instanceof Error && error.message === "Linear authorization is invalid");
     await ctx.runMutation(internal.workTrackerConnections.failLinearRefreshInternal, {
       connectionId: connection._id,
       needsAttention,
