@@ -2,7 +2,7 @@ import { validateWorkTrackerEncryptionKey } from "./workTrackerSecrets";
 
 export const LINEAR_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 export const LINEAR_AUTHORIZED_SETUP_TTL_MS = 30 * 60 * 1000;
-export const LINEAR_REFRESH_EARLY_MS = 5 * 60 * 1000;
+export const LINEAR_REFRESH_EARLY_MS = 7 * 60 * 1000;
 export const LINEAR_CREDENTIAL_LEASE_MS = 30 * 1000;
 
 export function validateLinearRedirectUri(value: string) {
@@ -54,12 +54,13 @@ export function getLinearConfig() {
   if (!clientId || !clientSecret || !redirectUri || !encryptionKey) {
     throw new Error("Linear OAuth is not configured");
   }
-  validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
+  const baseUrl = validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
   return {
     clientId,
     clientSecret,
     redirectUri: validateLinearRedirectUri(redirectUri),
     encryptionKey: validateWorkTrackerEncryptionKey(encryptionKey),
+    baseUrl,
   };
 }
 
@@ -67,6 +68,10 @@ export function getWorkTrackerEncryptionKey() {
   const encryptionKey = process.env.WORK_TRACKER_ENCRYPTION_KEY?.trim();
   if (!encryptionKey) throw new Error("Work Tracker encryption key is not configured");
   return validateWorkTrackerEncryptionKey(encryptionKey);
+}
+
+export function isLinearHandoffCreationEnabled() {
+  return process.env.LINEAR_HANDOFF_CREATION_ENABLED?.trim().toLowerCase() === "true";
 }
 
 export function isLinearConfigured() {

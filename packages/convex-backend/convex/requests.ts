@@ -7,6 +7,7 @@ import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { getRequestKind } from "./lib/requestKind";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
+import { isHandoffBlocking } from "./lib/workItemHandoff";
 import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
@@ -26,8 +27,17 @@ async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
     .withIndex("by_request", (q) => q.eq("requestId", id))
     .collect();
 
+  const handoffs = await ctx.db
+    .query("workItemHandoffs")
+    .withIndex("by_request", (q) => q.eq("requestId", id))
+    .collect();
+  if (handoffs.some((handoff) => isHandoffBlocking(handoff.lifecycle.state))) {
+    throw new Error("Request cannot be deleted while a Work Item Handoff is unresolved");
+  }
+
   await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
   await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
+  await Promise.all(handoffs.map((handoff) => ctx.db.delete(handoff._id)));
   await ctx.db.delete(id);
 
   return request;
