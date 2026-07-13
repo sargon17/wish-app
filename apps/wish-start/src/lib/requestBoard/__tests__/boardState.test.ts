@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import {
   createMoveRequestToStatus,
   groupRequestsByStatus,
-  getRequestsForStatus,
   toUpvotedRequestSet,
 } from "../boardState";
 
@@ -20,14 +19,9 @@ describe("requestBoard boardState", () => {
 
     const grouped = groupRequestsByStatus(requests);
 
-    expect(getRequestsForStatus(grouped, statusA).map((request) => request._id)).toEqual([
-      "request-1",
-      "request-3",
-    ]);
-    expect(getRequestsForStatus(grouped, statusB).map((request) => request._id)).toEqual([
-      "request-2",
-    ]);
-    expect(getRequestsForStatus(grouped, "missing" as Id<"requestStatuses">)).toEqual([]);
+    expect(grouped[statusA].map((request) => request._id)).toEqual(["request-1", "request-3"]);
+    expect(grouped[statusB].map((request) => request._id)).toEqual(["request-2"]);
+    expect(grouped.missing).toBeUndefined();
   });
 
   it("creates a stable upvote set", () => {
