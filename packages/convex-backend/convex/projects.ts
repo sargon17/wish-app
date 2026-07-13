@@ -237,6 +237,22 @@ export const deleteProject = mutation({
       .query("changelogEntries")
       .withIndex("by_project", (q) => q.eq("projectId", args.id))
       .collect();
+    const workTrackerConnection = await ctx.db
+      .query("workTrackerConnections")
+      .withIndex("by_project", (q) => q.eq("projectId", args.id))
+      .first();
+    const workTrackerSetup = await ctx.db
+      .query("workTrackerOAuthSetups")
+      .withIndex("by_project_provider", (q) =>
+        q.eq("projectId", args.id).eq("provider", "linear"),
+      )
+      .unique();
+    if (
+      workTrackerConnection ||
+      (workTrackerSetup && workTrackerSetup.data.stage !== "pending")
+    ) {
+      throw new Error("Disconnect Work Trackers before deleting this project");
+    }
 
     await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
     await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
@@ -244,6 +260,7 @@ export const deleteProject = mutation({
     await Promise.all(statuses.map((status) => ctx.db.delete(status._id)));
     await Promise.all(apiKeys.map((apiKey) => ctx.db.delete(apiKey._id)));
     await Promise.all(changelogEntries.map((entry) => ctx.db.delete(entry._id)));
+    if (workTrackerSetup) await ctx.db.delete(workTrackerSetup._id);
 
     await ctx.db.delete(args.id);
   },

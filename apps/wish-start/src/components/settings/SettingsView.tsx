@@ -11,11 +11,16 @@ interface SettingsSection {
 
 interface SettingsViewProps extends PropsWithChildren {
   navigation: SettingsSection[];
+  defaultValue?: string;
 }
 
-const SettingsView: FC<SettingsViewProps> = ({ children, navigation }) => {
+const SettingsView: FC<SettingsViewProps> = ({ children, defaultValue, navigation }) => {
   return (
-    <Tabs orientation="vertical" defaultValue={navigation[0]?.key} className="gap-0">
+    <Tabs
+      orientation="vertical"
+      defaultValue={defaultValue ?? navigation[0]?.key}
+      className="gap-0"
+    >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
         <div className="border-b border-neutral-800 pb-4 md:col-span-3 md:border-r md:border-b-0 md:pr-4 md:pb-0">
           <TabsList className="h-auto w-full flex-col items-stretch justify-start gap-1 rounded-none bg-transparent p-0">
