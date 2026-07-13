@@ -5,13 +5,16 @@ import ButtonSwitcher from "@components/molecules/ButtonSwitcher";
 import { createFileRoute } from "@tanstack/react-router";
 
 import DashboardBoard from "@/components/dashboard/DashboardBoard";
+import { requestItemFromSearch } from "@/lib/requestDeepLink";
 
 export const Route = createFileRoute("/dashboard/project/$projectId/$slug/complaints")({
+  validateSearch: (search) => ({ item: requestItemFromSearch(search.item) }),
   component: ProjectComplaintsRoute,
 });
 
 function ProjectComplaintsRoute() {
   const { projectId, slug } = Route.useParams();
+  const { item } = Route.useSearch();
   const { type: boardType, switchTo: switchToBoardType } = useBoardType();
 
   return (
@@ -34,7 +37,12 @@ function ProjectComplaintsRoute() {
         }
       ></DashboardPage>
       {/*outside page scope for styling purpouses */}
-      <DashboardBoard projectId={projectId as never} boardType={boardType} kind="complaint" />
+      <DashboardBoard
+        projectId={projectId as never}
+        boardType={boardType}
+        kind="complaint"
+        itemId={item}
+      />
     </>
   );
 }

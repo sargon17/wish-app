@@ -6,13 +6,16 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import DashboardBoard from "@/components/dashboard/DashboardBoard";
 import { RequestsCreateEditButton } from "@/components/Request/RequestCreateEditDialog";
+import { requestItemFromSearch } from "@/lib/requestDeepLink";
 
 export const Route = createFileRoute("/dashboard/project/$projectId/$slug/requests")({
+  validateSearch: (search) => ({ item: requestItemFromSearch(search.item) }),
   component: ProjectRequestsRoute,
 });
 
 function ProjectRequestsRoute() {
   const { projectId, slug } = Route.useParams();
+  const { item } = Route.useSearch();
   const { type: boardType, switchTo: switchToBoardType } = useBoardType();
 
   return (
@@ -36,7 +39,7 @@ function ProjectRequestsRoute() {
         }
       ></DashboardPage>
       {/*outside page scope for styling purpouses */}
-      <DashboardBoard projectId={projectId as never} boardType={boardType} />
+      <DashboardBoard projectId={projectId as never} boardType={boardType} itemId={item} />
     </>
   );
 }

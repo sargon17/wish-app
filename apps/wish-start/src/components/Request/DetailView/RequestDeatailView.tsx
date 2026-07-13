@@ -24,12 +24,20 @@ import { useRequestStatus } from "@/hooks/useRequestStatus";
 import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
 
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
   request: Doc<"requests">;
   showUpvoteButton?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function RequestDetailView({ children, request, showUpvoteButton = true }: Props) {
+export default function RequestDetailView({
+  children,
+  request,
+  showUpvoteButton = true,
+  open,
+  onOpenChange,
+}: Props) {
   const [activeRequestId, setActiveRequestId] = useState(request._id);
   const requests = useRequests(request.project);
 
@@ -68,10 +76,12 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
   const hasSuggestions = (suggestions?.length ?? 0) > 0;
   const isOriginalRequest = activeRequest._id === request._id;
   return (
-    <Dialog>
-      <DialogTrigger asChild className="cursor-pointer">
-        {children}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children ? (
+        <DialogTrigger asChild className="cursor-pointer">
+          {children}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-106.25 md:max-w-5xl">
         <div
           className={
