@@ -1,16 +1,19 @@
 "use client";
 
 import type { Id } from "@wish/convex-backend/data-model";
-import { CircleDot } from "lucide-react";
+import { Waypoints } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 
+import GitHubWorkTrackerCard from "./GitHubWorkTrackerCard";
 import LinearWorkTrackerCard from "./LinearWorkTrackerCard";
 
 export default function ProjectWorkTrackersManager({
+  githubResult,
   linearResult,
   projectId,
 }: {
+  githubResult?: string;
   linearResult?: string;
   projectId: Id<"projects">;
 }) {
@@ -28,11 +31,12 @@ export default function ProjectWorkTrackersManager({
           variant="outline"
           className="mr-8 border-orange-500/30 text-orange-700 dark:text-orange-300"
         >
-          <CircleDot /> Linear first
+          <Waypoints /> 2 providers
         </Badge>
       </div>
 
       <LinearWorkTrackerCard projectId={projectId} linearResult={linearResult} />
+      <GitHubWorkTrackerCard projectId={projectId} githubResult={githubResult} />
     </div>
   );
 }
