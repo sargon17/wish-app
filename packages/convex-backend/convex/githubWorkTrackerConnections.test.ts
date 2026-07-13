@@ -3,6 +3,7 @@ import { exportPKCS8, generateKeyPair } from "jose";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
+import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import { hashWorkTrackerOAuthState } from "./lib/workTrackerOAuthState";
 import schema from "./schema";
 
@@ -68,6 +69,18 @@ async function seed() {
       user: userId,
       projectSlug: "project",
     });
+    const statusId = await ctx.db.insert("requestStatuses", {
+      name: "open",
+      displayName: "Open",
+      project: projectId,
+      type: "custom",
+    });
+    const requestId = await ctx.db.insert("requests", {
+      text: "Export reports",
+      clientId: "client",
+      status: statusId,
+      project: projectId,
+    });
     const setupId = await ctx.db.insert("workTrackerOAuthSetups", {
       projectId,
       provider: "github",
@@ -85,7 +98,7 @@ async function seed() {
       expiresAt: Date.now() + 60_000,
       consumedAt: 2,
     });
-    return { projectId, setupId, userId };
+    return { projectId, requestId, setupId, userId };
   });
   return { ids, owner: t.withIdentity({ tokenIdentifier: "owner-token" }), t };
 }
@@ -453,6 +466,108 @@ describe("GitHub Work Tracker connections", () => {
         projectId: ids.projectId,
       }),
     ).resolves.toEqual({ disconnected: true });
+  });
+
+  it("blocks destination changes and disconnects while a GitHub Handoff is unresolved", async () => {
+    const { ids, owner, t } = await seed();
+    await owner.mutation(
+      internal.githubWorkTrackerConnections.selectGitHubRepositoryInternal,
+      {
+        projectId: ids.projectId,
+        setupId: ids.setupId,
+        repository: firstRepository,
+        connectionSnapshot: null,
+      },
+    );
+    const connection = await t.run(async (ctx) =>
+      ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", ids.projectId).eq("provider", "github"),
+        )
+        .unique(),
+    );
+    if (!connection) throw new Error("Expected GitHub connection");
+    const handoffId = await t.run(async (ctx) =>
+      ctx.db.insert("workItemHandoffs", {
+        projectId: ids.projectId,
+        requestId: ids.requestId,
+        provider: "github",
+        attemptCount: 1,
+        reconciliationCount: 0,
+        recovery: {
+          provider: "github",
+          installationId: "501",
+          repositoryId: firstRepository.id,
+          repositoryOwner: firstRepository.owner,
+          repositoryName: firstRepository.name,
+          sourceUrl: "https://wish.example/source",
+          startedAt: 1,
+        },
+        lifecycle: { state: "pending", leaseExpiresAt: Date.now() + 60_000 },
+        createdAt: 1,
+        updatedAt: 1,
+      }),
+    );
+    const change = (repository: typeof firstRepository, updatedAt = connection.updatedAt) =>
+      owner.mutation(internal.githubWorkTrackerConnections.changeGitHubRepositoryInternal, {
+        projectId: ids.projectId,
+        connectionId: connection._id,
+        installationId: "501",
+        connectionUpdatedAt: updatedAt,
+        repository,
+      });
+
+    await expect(change(firstRepository)).rejects.toMatchObject({
+      data: unresolvedWorkItemHandoffError,
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.patch(handoffId, { lifecycle: { state: "unknown" } });
+    });
+    await expect(change(firstRepository)).resolves.toEqual({ repository: firstRepository });
+    const updatedConnection = await t.run(async (ctx) => ctx.db.get(connection._id));
+    if (!updatedConnection) throw new Error("Expected GitHub connection");
+    const replacementSetupId = await t.run(async (ctx) =>
+      ctx.db.insert("workTrackerOAuthSetups", {
+        projectId: ids.projectId,
+        provider: "github",
+        stateHash: "replacement-state",
+        data: {
+          provider: "github",
+          stage: "ready",
+          redirectUri: "https://api.example.com/work-trackers/github/callback",
+          installationId: "502",
+          accountLogin: "wishco",
+          repositories: [firstRepository],
+        },
+        createdBy: ids.userId,
+        createdAt: 2,
+        expiresAt: Date.now() + 60_000,
+        consumedAt: 2,
+      }),
+    );
+    await expect(
+      owner.mutation(
+        internal.githubWorkTrackerConnections.selectGitHubRepositoryInternal,
+        {
+          projectId: ids.projectId,
+          setupId: replacementSetupId,
+          repository: firstRepository,
+          connectionSnapshot: {
+            id: updatedConnection._id,
+            updatedAt: updatedConnection.updatedAt,
+          },
+        },
+      ),
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
+    await expect(change(secondRepository, updatedConnection.updatedAt)).rejects.toMatchObject({
+      data: unresolvedWorkItemHandoffError,
+    });
+    await expect(
+      owner.mutation(api.githubWorkTrackerConnections.disconnectGitHub, {
+        projectId: ids.projectId,
+      }),
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
   });
 
   it("marks only the selected repository when GitHub removes access", async () => {

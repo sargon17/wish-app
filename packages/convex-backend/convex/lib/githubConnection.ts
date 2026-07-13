@@ -2,7 +2,7 @@ import { importPKCS8 } from "jose";
 
 import {
   getWorkTrackerEncryptionKey,
-  validateWishAppBaseUrl,
+  getWishAppBaseUrl,
 } from "./workTrackerConfig";
 
 export const GITHUB_SETUP_STATE_TTL_MS = 10 * 60 * 1000;
@@ -58,7 +58,7 @@ export function getGitHubConfig() {
     slug,
     redirectUri: validateGitHubRedirectUri(redirectUri),
     webhookSecret,
-    baseUrl: validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? ""),
+    baseUrl: getWishAppBaseUrl(),
   };
 }
 
@@ -107,4 +107,8 @@ export async function isGitHubConfigured() {
   } catch {
     return false;
   }
+}
+
+export function isGitHubHandoffCreationEnabled() {
+  return process.env.GITHUB_HANDOFF_CREATION_ENABLED?.trim().toLowerCase() === "true";
 }

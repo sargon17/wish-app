@@ -11,6 +11,7 @@ import {
   query,
 } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import { sendGitHubHandoff } from "./lib/githubHandoffDelivery";
 import { sendLinearHandoff } from "./lib/linearHandoffDelivery";
 import {
   WORK_ITEM_HANDOFF_RECONCILIATION_DELAYS_MS,
@@ -190,6 +191,7 @@ export const reserveInternal = internalMutation({
       await ctx.db.patch(existing._id, {
         attemptCount,
         reconciliationCount: 0,
+        recovery: args.recovery,
         lifecycle,
         updatedAt: now,
       });
@@ -389,6 +391,8 @@ export const send = action({
     switch (args.provider) {
       case "linear":
         return await sendLinearHandoff(ctx, args);
+      case "github":
+        return await sendGitHubHandoff(ctx, args);
     }
   },
 });
@@ -405,6 +409,8 @@ export const reconcileInternal = internalAction({
     switch (handoff.provider) {
       case "linear":
         return await ctx.runAction(internal.linearWorkItemHandoffs.reconcileInternal, args);
+      case "github":
+        return await ctx.runAction(internal.githubWorkItemHandoffs.reconcileInternal, args);
     }
   },
 });

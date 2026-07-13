@@ -2,12 +2,19 @@ import { importPKCS8, SignJWT } from "jose";
 
 import type { getGitHubAppAuthConfig } from "./githubConnection";
 
-const GITHUB_API_URL = "https://api.github.com";
+export const GITHUB_API_URL = "https://api.github.com";
 const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
-const GITHUB_API_VERSION = "2026-03-10";
-const GITHUB_TIMEOUT_MS = 10_000;
+export const GITHUB_API_VERSION = "2026-03-10";
+export const GITHUB_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 1_000_000;
 const MAX_PAGES = 10;
+
+export class GitHubInstallationTokenError extends Error {
+  constructor(public readonly needsAttention: boolean) {
+    super("GitHub installation token request failed");
+    this.name = "GitHubInstallationTokenError";
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -23,7 +30,7 @@ function readId(value: unknown) {
     : null;
 }
 
-async function readGitHubJson(response: Response) {
+export async function readGitHubJson(response: Response) {
   const contentLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
     throw new Error("GitHub response exceeded the size limit");
@@ -51,13 +58,22 @@ async function readGitHubJson(response: Response) {
   }
 }
 
-function githubHeaders(token: string) {
+export function githubHeaders(token: string) {
   return {
     accept: "application/vnd.github+json",
     authorization: `Bearer ${token}`,
     "x-github-api-version": GITHUB_API_VERSION,
     "user-agent": "Wish-Work-Tracker",
   };
+}
+
+export function isGitHubRateLimitedResponse(response: Response) {
+  return (
+    response.status === 429 ||
+    (response.status === 403 &&
+      (response.headers.get("x-ratelimit-remaining") === "0" ||
+        response.headers.has("retry-after")))
+  );
 }
 
 async function githubGet(path: string, token: string) {
@@ -308,7 +324,12 @@ export async function createGitHubInstallationToken(args: {
       signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
     },
   );
-  if (!response.ok) throw new Error("GitHub installation token request failed");
+  if (!response.ok) {
+    throw new GitHubInstallationTokenError(
+      !isGitHubRateLimitedResponse(response) &&
+        (response.status === 403 || response.status === 404 || response.status === 410),
+    );
+  }
   const value = await readGitHubJson(response);
   const token = isRecord(value) ? readString(value.token) : null;
   if (!token) throw new Error("Invalid GitHub installation token response");
