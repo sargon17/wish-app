@@ -4,23 +4,62 @@ import { useLocation, useRouter } from "@tanstack/react-router";
 import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
 import { useAction, useQuery } from "convex/react";
-import { ExternalLink, RefreshCw, Send, Settings2, Wrench } from "lucide-react";
+import {
+  ChartNoAxesGantt,
+  ChevronDown,
+  ExternalLink,
+  Github,
+  RefreshCw,
+  Send,
+  Settings2,
+  Wrench,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { getWorkItemHandoffAction } from "@/lib/workItemHandoffUi";
 import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
-function errorMessage(error: unknown, fallback: string) {
-  return getWorkTrackerError(error)?.message ?? fallback;
+function providerDetails(provider: Doc<"workItemHandoffs">["provider"]) {
+  switch (provider) {
+    case "linear":
+      return { label: "Linear", issueLabel: "Linear issue", Icon: ChartNoAxesGantt };
+    case "github":
+      return { label: "GitHub Issues", issueLabel: "GitHub issue", Icon: Github };
+  }
+}
+
+function actionIcon(action: ReturnType<typeof getWorkItemHandoffAction>) {
+  switch (action) {
+    case "connect":
+      return Settings2;
+    case "fix":
+      return Wrench;
+    case "checking":
+      return RefreshCw;
+    case "open":
+      return ExternalLink;
+    case "retry":
+    case "send":
+      return Send;
+  }
 }
 
 function showHandoffResult(handoff: Doc<"workItemHandoffs">) {
+  const details = providerDetails(handoff.provider);
   if (handoff.lifecycle.state === "succeeded") {
     const issue = handoff.lifecycle.externalIdentity;
-    toast.success("Linear issue ready", {
+    toast.success(`${details.issueLabel} ready`, {
       description: (
         <a
           href={issue.url}
@@ -36,17 +75,18 @@ function showHandoffResult(handoff: Doc<"workItemHandoffs">) {
     return;
   }
   if (handoff.lifecycle.state === "failed") {
-    toast.error(handoff.lifecycle.errorMessage);
+    toast.error(
+      handoff.lifecycle.errorMessage ?? `Could not create the ${details.issueLabel}`,
+    );
     return;
   }
   if (handoff.lifecycle.state === "unknown") {
-    toast.warning("Linear delivery is being checked", {
-      description:
-        "Wish will not send the issue twice while the outcome is uncertain.",
+    toast.warning(`${details.label} delivery is being checked`, {
+      description: "Wish will not send the issue twice while the outcome is uncertain.",
     });
     return;
   }
-  toast.message("Creating Linear issue");
+  toast.message(`Creating ${details.issueLabel}`);
 }
 
 export default function WorkItemHandoffAction({
@@ -54,7 +94,74 @@ export default function WorkItemHandoffAction({
 }: {
   request: Doc<"requests">;
 }) {
-  const provider = "linear" as const;
+  const location = useLocation();
+  const router = useRouter();
+  const [workingProviders, setWorkingProviders] = useState({
+    github: false,
+    linear: false,
+  });
+
+  function openSettings() {
+    const search = new URLSearchParams(location.searchStr);
+    search.set("settings", "work-trackers");
+    router.history.push(`${location.pathname}?${search.toString()}`);
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" size="sm" variant="outline">
+          <Send /> Work trackers <ChevronDown className="size-3.5 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel>
+          <span className="block">External work items</span>
+          <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+            Choose exactly where to send this item.
+          </span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <ProviderHandoffItem
+          request={request}
+          provider="linear"
+          openSettings={openSettings}
+          working={workingProviders.linear}
+          onWorkingChange={(working) =>
+            setWorkingProviders((current) => ({ ...current, linear: working }))
+          }
+        />
+        <ProviderHandoffItem
+          request={request}
+          provider="github"
+          openSettings={openSettings}
+          working={workingProviders.github}
+          onWorkingChange={(working) =>
+            setWorkingProviders((current) => ({ ...current, github: working }))
+          }
+        />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={openSettings}>
+          <Settings2 /> Manage Work Trackers
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ProviderHandoffItem({
+  onWorkingChange,
+  openSettings,
+  provider,
+  request,
+  working,
+}: {
+  onWorkingChange: (working: boolean) => void;
+  openSettings: () => void;
+  provider: Doc<"workItemHandoffs">["provider"];
+  request: Doc<"requests">;
+  working: boolean;
+}) {
   const surface = useQuery(api.workItemHandoffs.getSurface, {
     projectId: request.project,
     requestId: request._id,
@@ -62,15 +169,15 @@ export default function WorkItemHandoffAction({
   });
   const sendHandoff = useAction(api.workItemHandoffs.send);
   const checkHandoff = useAction(api.workItemHandoffs.check);
-  const location = useLocation();
-  const router = useRouter();
-  const [working, setWorking] = useState(false);
+  const details = providerDetails(provider);
 
   if (!surface) {
     return (
-      <Button type="button" size="sm" variant="outline" disabled>
-        <Spinner /> Loading Linear
-      </Button>
+      <DropdownMenuItem disabled className="py-2.5">
+        <details.Icon />
+        <span className="flex-1">Loading {details.label}</span>
+        <Spinner />
+      </DropdownMenuItem>
     );
   }
 
@@ -80,92 +187,85 @@ export default function WorkItemHandoffAction({
       ? surface.handoff.lifecycle.externalIdentity
       : undefined;
 
-  function openSettings() {
-    const search = new URLSearchParams(location.searchStr);
-    search.set("settings", "work-trackers");
-    router.history.push(`${location.pathname}?${search.toString()}`);
-  }
-
-  async function send() {
-    setWorking(true);
-    try {
-      const result = await sendHandoff({
-        projectId: request.project,
-        requestId: request._id,
-        provider,
-      });
-      showHandoffResult(result);
-    } catch (error) {
-      toast.error(errorMessage(error, "Could not send this item to Linear"));
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function check() {
-    setWorking(true);
-    try {
-      const result = await checkHandoff({
-        projectId: request.project,
-        requestId: request._id,
-        provider,
-      });
-      if (result) showHandoffResult(result);
-    } catch (error) {
-      toast.error(errorMessage(error, "Could not check the Linear issue"));
-    } finally {
-      setWorking(false);
-    }
-  }
-
   if (action === "open" && issue) {
     return (
-      <Button size="sm" variant="outline" asChild>
+      <DropdownMenuItem asChild className="py-2.5">
         <a href={issue.url} target="_blank" rel="noreferrer">
-          {issue.identifier} <ExternalLink />
+          <details.Icon />
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">{details.label}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              Open {issue.identifier}
+            </span>
+          </span>
+          <ExternalLink />
         </a>
-      </Button>
+      </DropdownMenuItem>
     );
   }
 
-  if (action === "connect" || action === "fix") {
-    return (
-      <Button type="button" size="sm" variant="outline" onClick={openSettings}>
-        {action === "connect" ? <Settings2 /> : <Wrench />}
-        {action === "connect" ? "Connect Linear" : "Fix Linear"}
-      </Button>
-    );
+  const pending = surface.handoff?.lifecycle.state === "pending";
+
+  async function run() {
+    if (action === "connect" || action === "fix") {
+      openSettings();
+      return;
+    }
+    if (working) return;
+    onWorkingChange(true);
+    try {
+      const result =
+        action === "checking"
+          ? await checkHandoff({
+              projectId: request.project,
+              requestId: request._id,
+              provider,
+            })
+          : await sendHandoff({
+              projectId: request.project,
+              requestId: request._id,
+              provider,
+            });
+      if (result) showHandoffResult(result);
+    } catch (error) {
+      const message = getWorkTrackerError(error)?.message ??
+        `Could not ${action === "checking" ? "check" : "send"} the ${details.issueLabel}`;
+      toast.error(message);
+    } finally {
+      onWorkingChange(false);
+    }
   }
 
-  if (action === "checking") {
-    const pending = surface.handoff?.lifecycle.state === "pending";
-    return (
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        disabled={working || pending}
-        onClick={() => void check()}
-      >
-        {working || pending ? <Spinner /> : <RefreshCw />}
-        {working || pending ? "Checking Linear" : "Check Linear"}
-      </Button>
-    );
-  }
+  const description = (() => {
+    switch (action) {
+      case "connect":
+        return "Connect this provider to send";
+      case "fix":
+        return "Connection needs attention";
+      case "checking":
+        return pending ? "Creation is in progress" : "Outcome uncertain — check now";
+      case "retry":
+        return "Previous attempt failed — retry";
+      case "send":
+        return `Send to ${surface.connection?.destinationLabel}`;
+      case "open":
+        return "Open external issue";
+    }
+  })();
+  const StatusIcon = actionIcon(action);
 
   return (
-    <Button
-      type="button"
-      size="sm"
-      disabled={working}
-      onClick={() => void send()}
+    <DropdownMenuItem
+      disabled={working || pending}
+      className="py-2.5"
+      onSelect={() => void run()}
     >
-      {working ? <Spinner /> : <Send />}
-      {working
-        ? "Sending"
-        : action === "retry"
-          ? "Retry Linear"
-          : "Send to Linear"}
-    </Button>
+      <details.Icon />
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium">{details.label}</span>
+        <span className="block truncate text-xs text-muted-foreground">{description}</span>
+      </span>
+      {working ? <Spinner /> : <StatusIcon />}
+    </DropdownMenuItem>
   );
 }
