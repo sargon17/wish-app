@@ -1,6 +1,6 @@
 import {
   getWorkTrackerEncryptionKey,
-  validateWishAppBaseUrl,
+  getWishAppBaseUrl,
 } from "./workTrackerConfig";
 
 export const LINEAR_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
@@ -35,13 +35,12 @@ export function getLinearConfig() {
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Linear OAuth is not configured");
   }
-  const baseUrl = validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
   return {
     clientId,
     clientSecret,
     redirectUri: validateLinearRedirectUri(redirectUri),
     encryptionKey: getWorkTrackerEncryptionKey(),
-    baseUrl,
+    baseUrl: getWishAppBaseUrl(),
   };
 }
 

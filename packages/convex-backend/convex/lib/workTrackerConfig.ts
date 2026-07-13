@@ -27,3 +27,7 @@ export function getWorkTrackerEncryptionKey() {
   if (!encryptionKey) throw new Error("Work Tracker encryption key is not configured");
   return validateWorkTrackerEncryptionKey(encryptionKey);
 }
+
+export function getWishAppBaseUrl() {
+  return validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
+}

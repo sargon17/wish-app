@@ -6,6 +6,7 @@ import {
   getGitHubConfig,
   getGitHubWebhookConfig,
   isGitHubConfigured,
+  isGitHubHandoffCreationEnabled,
   validateGitHubRedirectUri,
 } from "./githubConnection";
 
@@ -77,4 +78,9 @@ describe("GitHub App configuration", () => {
     expect(getGitHubAppAuthConfig()).toMatchObject({ clientId: "Iv1.client" });
   });
 
+  it("enables issue creation only for an explicit true value", () => {
+    expect(isGitHubHandoffCreationEnabled()).toBe(false);
+    vi.stubEnv("GITHUB_HANDOFF_CREATION_ENABLED", " TRUE ");
+    expect(isGitHubHandoffCreationEnabled()).toBe(true);
+  });
 });

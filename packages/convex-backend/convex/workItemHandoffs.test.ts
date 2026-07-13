@@ -424,6 +424,12 @@ describe("Work Item Handoff delivery lifecycle", () => {
     ]);
 
     expect(second.handoff._id).toBe(first.handoff._id);
+    if (
+      first.handoff.recovery.provider !== "linear" ||
+      second.handoff.recovery.provider !== "linear"
+    ) {
+      throw new Error("Expected Linear recovery data");
+    }
     expect(second.handoff.recovery.issueId).toBe(first.handoff.recovery.issueId);
     expect([first.shouldSend, second.shouldSend].sort()).toEqual([false, true]);
     expect(
@@ -431,7 +437,7 @@ describe("Work Item Handoff delivery lifecycle", () => {
     ).toHaveLength(1);
   });
 
-  it("retries a definite failure with the same provider id", async () => {
+  it("retries a definite failure with fresh recovery data", async () => {
     const { ids, owner } = await seed();
     const first = await owner.mutation(
       internal.workItemHandoffs.reserveInternal,
@@ -450,7 +456,10 @@ describe("Work Item Handoff delivery lifecycle", () => {
     );
     expect(retry.shouldSend).toBe(true);
     expect(retry.handoff.attemptCount).toBe(2);
-    expect(retry.handoff.recovery.issueId).toBe("stable-issue-id");
+    if (retry.handoff.recovery.provider !== "linear") {
+      throw new Error("Expected Linear recovery data");
+    }
+    expect(retry.handoff.recovery.issueId).toBe("different-issue-id");
   });
 
   it("moves an expired pending attempt to unknown instead of retrying creation", async () => {

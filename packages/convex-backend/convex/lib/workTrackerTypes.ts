@@ -5,7 +5,10 @@ export const workTrackerConnectionProviderValidator = v.union(
   v.literal("github"),
 );
 
-export const workTrackerProviderValidator = v.literal("linear");
+export const workTrackerProviderValidator = v.union(
+  v.literal("linear"),
+  v.literal("github"),
+);
 
 export const workTrackerConnectionHealthValidator = v.union(
   v.literal("active"),
@@ -118,17 +121,39 @@ export const workTrackerOAuthSetupDataValidator = v.union(
   }),
 );
 
-export const workItemHandoffRecoveryValidator = v.object({
-  provider: v.literal("linear"),
-  issueId: v.string(),
-});
+export const workItemHandoffRecoveryValidator = v.union(
+  v.object({
+    provider: v.literal("linear"),
+    issueId: v.string(),
+  }),
+  v.object({
+    provider: v.literal("github"),
+    installationId: v.string(),
+    repositoryId: v.string(),
+    repositoryOwner: v.string(),
+    repositoryName: v.string(),
+    sourceUrl: v.string(),
+    startedAt: v.number(),
+  }),
+);
 
-export const externalWorkItemIdentityValidator = v.object({
-  provider: v.literal("linear"),
-  id: v.string(),
-  identifier: v.string(),
-  url: v.string(),
-});
+export const externalWorkItemIdentityValidator = v.union(
+  v.object({
+    provider: v.literal("linear"),
+    id: v.string(),
+    identifier: v.string(),
+    url: v.string(),
+  }),
+  v.object({
+    provider: v.literal("github"),
+    id: v.string(),
+    nodeId: v.string(),
+    number: v.number(),
+    repositoryId: v.string(),
+    identifier: v.string(),
+    url: v.string(),
+  }),
+);
 
 const handoffErrorFields = {
   errorCode: v.optional(v.string()),
