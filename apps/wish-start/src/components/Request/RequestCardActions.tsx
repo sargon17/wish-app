@@ -4,6 +4,7 @@ import type { Doc } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
 import { Button } from "../ui/button";
 import {
@@ -24,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { Spinner } from "../ui/spinner";
 
 import RequestCreateEditDialog from "./RequestCreateEditDialog";
 
@@ -39,11 +42,27 @@ export default function RequestCardActions({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const deleteProject = useMutation(api.requests.deleteRequest);
+  const [deleting, setDeleting] = useState(false);
+  const deleteRequest = useMutation(api.requests.deleteRequest);
 
-  const handleSubmit = () => {
-    deleteProject({ id: request._id });
-    setIsOpen(false);
+  const handleSubmit = async () => {
+    setDeleting(true);
+    try {
+      await deleteRequest({ id: request._id });
+      setIsOpen(false);
+      toast.success(`${label} deleted`);
+    } catch (error) {
+      const workTrackerError = getWorkTrackerError(error);
+      if (workTrackerError) {
+        toast.error(`${label} cannot be deleted yet`, {
+          description: workTrackerError.message,
+        });
+      } else {
+        toast.error(`Could not delete ${label.toLowerCase()}`);
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -101,12 +120,13 @@ export default function RequestCardActions({
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" disabled={deleting}>
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" variant="destructive">
-                Delete
+              <Button type="submit" variant="destructive" disabled={deleting}>
+                {deleting ? <Spinner /> : null}
+                {deleting ? "Deleting" : "Delete"}
               </Button>
             </DialogFooter>
           </form>

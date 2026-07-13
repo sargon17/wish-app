@@ -3,6 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import { serializeCredentials } from "./lib/linearConnection";
+import {
+  handoffCreationDisabledError,
+  unresolvedWorkItemHandoffError,
+  workTrackerConnectionNeedsAttentionError,
+} from "./lib/workTrackerErrors";
 import { encryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 import schema from "./schema";
 
@@ -117,6 +122,21 @@ async function configureLinearDelivery(
 }
 
 describe("Work Item Handoff delivery lifecycle", () => {
+  it("returns provider-neutral connection and Handoff facts", async () => {
+    const { ids, owner } = await seed();
+
+    await expect(
+      owner.query(api.workItemHandoffs.getSurface, {
+        projectId: ids.projectId,
+        requestId: ids.requestId,
+        provider: "linear",
+      }),
+    ).resolves.toEqual({
+      connection: { health: "active", destinationLabel: "Engineering" },
+      handoff: null,
+    });
+  });
+
   it("sends once through the provider-neutral action and persists the Linear link", async () => {
     const { ids, owner, t } = await seed();
     await configureLinearDelivery(t, ids);
@@ -179,10 +199,22 @@ describe("Work Item Handoff delivery lifecycle", () => {
         requestId: ids.requestId,
         provider: "linear",
       }),
-    ).rejects.toThrow("Linear Handoff creation is disabled");
+    ).rejects.toMatchObject({ data: handoffCreationDisabledError });
     expect(await t.run(async (ctx) => await ctx.db.query("workItemHandoffs").collect())).toEqual(
       [],
     );
+
+    await configureLinearDelivery(t, ids);
+    await t.run(async (ctx) => {
+      await ctx.db.patch(ids.connectionId, { health: "needs_attention" });
+    });
+    await expect(
+      owner.action(api.workItemHandoffs.send, {
+        projectId: ids.projectId,
+        requestId: ids.requestId,
+        provider: "linear",
+      }),
+    ).rejects.toMatchObject({ data: workTrackerConnectionNeedsAttentionError });
   });
 
   it("never repeats creation after an uncertain provider outcome", async () => {
@@ -549,9 +581,15 @@ describe("Work Item Handoff delivery lifecycle", () => {
     );
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    await expect(owner.mutation(api.requests.deleteRequest, { id: ids.requestId })).rejects.toThrow(
-      "Failed to delete request",
-    );
+    await expect(owner.mutation(api.requests.deleteRequest, { id: ids.requestId })).rejects.toMatchObject({
+      data: unresolvedWorkItemHandoffError,
+    });
+    await expect(
+      owner.mutation(internal.requests.deleteRequestByApiKeyInternal, {
+        id: ids.requestId,
+        projectId: ids.projectId,
+      }),
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
     await owner.mutation(internal.workItemHandoffs.completeFailedInternal, {
       handoffId: reservation.handoff._id,
       attemptCount: 1,

@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
@@ -8,6 +8,7 @@ import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestIn
 import { getRequestKind } from "./lib/requestKind";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { isHandoffBlocking } from "./lib/workItemHandoff";
+import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
@@ -32,7 +33,7 @@ async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
     .withIndex("by_request", (q) => q.eq("requestId", id))
     .collect();
   if (handoffs.some((handoff) => isHandoffBlocking(handoff.lifecycle.state))) {
-    throw new Error("Request cannot be deleted while a Work Item Handoff is unresolved");
+    throw new ConvexError(unresolvedWorkItemHandoffError);
   }
 
   await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
@@ -220,6 +221,7 @@ export const deleteRequest = mutation({
       await assertProjectOwner(ctx, request.project, user._id);
       await deleteRequestCascade(ctx, args.id);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete request");
     }
@@ -240,6 +242,7 @@ export const deleteRequestByApiKeyInternal = internalMutation({
 
       await deleteRequestCascade(ctx, args.id);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete request");
     }

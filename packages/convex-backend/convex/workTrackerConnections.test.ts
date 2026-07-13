@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import { parseStoredCredentials } from "./lib/linearConnection";
+import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import schema from "./schema";
 
 const modules = {
@@ -244,14 +245,14 @@ describe("Work Tracker connections", () => {
         setupId: ids.setupId,
         teamId: "team-2",
       }),
-    ).rejects.toThrow("Work Tracker change is blocked");
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
     await expect(
       owner.mutation(internal.workTrackerConnections.beginLinearDisconnectInternal, {
         projectId: ids.projectId,
         leaseId: "disconnect",
         now: Date.now(),
       }),
-    ).rejects.toThrow("Work Tracker change is blocked");
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
   });
 
   it("blocks same-destination credential replacement while a Handoff is pending", async () => {
@@ -287,7 +288,7 @@ describe("Work Tracker connections", () => {
         setupId: ids.setupId,
         teamId: "team-1",
       }),
-    ).rejects.toThrow("Work Tracker change is blocked");
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
   });
 
   it("allows same-destination credential repair for an unknown Handoff", async () => {
@@ -508,7 +509,7 @@ describe("Work Tracker connections", () => {
         leaseId: "disconnect-second",
         now: Date.now(),
       }),
-    ).rejects.toThrow("Work Tracker change is blocked");
+    ).rejects.toMatchObject({ data: unresolvedWorkItemHandoffError });
   });
 
   it("clears an expired refresh lease and restores Handoff reservation", async () => {
