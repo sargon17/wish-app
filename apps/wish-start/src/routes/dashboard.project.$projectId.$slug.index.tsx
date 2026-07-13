@@ -5,6 +5,7 @@ export const Route = createFileRoute("/dashboard/project/$projectId/$slug/")({
     throw redirect({
       to: "/dashboard/project/$projectId/$slug/requests",
       params,
+      search: { item: undefined },
     });
   },
 });
