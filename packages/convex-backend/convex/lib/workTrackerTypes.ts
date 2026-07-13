@@ -12,23 +12,70 @@ const encryptedCredentialsValidator = v.object({
   iv: v.string(),
 });
 
+const linearOrganizationValidator = v.object({
+  id: v.string(),
+  name: v.string(),
+  urlKey: v.string(),
+});
+
+const linearTeamValidator = v.object({
+  id: v.string(),
+  key: v.string(),
+  name: v.string(),
+});
+
 export const workTrackerConnectionDataValidator = v.object({
   provider: v.literal("linear"),
   organizationId: v.string(),
   organizationName: v.string(),
+  organizationUrlKey: v.string(),
   teamId: v.string(),
+  teamKey: v.string(),
   teamName: v.string(),
   encryptedCredentials: encryptedCredentialsValidator,
-});
-
-export const workTrackerOAuthSetupDataValidator = v.object({
-  provider: v.literal("linear"),
-  authorization: v.optional(
+  credentialLease: v.optional(
+    v.object({
+      id: v.string(),
+      expiresAt: v.number(),
+    }),
+  ),
+  pendingRevocation: v.optional(
     v.object({
       encryptedCredentials: encryptedCredentialsValidator,
+      retryAt: v.number(),
     }),
   ),
 });
+
+export const workTrackerOAuthSetupDataValidator = v.union(
+  v.object({
+    provider: v.literal("linear"),
+    stage: v.literal("pending"),
+    redirectUri: v.string(),
+  }),
+  v.object({
+    provider: v.literal("linear"),
+    stage: v.literal("exchanged"),
+    redirectUri: v.string(),
+    encryptedCredentials: encryptedCredentialsValidator,
+  }),
+  v.object({
+    provider: v.literal("linear"),
+    stage: v.literal("ready"),
+    redirectUri: v.string(),
+    encryptedCredentials: encryptedCredentialsValidator,
+    authorization: v.object({
+      organization: linearOrganizationValidator,
+      teams: v.array(linearTeamValidator),
+    }),
+  }),
+  v.object({
+    provider: v.literal("linear"),
+    stage: v.literal("discarding"),
+    redirectUri: v.string(),
+    encryptedCredentials: encryptedCredentialsValidator,
+  }),
+);
 
 export const workItemHandoffRecoveryValidator = v.object({
   provider: v.literal("linear"),

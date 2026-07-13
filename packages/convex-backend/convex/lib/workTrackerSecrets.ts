@@ -14,6 +14,11 @@ function decodeEncryptionKey(value: string) {
   throw new Error("Work Tracker encryption key must be 32 bytes encoded as base64");
 }
 
+export function validateWorkTrackerEncryptionKey(value: string) {
+  decodeEncryptionKey(value);
+  return value;
+}
+
 function encodeBase64(value: Uint8Array) {
   return btoa(String.fromCharCode(...value));
 }

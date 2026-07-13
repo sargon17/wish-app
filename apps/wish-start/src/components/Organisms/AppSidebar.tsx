@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams } from "@tanstack/react-router";
+import { Link, useLocation, useParams, useRouter } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -14,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 
 import ProjectSettings from "@/components/project/ProjectSettings";
+import { parseLinearCallbackResult } from "@/lib/linearWorkTrackerUi";
 import {
   Sidebar,
   SidebarContent,
@@ -75,11 +76,29 @@ interface Props {
 
 export function AppSidebar({ footer }: Props) {
   const { projectId, slug } = useParams({ strict: false });
+  const location = useLocation();
+  const router = useRouter();
+  const search = new URLSearchParams(location.searchStr);
 
   return (
     <Sidebar variant="floating" className="z-20">
       <SidebarContent>
-        {projectId && slug ? <ProjectNav projectId={projectId} slug={slug} /> : <GlobalNav />}
+        {projectId && slug ? (
+          <ProjectNav
+            projectId={projectId}
+            slug={slug}
+            requestedSettings={search.get("settings") === "work-trackers" ? "work-trackers" : undefined}
+            linearResult={parseLinearCallbackResult(search.get("linear"))}
+            onSettingsClose={() => {
+              search.delete("settings");
+              search.delete("linear");
+              const suffix = search.toString();
+              router.history.replace(`${location.pathname}${suffix ? `?${suffix}` : ""}`);
+            }}
+          />
+        ) : (
+          <GlobalNav />
+        )}
       </SidebarContent>
       <SidebarFooter>{footer}</SidebarFooter>
     </Sidebar>
@@ -108,7 +127,19 @@ function GlobalNav() {
   );
 }
 
-function ProjectNav({ projectId, slug }: { projectId: string; slug: string }) {
+function ProjectNav({
+  linearResult,
+  onSettingsClose,
+  projectId,
+  requestedSettings,
+  slug,
+}: {
+  linearResult?: string;
+  onSettingsClose: () => void;
+  projectId: string;
+  requestedSettings?: string;
+  slug: string;
+}) {
   const { pathname } = useLocation();
   const base = `/dashboard/project/${projectId}/${slug}`;
 
@@ -146,7 +177,12 @@ function ProjectNav({ projectId, slug }: { projectId: string; slug: string }) {
               </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-              <ProjectSettings projectID={projectId as never}>
+              <ProjectSettings
+                projectID={projectId as never}
+                requestedSection={requestedSettings}
+                linearResult={linearResult}
+                onUrlClose={onSettingsClose}
+              >
                 <SidebarMenuButton>
                   <Cog />
                   <span>Settings</span>

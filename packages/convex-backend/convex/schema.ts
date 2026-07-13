@@ -130,7 +130,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_project", ["projectId"])
-    .index("by_project_provider", ["projectId", "provider"]),
+    .index("by_project_provider", ["projectId", "provider"])
+    .index("by_pending_revocation", ["data.pendingRevocation.retryAt"]),
 
   workTrackerOAuthSetups: defineTable({
     projectId: v.id("projects"),
