@@ -35,6 +35,10 @@ type RequestEntry = {
   createdAt: number;
 };
 
+function getRequestSearchText(request: RequestEntry) {
+  return [request.title, request.description, request.status?.name];
+}
+
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: requests, byId, byStatus, isPending } = useRequests(projectId, kind);
   const { value: statuses, byId: statusesById } = useStatuses(projectId);
@@ -260,7 +264,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         columns={columns}
         getRowId={(row) => row._id}
         initialSorting={[{ id: "title", desc: true }]}
-        getSearchText={(row) => [row.title, row.description, row.status?.name]}
+        getSearchText={getRequestSearchText}
         rowSelection={rowSelection}
         onRowSelectionChange={handleRowSelectionChange}
         searchPlaceholder="Search requests"
