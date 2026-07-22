@@ -3,9 +3,10 @@ import useStatuses from "#/hooks/useStatuses";
 import { trimTo } from "#/lib/text.ts";
 import SortButton from "@components/atoms/SortButton";
 import { Checkbox } from "@components/ui/checkbox";
-import { type ColumnDef, type RowSelectionState } from "@tanstack/react-table";
+import { type ColumnDef, type OnChangeFn, type RowSelectionState } from "@tanstack/react-table";
 import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
+import { MAX_BULK_REQUESTS } from "@wish/convex-backend/request-limits";
 import { useMutation } from "convex/react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -42,6 +43,15 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const selectedIds = (requests ?? [])
     .filter((request) => rowSelection[request._id])
     .map((request) => request._id);
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (updater) => {
+    setRowSelection((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater;
+      const selected = Object.keys(next).filter((id) => next[id]);
+      if (selected.length <= MAX_BULK_REQUESTS) return next;
+
+      return Object.fromEntries(selected.slice(0, MAX_BULK_REQUESTS).map((id) => [id, true]));
+    });
+  };
 
   const handleBulkStatusChange = async (status: Id<"requestStatuses">) => {
     if (bulkMutationInFlight.current || selectedIds.length === 0) return;
@@ -123,9 +133,12 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         ),
         cell: ({ row }) => (
           <Checkbox
-            aria-label={`Select ${kind === "complaint" ? "complaint" : "request"}`}
+            aria-label={`Select ${kind === "complaint" ? "complaint" : "request"} ${row.original.title}`}
             checked={row.getIsSelected()}
-            disabled={isBulkMutationPending}
+            disabled={
+              isBulkMutationPending ||
+              (!row.getIsSelected() && selectedIds.length >= MAX_BULK_REQUESTS)
+            }
             onCheckedChange={(value) => row.toggleSelected(!!value)}
           />
         ),
@@ -186,7 +199,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
     ],
-    [byId, isBulkMutationPending, kind],
+    [byId, isBulkMutationPending, kind, selectedIds.length],
   );
 
   // empty
@@ -215,7 +228,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         getFilterText={(row) => [row.status?.name]}
         filters={filters}
         rowSelection={rowSelection}
-        onRowSelectionChange={setRowSelection}
+        onRowSelectionChange={handleRowSelectionChange}
       />
     </div>
   );

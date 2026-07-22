@@ -6,6 +6,7 @@ import { internalMutation, internalQuery, mutation, query } from "./_generated/s
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { getRequestKind } from "./lib/requestKind";
+import { MAX_BULK_REQUESTS } from "./lib/requestLimits";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { emitNotificationEvent } from "./notificationEvents";
 
@@ -18,6 +19,9 @@ export async function getBulkRequests(
   const uniqueIds = [...new Set(ids)];
   if (uniqueIds.length === 0) {
     throw new Error("Select at least one request");
+  }
+  if (uniqueIds.length > MAX_BULK_REQUESTS) {
+    throw new Error(`Select no more than ${MAX_BULK_REQUESTS} requests`);
   }
 
   const requests = await Promise.all(uniqueIds.map((id) => ctx.db.get(id)));

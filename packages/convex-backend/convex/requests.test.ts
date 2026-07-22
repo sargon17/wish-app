@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { Doc, Id } from "./_generated/dataModel";
+import { MAX_BULK_REQUESTS } from "./lib/requestLimits";
 import { deleteOwnedRequests, getBulkRequests, updateRequestStatuses } from "./requests";
 
 const projectId = "project-1" as Id<"projects">;
@@ -46,10 +47,15 @@ function mutationContext(records: Record<string, unknown>) {
             return {
               collect: async () =>
                 Object.values(records).filter((record) => {
-                  if (!record || typeof record !== "object" || !("requestId" in record)) {
+                  if (
+                    !record ||
+                    typeof record !== "object" ||
+                    !("requestId" in record) ||
+                    !("table" in record)
+                  ) {
                     return false;
                   }
-                  return record.requestId === indexedValue;
+                  return record.table === table && record.requestId === indexedValue;
                 }),
               unique: async () => (table === "users" ? records.user : null),
             };
@@ -83,6 +89,15 @@ describe("bulk request validation", () => {
     await expect(
       getBulkRequests(context([first, otherProject]), [first._id, otherProject._id]),
     ).rejects.toThrow("same project");
+    await expect(
+      getBulkRequests(
+        context([]),
+        Array.from(
+          { length: MAX_BULK_REQUESTS + 1 },
+          (_, index) => `request-${index}` as Id<"requests">,
+        ),
+      ),
+    ).rejects.toThrow(`no more than ${MAX_BULK_REQUESTS}`);
   });
 
   it("updates every selected Request after validating the Project Board and Status", async () => {
@@ -159,8 +174,18 @@ describe("bulk request validation", () => {
       [first._id]: first,
       [second._id]: second,
       [projectId]: { _id: projectId, user: "user-1" },
-      upvote: { _id: "upvote-1", requestId: first._id, user: "user-2" },
-      comment: { _id: "comment-1", requestId: first._id, message: "Comment" },
+      upvote: {
+        _id: "upvote-1",
+        requestId: first._id,
+        table: "requestUpvotes",
+        user: "user-2",
+      },
+      comment: {
+        _id: "comment-1",
+        message: "Comment",
+        requestId: first._id,
+        table: "requestComments",
+      },
     });
 
     await deleteOwnedRequests(ctx, [first._id, second._id]);
@@ -169,6 +194,7 @@ describe("bulk request validation", () => {
     expect(remove).toHaveBeenCalledWith("comment-1");
     expect(remove).toHaveBeenCalledWith(first._id);
     expect(remove).toHaveBeenCalledWith(second._id);
+    expect(remove).toHaveBeenCalledTimes(4);
   });
 
   it("performs no deletes when ownership or request validation fails", async () => {
