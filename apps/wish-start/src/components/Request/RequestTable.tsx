@@ -3,17 +3,24 @@ import useStatuses from "#/hooks/useStatuses";
 import { trimTo } from "#/lib/text.ts";
 import SortButton from "@components/atoms/SortButton";
 import { Checkbox } from "@components/ui/checkbox";
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type OnChangeFn, type RowSelectionState } from "@tanstack/react-table";
+import { api } from "@wish/convex-backend/api";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
-import { useMemo } from "react";
+import { MAX_BULK_REQUESTS } from "@wish/convex-backend/request-limits";
+import { useMutation } from "convex/react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
+import { formatDate } from "@/lib/time";
 
 import EntityTable from "../molecules/EntityTable";
 import StatusChip from "../Status/StatusChip";
 
 import RequestDetailView from "./DetailView/RequestDeatailView";
+import { RequestBulkActions } from "./RequestBulkActions";
 import RequestsEmpty from "./RequestsEmpty";
+import RequestTableFilters from "./RequestTableFilters";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
@@ -25,11 +32,78 @@ type RequestEntry = {
   title: Doc<"requests">["text"];
   description?: Doc<"requests">["description"];
   status?: Doc<"requestStatuses">;
+  createdAt: number;
 };
+
+function getRequestSearchText(request: RequestEntry) {
+  return [request.title, request.description, request.status?.name];
+}
 
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: requests, byId, byStatus, isPending } = useRequests(projectId, kind);
-  const { byId: statusesById } = useStatuses(projectId);
+  const { value: statuses, byId: statusesById } = useStatuses(projectId);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [isBulkMutationPending, setIsBulkMutationPending] = useState(false);
+  const [hiddenFilters, setHiddenFilters] = useState<string[]>([]);
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
+  const bulkMutationInFlight = useRef(false);
+  const updateStatuses = useMutation(api.requests.updateStatuses);
+  const deleteRequests = useMutation(api.requests.deleteRequests);
+  const selectedIds = (requests ?? [])
+    .filter((request) => rowSelection[request._id])
+    .map((request) => request._id);
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (updater) => {
+    setRowSelection((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater;
+      const selected = Object.keys(next).filter((id) => next[id]);
+      if (selected.length <= MAX_BULK_REQUESTS) return next;
+
+      return Object.fromEntries(selected.slice(0, MAX_BULK_REQUESTS).map((id) => [id, true]));
+    });
+  };
+
+  const handleBulkStatusChange = async (status: Id<"requestStatuses">) => {
+    if (bulkMutationInFlight.current || selectedIds.length === 0) return;
+
+    try {
+      bulkMutationInFlight.current = true;
+      setIsBulkMutationPending(true);
+      await updateStatuses({ ids: selectedIds, status });
+      setRowSelection({});
+      toast.success(
+        `${selectedIds.length} ${kind === "complaint" ? "complaints" : "requests"} updated`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to update the selected items");
+    } finally {
+      bulkMutationInFlight.current = false;
+      setIsBulkMutationPending(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (bulkMutationInFlight.current || selectedIds.length === 0) return false;
+
+    try {
+      bulkMutationInFlight.current = true;
+      setIsBulkMutationPending(true);
+      await deleteRequests({ ids: selectedIds });
+      setRowSelection({});
+      toast.success(
+        `${selectedIds.length} ${kind === "complaint" ? "complaints" : "requests"} deleted`,
+      );
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to delete the selected items");
+      return false;
+    } finally {
+      bulkMutationInFlight.current = false;
+      setIsBulkMutationPending(false);
+    }
+  };
 
   const mappedRequests: RequestEntry[] = useMemo(
     () =>
@@ -38,6 +112,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         title: request.text,
         description: request.description,
         status: statusesById.get(request.status),
+        createdAt: request._creationTime,
       })),
     [requests, statusesById],
   );
@@ -51,6 +126,16 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
     });
     return res;
   }, [byStatus, statusesById]);
+  const filteredRequests = useMemo(() => {
+    const from = createdFrom ? new Date(`${createdFrom}T00:00:00`).getTime() : undefined;
+    const to = createdTo ? new Date(`${createdTo}T23:59:59.999`).getTime() : undefined;
+    return mappedRequests.filter((request) => {
+      if (request.status && hiddenFilters.includes(request.status.name.toLowerCase())) return false;
+      if (from && request.createdAt < from) return false;
+      if (to && request.createdAt > to) return false;
+      return true;
+    });
+  }, [createdFrom, createdTo, hiddenFilters, mappedRequests]);
 
   const columns = useMemo<ColumnDef<RequestEntry>[]>(
     () => [
@@ -58,14 +143,27 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={table.getIsAllRowsSelected()}
-            onCheckedChange={(v) => table.toggleAllRowsSelected(!!v)}
+            aria-label="Select current page"
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            disabled={
+              isBulkMutationPending ||
+              (selectedIds.length >= MAX_BULK_REQUESTS && !table.getIsAllPageRowsSelected())
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           />
         ),
         cell: ({ row }) => (
           <Checkbox
+            aria-label={`Select ${kind === "complaint" ? "complaint" : "request"} ${row.original.title}`}
             checked={row.getIsSelected()}
-            onCheckedChange={(v) => row.toggleSelected(!!v)}
+            disabled={
+              isBulkMutationPending ||
+              (!row.getIsSelected() && selectedIds.length >= MAX_BULK_REQUESTS)
+            }
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
           />
         ),
       },
@@ -102,6 +200,22 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
       {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <SortButton
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            sort={column.getIsSorted()}
+          >
+            Created
+          </SortButton>
+        ),
+        cell: (info) => (
+          <time className="whitespace-nowrap text-muted-foreground">
+            {formatDate(info.getValue<number>())}
+          </time>
+        ),
+      },
+      {
         accessorKey: "status",
         header: ({ column }) => (
           <SortButton
@@ -125,7 +239,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
     ],
-    [byId, kind],
+    [byId, isBulkMutationPending, kind, selectedIds.length],
   );
 
   // empty
@@ -134,13 +248,39 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
 
   return (
     <div className="mt-1 flex w-full flex-col gap-4">
+      {selectedIds.length > 0 && (
+        <RequestBulkActions
+          count={selectedIds.length}
+          isPending={isBulkMutationPending}
+          kind={kind ?? "request"}
+          onClear={() => setRowSelection({})}
+          onDelete={handleBulkDelete}
+          onStatusChange={handleBulkStatusChange}
+          statuses={statuses ?? []}
+        />
+      )}
       <EntityTable
-        data={mappedRequests}
+        data={filteredRequests}
         columns={columns}
+        getRowId={(row) => row._id}
         initialSorting={[{ id: "title", desc: true }]}
-        getSearchText={(row) => [row.title, row.description, row.status?.name]}
-        getFilterText={(row) => [row.status?.name]}
-        filters={filters}
+        getSearchText={getRequestSearchText}
+        rowSelection={rowSelection}
+        onRowSelectionChange={handleRowSelectionChange}
+        searchPlaceholder="Search requests"
+        toolbar={
+          <RequestTableFilters
+            filters={filters}
+            hiddenFilters={hiddenFilters}
+            createdFrom={createdFrom}
+            createdTo={createdTo}
+            onHiddenFiltersChange={setHiddenFilters}
+            onDateRangeChange={(from, to) => {
+              setCreatedFrom(from);
+              setCreatedTo(to);
+            }}
+          />
+        }
       />
     </div>
   );

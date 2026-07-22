@@ -20,9 +20,11 @@ export default function StatusForwardBadge({ status }: StatusForwardBadgeProps) 
   if (!status.state.current) return;
 
   return (
-    <div className="group flex cursor-pointer items-center gap-2 text-xs text-secondary-foreground/50 transition-colors hover:text-secondary-foreground">
+    <div className="group flex cursor-pointer items-center gap-2 text-xs text-secondary-foreground/50 transition-colors focus-within:text-secondary-foreground hover:text-secondary-foreground">
       <DropdownMenu>
-        <DropdownMenuTrigger>{status.state.current.displayName}</DropdownMenuTrigger>
+        <DropdownMenuTrigger aria-label="Change request status">
+          {status.state.current.displayName}
+        </DropdownMenuTrigger>
 
         <DropdownMenuContent>
           <DropdownMenuLabel>Change status to</DropdownMenuLabel>
@@ -41,8 +43,10 @@ export default function StatusForwardBadge({ status }: StatusForwardBadgeProps) 
       </DropdownMenu>
 
       <button
+        type="button"
+        aria-label="Move request to next Status"
         onClick={status.methods.setNext}
-        className="-translate-x-4 cursor-pointer rounded-sm p-1 opacity-0 transition-all group-hover:translate-0 group-hover:opacity-100 hover:bg-secondary"
+        className="cursor-pointer rounded-sm p-1 hover:bg-secondary"
       >
         <ChevronRight size={16} />
       </button>

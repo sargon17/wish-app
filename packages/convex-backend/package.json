@@ -14,6 +14,10 @@
     "./notification-event-types": {
       "types": "./convex/lib/notificationEventTypes.ts",
       "default": "./convex/lib/notificationEventTypes.ts"
+    },
+    "./request-limits": {
+      "types": "./convex/lib/requestLimits.ts",
+      "default": "./convex/lib/requestLimits.ts"
     }
   },
   "scripts": {

@@ -1,22 +1,45 @@
 import { v } from "convex/values";
 
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { getRequestKind } from "./lib/requestKind";
+import { MAX_BULK_REQUESTS } from "./lib/requestLimits";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
 
-async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
-  const request = await ctx.db.get(id);
-  if (!request) {
+export async function getBulkRequests(
+  ctx: Pick<MutationCtx, "db">,
+  ids: Id<"requests">[],
+): Promise<Doc<"requests">[]> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) {
+    throw new Error("Select at least one request");
+  }
+  if (uniqueIds.length > MAX_BULK_REQUESTS) {
+    throw new Error(`Select no more than ${MAX_BULK_REQUESTS} requests`);
+  }
+
+  const requests = await Promise.all(uniqueIds.map((id) => ctx.db.get(id)));
+  if (requests.some((request) => !request)) {
     throw new Error("Request not found");
   }
 
+  const existingRequests = requests as Doc<"requests">[];
+  const projectId = existingRequests[0].project;
+  if (existingRequests.some((request) => request.project !== projectId)) {
+    throw new Error("Requests must belong to the same project");
+  }
+
+  return existingRequests;
+}
+
+async function deleteRequestCascade(ctx: MutationCtx, request: Doc<"requests">) {
+  const id = request._id;
   const upvotes = await ctx.db
     .query("requestUpvotes")
     .withIndex("by_request", (q) => q.eq("requestId", id))
@@ -29,8 +52,6 @@ async function deleteRequestCascade(ctx: MutationCtx, id: Id<"requests">) {
   await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
   await Promise.all(comments.map((comment) => ctx.db.delete(comment._id)));
   await ctx.db.delete(id);
-
-  return request;
 }
 
 export const getByProject = query({
@@ -187,16 +208,35 @@ export const updateStatus = mutation({
     id: v.id("requests"),
     status: v.id("requestStatuses"),
   },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    const request = await ctx.db.get(args.id);
-    if (!request) {
-      throw new Error("Request not found");
-    }
-    await assertProjectOwner(ctx, request.project, user._id);
-    await assertStatusBelongsToProject(ctx, args.status, request.project);
+  handler: async (ctx, args) =>
+    await updateRequestStatuses(ctx, { ids: [args.id], status: args.status }),
+});
 
-    await ctx.db.patch(args.id, { status: args.status });
+export async function updateRequestStatuses(
+  ctx: MutationCtx,
+  args: { ids: Id<"requests">[]; status: Id<"requestStatuses"> },
+) {
+  const user = await getCurrentUser(ctx);
+  const requests = await getBulkRequests(ctx, args.ids);
+  const projectId = requests[0].project;
+
+  await assertProjectOwner(ctx, projectId, user._id);
+  await assertStatusBelongsToProject(ctx, args.status, projectId);
+  await Promise.all(requests.map((request) => ctx.db.patch(request._id, { status: args.status })));
+}
+
+export const updateStatuses = mutation({
+  args: {
+    ids: v.array(v.id("requests")),
+    status: v.id("requestStatuses"),
+  },
+  handler: async (ctx, args) => {
+    try {
+      await updateRequestStatuses(ctx, args);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to update requests");
+    }
   },
 });
 
@@ -204,14 +244,32 @@ export const deleteRequest = mutation({
   args: { id: v.id("requests") },
   handler: async (ctx, args) => {
     try {
-      const user = await getCurrentUser(ctx);
-      const request = await ctx.db.get(args.id);
-      if (!request) throw new Error("Request not found");
-      await assertProjectOwner(ctx, request.project, user._id);
-      await deleteRequestCascade(ctx, args.id);
+      await deleteOwnedRequests(ctx, [args.id]);
     } catch (error) {
       console.error(error);
       throw new Error("Failed to delete request");
+    }
+  },
+});
+
+export async function deleteOwnedRequests(ctx: MutationCtx, ids: Id<"requests">[]) {
+  const user = await getCurrentUser(ctx);
+  const requests = await getBulkRequests(ctx, ids);
+
+  await assertProjectOwner(ctx, requests[0].project, user._id);
+  for (const request of requests) {
+    await deleteRequestCascade(ctx, request);
+  }
+}
+
+export const deleteRequests = mutation({
+  args: { ids: v.array(v.id("requests")) },
+  handler: async (ctx, args) => {
+    try {
+      await deleteOwnedRequests(ctx, args.ids);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Failed to delete requests");
     }
   },
 });
@@ -228,7 +286,7 @@ export const deleteRequestByApiKeyInternal = internalMutation({
         throw new Error("Request does not belong to project");
       }
 
-      await deleteRequestCascade(ctx, args.id);
+      await deleteRequestCascade(ctx, request);
     } catch (error) {
       console.error(error);
       throw new Error("Failed to delete request");

@@ -14,12 +14,19 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useRequestStatus } from "@/hooks/useRequestStatus";
 import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
 
@@ -30,6 +37,7 @@ interface Props {
 }
 
 export default function RequestDetailView({ children, request, showUpvoteButton = true }: Props) {
+  const isMobile = useIsMobile();
   const [activeRequestId, setActiveRequestId] = useState(request._id);
   const requests = useRequests(request.project);
 
@@ -67,132 +75,155 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
   const hasChanges = requestStatus.state.hasChanged;
   const hasSuggestions = (suggestions?.length ?? 0) > 0;
   const isOriginalRequest = activeRequest._id === request._id;
+  const detailContent = (
+    <div
+      className={hasSuggestions ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]" : "grid gap-6"}
+    >
+      <div className="flex min-h-0 flex-col gap-6">
+        <header>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold capitalize">{activeRequest.text}</h2>
+            {showUpvoteButton ? (
+              <RequestUpvoteButton
+                requestId={activeRequest._id}
+                projectId={activeRequest.project}
+                upvoteCount={activeRequest.upvoteCount ?? 0}
+                isUpvoted={requests.upvotedByUser.has(activeRequest._id)}
+                size="default"
+              />
+            ) : null}
+            {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
+          </div>
+          <div>
+            <div className="mb-8 flex flex-wrap gap-3 text-sm text-foreground/50 *:flex *:items-center *:gap-2">
+              {activeRequest.requesterEmail ? (
+                <>
+                  <div>
+                    <Mail size={16} />
+                    <a
+                      className="hover:text-foreground"
+                      href={`mailto:${activeRequest.requesterEmail}`}
+                    >
+                      {activeRequest.requesterEmail}
+                    </a>
+                  </div>
+                  <div className="text-foreground/20">/</div>
+                </>
+              ) : null}
+              <div>
+                <User size={16} />
+                {activeRequest.clientId}
+              </div>
+              <div className="text-foreground/20">/</div>
+              <div>
+                <p>ID:</p>
+                {activeRequest._id}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-secondary-foreground">{activeRequest.description}</p>
+            </div>
+          </div>
+        </header>
+
+        <CommentsPanel request={activeRequest} />
+
+        {hasChanges && (
+          <div className="flex justify-end">
+            <Button onClick={handleSave}>Save</Button>
+          </div>
+        )}
+      </div>
+
+      {hasSuggestions && (
+        <div className="flex min-h-0 flex-col">
+          <div className="flex items-center justify-between">
+            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+              Other suggestions
+            </p>
+            {!isOriginalRequest && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => setActiveRequestId(request._id)}
+              >
+                Back to original
+              </Button>
+            )}
+          </div>
+          <Separator className="my-3" />
+          <div className="flex flex-col">
+            {suggestions?.map((suggestion) => {
+              const status = findCurrentStatus({
+                id: suggestion.status,
+                statuses: requestStatus.state.statuses,
+              });
+              const isActive = suggestion._id === activeRequest._id;
+              return (
+                <Button
+                  key={suggestion._id}
+                  type="button"
+                  variant="ghost"
+                  className={
+                    isActive
+                      ? "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left text-accent-foreground last:border-b-0 hover:bg-transparent"
+                      : "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left last:border-b-0 hover:bg-transparent"
+                  }
+                  onClick={() => setActiveRequestId(suggestion._id)}
+                >
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {suggestion.text}
+                    </span>
+                    {status && (
+                      <Badge variant="secondary" className="w-fit text-[10px]">
+                        {status.displayName}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <ChevronUp className="h-3.5 w-3.5" />
+                    <span>{suggestion.upvoteCount ?? 0}</span>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer>
+        <DrawerTrigger asChild className="cursor-pointer">
+          {children}
+        </DrawerTrigger>
+        <DrawerContent className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <DrawerTitle className="sr-only">Request details</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Review the request, update its status, and read comments.
+          </DrawerDescription>
+          <div className="min-h-0 overflow-y-auto py-4">{detailContent}</div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild className="cursor-pointer">
         {children}
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-106.25 md:max-w-5xl">
-        <div
-          className={
-            hasSuggestions ? "grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]" : "grid gap-6"
-          }
-        >
-          <div className="flex min-h-0 flex-col gap-6">
-            <DialogHeader>
-              <div className="flex flex-wrap items-center gap-3">
-                <DialogTitle className="capitalize">{activeRequest.text}</DialogTitle>
-                {showUpvoteButton ? (
-                  <RequestUpvoteButton
-                    requestId={activeRequest._id}
-                    projectId={activeRequest.project}
-                    upvoteCount={activeRequest.upvoteCount ?? 0}
-                    isUpvoted={requests.upvotedByUser.has(activeRequest._id)}
-                    size="default"
-                  />
-                ) : null}
-                {requestStatus.state.current && <StatusForwardBadge status={requestStatus} />}
-              </div>
-              <div>
-                <div className="mb-8 flex flex-wrap gap-3 text-sm text-foreground/50 *:flex *:items-center *:gap-2">
-                  {activeRequest.requesterEmail ? (
-                    <>
-                      <div>
-                        <Mail size={16} />
-                        <a
-                          className="hover:text-foreground"
-                          href={`mailto:${activeRequest.requesterEmail}`}
-                        >
-                          {activeRequest.requesterEmail}
-                        </a>
-                      </div>
-                      <div className="text-foreground/20">/</div>
-                    </>
-                  ) : null}
-                  <div>
-                    <User size={16} />
-                    {activeRequest.clientId}
-                  </div>
-                  <div className="text-foreground/20">/</div>
-                  <div>
-                    <p>ID:</p>
-                    {activeRequest._id}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-secondary-foreground">{activeRequest.description}</p>
-                </div>
-              </div>
-            </DialogHeader>
-
-            <CommentsPanel request={activeRequest} />
-
-            {hasChanges && (
-              <DialogFooter>
-                <Button onClick={handleSave}>Save</Button>
-              </DialogFooter>
-            )}
-          </div>
-
-          {hasSuggestions && (
-            <div className="flex min-h-0 flex-col">
-              <div className="flex items-center justify-between">
-                <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-                  Other suggestions
-                </p>
-                {!isOriginalRequest && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => setActiveRequestId(request._id)}
-                  >
-                    Back to original
-                  </Button>
-                )}
-              </div>
-              <Separator className="my-3" />
-              <div className="flex flex-col">
-                {suggestions?.map((suggestion) => {
-                  const status = findCurrentStatus({
-                    id: suggestion.status,
-                    statuses: requestStatus.state.statuses,
-                  });
-                  const isActive = suggestion._id === activeRequest._id;
-                  return (
-                    <Button
-                      key={suggestion._id}
-                      type="button"
-                      variant="ghost"
-                      className={
-                        isActive
-                          ? "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left text-accent-foreground last:border-b-0 hover:bg-transparent"
-                          : "h-auto justify-between gap-4 rounded-none border-b border-border/60 px-0 py-3 text-left last:border-b-0 hover:bg-transparent"
-                      }
-                      onClick={() => setActiveRequestId(suggestion._id)}
-                    >
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {suggestion.text}
-                        </span>
-                        {status && (
-                          <Badge variant="secondary" className="w-fit text-[10px]">
-                            {status.displayName}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <ChevronUp className="h-3.5 w-3.5" />
-                        <span>{suggestion.upvoteCount ?? 0}</span>
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-106.25 md:max-w-5xl">
+        <DialogTitle className="sr-only">Request details</DialogTitle>
+        <DialogDescription className="sr-only">
+          Review the request, update its status, and read comments.
+        </DialogDescription>
+        {detailContent}
       </DialogContent>
     </Dialog>
   );

@@ -543,7 +543,7 @@ function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
       <ul className="grid gap-4" aria-label={`Features in ${entry.versionLabel}`}>
         {entry.features.map((feature) => (
           <li key={feature.title} className="flex gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 [&>svg]:size-4 dark:text-orange-400">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand [&>svg]:size-4">
               <ChangelogFeatureIcon name={feature.icon} />
             </span>
             <div className="grid gap-0.5">

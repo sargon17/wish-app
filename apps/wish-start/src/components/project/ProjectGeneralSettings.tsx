@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -142,11 +143,23 @@ export default function ProjectGeneralSettings({ projectId }: { projectId: Id<"p
       </div>
 
       <div className="grid gap-3 rounded-lg border p-4">
-        <div className="space-y-1">
-          <Label>Suggestion Portal</Label>
-          <p className="text-sm text-muted-foreground">
-            Publishing makes every request on this project visible to anyone with the link.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <Label>Suggestion Portal</Label>
+            <p className="text-sm text-muted-foreground">
+              Publishing makes every request on this project visible to anyone with the link.
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className={
+              project?.suggestionPortalPublishedAt
+                ? "border-brand/25 bg-brand/10 text-brand"
+                : "text-muted-foreground"
+            }
+          >
+            {project?.suggestionPortalPublishedAt ? "Published" : "Unpublished"}
+          </Badge>
         </div>
 
         <InputGroup>
