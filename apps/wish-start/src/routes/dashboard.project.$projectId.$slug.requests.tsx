@@ -18,6 +18,7 @@ function ProjectRequestsRoute() {
   return (
     <>
       <DashboardPage
+        projectId={projectId as never}
         title="Requests"
         breadcrumbs={[
           { label: "home", url: "/" },

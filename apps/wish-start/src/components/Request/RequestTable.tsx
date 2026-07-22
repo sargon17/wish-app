@@ -5,15 +5,17 @@ import SortButton from "@components/atoms/SortButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { type ColumnDef } from "@tanstack/react-table";
 import type { Doc, Id } from "@wish/convex-backend/data-model";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
+import { formatDate } from "@/lib/time";
 
 import EntityTable from "../molecules/EntityTable";
 import StatusChip from "../Status/StatusChip";
 
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import RequestsEmpty from "./RequestsEmpty";
+import RequestTableFilters from "./RequestTableFilters";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
@@ -25,11 +27,15 @@ type RequestEntry = {
   title: Doc<"requests">["text"];
   description?: Doc<"requests">["description"];
   status?: Doc<"requestStatuses">;
+  createdAt: number;
 };
 
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: requests, byId, byStatus, isPending } = useRequests(projectId, kind);
   const { byId: statusesById } = useStatuses(projectId);
+  const [hiddenFilters, setHiddenFilters] = useState<string[]>([]);
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
 
   const mappedRequests: RequestEntry[] = useMemo(
     () =>
@@ -38,6 +44,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         title: request.text,
         description: request.description,
         status: statusesById.get(request.status),
+        createdAt: request._creationTime,
       })),
     [requests, statusesById],
   );
@@ -51,6 +58,16 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
     });
     return res;
   }, [byStatus, statusesById]);
+  const filteredRequests = useMemo(() => {
+    const from = createdFrom ? new Date(`${createdFrom}T00:00:00`).getTime() : undefined;
+    const to = createdTo ? new Date(`${createdTo}T23:59:59.999`).getTime() : undefined;
+    return mappedRequests.filter((request) => {
+      if (request.status && hiddenFilters.includes(request.status.name.toLowerCase())) return false;
+      if (from && request.createdAt < from) return false;
+      if (to && request.createdAt > to) return false;
+      return true;
+    });
+  }, [createdFrom, createdTo, hiddenFilters, mappedRequests]);
 
   const columns = useMemo<ColumnDef<RequestEntry>[]>(
     () => [
@@ -102,6 +119,22 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
       {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <SortButton
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            sort={column.getIsSorted()}
+          >
+            Created
+          </SortButton>
+        ),
+        cell: (info) => (
+          <time className="whitespace-nowrap text-muted-foreground">
+            {formatDate(info.getValue<number>())}
+          </time>
+        ),
+      },
+      {
         accessorKey: "status",
         header: ({ column }) => (
           <SortButton
@@ -135,12 +168,24 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   return (
     <div className="mt-1 flex w-full flex-col gap-4">
       <EntityTable
-        data={mappedRequests}
+        data={filteredRequests}
         columns={columns}
         initialSorting={[{ id: "title", desc: true }]}
         getSearchText={(row) => [row.title, row.description, row.status?.name]}
-        getFilterText={(row) => [row.status?.name]}
-        filters={filters}
+        searchPlaceholder="Search requests"
+        toolbar={
+          <RequestTableFilters
+            filters={filters}
+            hiddenFilters={hiddenFilters}
+            createdFrom={createdFrom}
+            createdTo={createdTo}
+            onHiddenFiltersChange={setHiddenFilters}
+            onDateRangeChange={(from, to) => {
+              setCreatedFrom(from);
+              setCreatedTo(to);
+            }}
+          />
+        }
       />
     </div>
   );

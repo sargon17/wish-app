@@ -2,6 +2,7 @@ import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from "@c
 import type { ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import env from "@/env";
 
 import ConvexClientProvider from "./ConvexClientProvider";
@@ -39,8 +40,10 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     <AuthBoundary>
       <ThemeProvider>
         <ConvexClientProvider>
-          {children}
-          <Toaster />
+          <TooltipProvider>
+            {children}
+            <Toaster />
+          </TooltipProvider>
         </ConvexClientProvider>
       </ThemeProvider>
     </AuthBoundary>

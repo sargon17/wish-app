@@ -1,5 +1,5 @@
-import { makeFunctionReference } from "convex/server";
 import { useAction, useMutation, useQuery } from "convex/react";
+import { makeFunctionReference } from "convex/server";
 import { Check, CircleAlert, Copy, KeyRound, Plug, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -77,31 +77,45 @@ export default function McpConnectionView() {
 
   return (
     <div className="grid gap-6 pb-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.6fr)]">
-      <Card className="border-orange-500/20 bg-card/85 shadow-xl shadow-orange-950/5">
+      <Card className="border-brand/20 bg-card/85 shadow-xl shadow-brand/5">
         <CardHeader className="border-b border-border/70 pb-6">
-          <Badge variant="outline" className="mb-3 w-fit border-orange-500/30 text-orange-700 dark:text-orange-300">
+          <Badge variant="outline" className="mb-3 w-fit border-brand/30 text-brand">
             <Plug /> Account-wide access
           </Badge>
           <CardTitle className="text-2xl tracking-tight">Connect Codex in one paste</CardTitle>
           <CardDescription className="mt-2 max-w-xl text-[15px] leading-6">
-            Connect directly to the hosted Wish MCP endpoint with one revocable token. No local server, admin keys, deployment secrets, or impersonation settings are required.
+            Connect directly to the hosted Wish MCP endpoint with one revocable token. No local
+            server, admin keys, deployment secrets, or impersonation settings are required.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           {activeToken === undefined ? null : activeToken ? (
-            <div className="rounded-xl border border-orange-500/15 bg-orange-500/5 p-4">
+            <div className="rounded-xl border border-brand/15 bg-brand/5 p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium">Connection is active</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Expires {formatDate(activeToken.expiresAt)}. Creating another token immediately revokes this one.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Expires {formatDate(activeToken.expiresAt)}. Creating another token immediately
+                    revokes this one.
+                  </p>
                 </div>
-                <Check className="mt-0.5 size-5 text-orange-600" />
+                <Check className="mt-0.5 size-5 text-brand" />
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => void handleCreate()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  onClick={() => void handleCreate()}
+                >
                   <RotateCcw /> Replace token
                 </Button>
-                <Button type="button" variant="ghost" disabled={isSubmitting} onClick={() => void handleRevoke()}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={isSubmitting}
+                  onClick={() => void handleRevoke()}
+                >
                   Revoke access
                 </Button>
               </div>
@@ -109,15 +123,29 @@ export default function McpConnectionView() {
           ) : (
             <div className="rounded-xl border border-dashed bg-muted/30 p-5">
               <p className="font-medium">No MCP connection yet</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">Create a token, paste the generated block into Codex, and start using Wish from your assistant.</p>
-              <Button type="button" className="mt-4" disabled={isSubmitting} onClick={() => void handleCreate()}>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Create a token, paste the generated block into Codex, and start using Wish from your
+                assistant.
+              </p>
+              <Button
+                type="button"
+                className="mt-4"
+                disabled={isSubmitting}
+                onClick={() => void handleCreate()}
+              >
                 <KeyRound /> Create MCP token
               </Button>
             </div>
           )}
           <div className="grid gap-3 text-sm sm:grid-cols-3">
             {["One token", "All your projects", "Revoke anytime"].map((label) => (
-              <div key={label} className="flex items-center gap-2 rounded-lg bg-muted/45 px-3 py-2.5"><Check className="size-4 text-orange-600" />{label}</div>
+              <div
+                key={label}
+                className="flex items-center gap-2 rounded-lg bg-muted/45 px-3 py-2.5"
+              >
+                <Check className="size-4 text-brand" />
+                {label}
+              </div>
             ))}
           </div>
         </CardContent>
@@ -126,7 +154,9 @@ export default function McpConnectionView() {
       <Card className="bg-foreground text-background ring-0">
         <CardHeader>
           <CardTitle className="text-base">What Codex can do</CardTitle>
-          <CardDescription className="text-background/60">Existing admin tools run with your account permissions.</CardDescription>
+          <CardDescription className="text-background/60">
+            Existing admin tools run with your account permissions.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-background/80">
           <p>Manage projects and requests</p>
@@ -139,18 +169,32 @@ export default function McpConnectionView() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Connect Codex</DialogTitle>
-            <DialogDescription>Run this once in Terminal to register the hosted MCP endpoint, then restart Codex. This token is shown only once.</DialogDescription>
+            <DialogDescription>
+              Run this once in Terminal to register the hosted MCP endpoint, then restart Codex.
+              This token is shown only once.
+            </DialogDescription>
           </DialogHeader>
           <Alert>
             <CircleAlert className="size-4" />
             <AlertTitle>Treat it like a password</AlertTitle>
-            <AlertDescription>Anyone with this token can operate every Wish project you own. Revoke it here if it is exposed.</AlertDescription>
+            <AlertDescription>
+              Anyone with this token can operate every Wish project you own. Revoke it here if it is
+              exposed.
+            </AlertDescription>
           </Alert>
           <div className="relative overflow-hidden rounded-xl border bg-muted/50">
-            <CopyButton text={getCodexConfig(createdToken)} className="absolute top-2 right-2"><Copy size={14} /></CopyButton>
-            <pre className="overflow-x-auto p-4 pr-12 font-mono text-xs leading-6"><code>{getCodexConfig(createdToken)}</code></pre>
+            <CopyButton text={getCodexConfig(createdToken)} className="absolute top-2 right-2">
+              <Copy size={14} />
+            </CopyButton>
+            <pre className="overflow-x-auto p-4 pr-12 font-mono text-xs leading-6">
+              <code>{getCodexConfig(createdToken)}</code>
+            </pre>
           </div>
-          <DialogFooter><Button type="button" onClick={() => setCreatedToken("")}>Done</Button></DialogFooter>
+          <DialogFooter>
+            <Button type="button" onClick={() => setCreatedToken("")}>
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

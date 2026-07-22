@@ -9,7 +9,10 @@ function McpPage() {
   return (
     <DashboardPage
       title="MCP connection"
-      breadcrumbs={[{ label: "dashboard", url: "/dashboard" }, { label: "mcp", url: "/dashboard/mcp" }]}
+      breadcrumbs={[
+        { label: "dashboard", url: "/dashboard" },
+        { label: "mcp", url: "/dashboard/mcp" },
+      ]}
     >
       <McpConnectionView />
     </DashboardPage>

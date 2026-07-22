@@ -64,7 +64,7 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
           {displayName}
         </div>
         <RequestCreateEditDialog project={projectId} status={statusId}>
-          <Button size="icon" variant="ghost">
+          <Button size="icon" variant="ghost" aria-label={`Add request to ${displayName}`}>
             +
           </Button>
         </RequestCreateEditDialog>
@@ -91,9 +91,9 @@ export default function DashboardBoardColumn({ status, projectId, kind, onDropRe
           </div>
         )}
 
-        <div className="flex w-full justify-center p-3 opacity-0 transition-opacity group-hover/board-column:opacity-100">
+        <div className="flex w-full justify-center p-3">
           <RequestCreateEditDialog project={projectId} status={statusId}>
-            <Button size="icon" variant="ghost">
+            <Button size="icon" variant="ghost" aria-label={`Add request to ${displayName}`}>
               +
             </Button>
           </RequestCreateEditDialog>

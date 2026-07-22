@@ -18,14 +18,18 @@ export default function DashboardBoard({ projectId, boardType, kind }: Props) {
   if (!project) return null;
 
   return (
-    // <div className="sidebar-offset-pl h-full">
-    <div className="flex h-full w-full gap-2 overflow-x-scroll pt-px pr-6 sidebar-offset-pl ">
+    <div
+      className={
+        boardType === "kanban"
+          ? "flex h-full w-full max-w-full min-w-0 gap-2 overflow-x-auto overscroll-x-contain pt-px pr-2 sidebar-offset-pl md:pr-6"
+          : "flex h-full w-full max-w-full min-w-0 gap-2 pt-px pr-2 sidebar-offset-pl md:pr-6"
+      }
+    >
       {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} kind={kind} />
       ) : (
         <RequestTable projectId={projectId} kind={kind} />
       )}
     </div>
-    // </div>
   );
 }
