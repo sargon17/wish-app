@@ -17,6 +17,7 @@ function ProjectComplaintsRoute() {
   return (
     <>
       <DashboardPage
+        projectId={projectId as never}
         breadcrumbs={[
           { label: "home", url: "/" },
           { label: "dashboard", url: "/dashboard" },

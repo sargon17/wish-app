@@ -11,13 +11,6 @@ export function groupRequestsByStatus(requests?: Doc<"requests">[]) {
   }, {});
 }
 
-export function getRequestsForStatus(
-  requestsByStatus: Record<string, Doc<"requests">[]>,
-  statusId: Id<"requestStatuses">,
-) {
-  return requestsByStatus[statusId] ?? [];
-}
-
 export function toUpvotedRequestSet(viewerUpvotes?: Id<"requests">[]) {
   return new Set(viewerUpvotes ?? []);
 }

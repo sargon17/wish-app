@@ -1,6 +1,8 @@
 "use client";
 import useRequests from "#/hooks/useRequests";
+import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
+import { useQuery } from "convex/react";
 
 import { writeRequestDragPayload } from "@/lib/requestBoard/dragPayload";
 import { trimTo } from "@/lib/text";
@@ -19,6 +21,9 @@ interface Props {
 export default function RequestCard({ request, showUpvoteButton = true }: Props) {
   const upvoteCount = request.upvoteCount ?? 0;
   const requests = useRequests(request.project);
+  const statuses = useQuery(api.requestStatuses.getByProject, {
+    id: request.project,
+  });
 
   return (
     <RequestDetailView request={request} showUpvoteButton={showUpvoteButton}>
@@ -38,7 +43,7 @@ export default function RequestCard({ request, showUpvoteButton = true }: Props)
         <CardHeader>
           <CardTitle className=" capitalize">{request.text}</CardTitle>
           <CardAction className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <RequestCardActions request={request} />
+            <RequestCardActions request={request} statuses={statuses} />
             {showUpvoteButton ? (
               <RequestUpvoteButton
                 requestId={request._id}

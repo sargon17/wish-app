@@ -46,7 +46,6 @@ function SelectionTable() {
       <EntityTable
         columns={columns}
         data={data}
-        filters={[]}
         getRowId={(row) => row.id}
         getSearchText={(row) => [row.title]}
         initialSorting={[]}

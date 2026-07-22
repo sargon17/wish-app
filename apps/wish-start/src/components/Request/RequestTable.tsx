@@ -12,6 +12,7 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
+import { formatDate } from "@/lib/time";
 
 import EntityTable from "../molecules/EntityTable";
 import StatusChip from "../Status/StatusChip";
@@ -19,6 +20,7 @@ import StatusChip from "../Status/StatusChip";
 import RequestDetailView from "./DetailView/RequestDeatailView";
 import { RequestBulkActions } from "./RequestBulkActions";
 import RequestsEmpty from "./RequestsEmpty";
+import RequestTableFilters from "./RequestTableFilters";
 
 interface RequestTableProps {
   projectId: Id<"projects">;
@@ -30,6 +32,7 @@ type RequestEntry = {
   title: Doc<"requests">["text"];
   description?: Doc<"requests">["description"];
   status?: Doc<"requestStatuses">;
+  createdAt: number;
 };
 
 const RequestTable = ({ projectId, kind }: RequestTableProps) => {
@@ -37,6 +40,9 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
   const { value: statuses, byId: statusesById } = useStatuses(projectId);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isBulkMutationPending, setIsBulkMutationPending] = useState(false);
+  const [hiddenFilters, setHiddenFilters] = useState<string[]>([]);
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
   const bulkMutationInFlight = useRef(false);
   const updateStatuses = useMutation(api.requests.updateStatuses);
   const deleteRequests = useMutation(api.requests.deleteRequests);
@@ -102,6 +108,7 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         title: request.text,
         description: request.description,
         status: statusesById.get(request.status),
+        createdAt: request._creationTime,
       })),
     [requests, statusesById],
   );
@@ -115,6 +122,16 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
     });
     return res;
   }, [byStatus, statusesById]);
+  const filteredRequests = useMemo(() => {
+    const from = createdFrom ? new Date(`${createdFrom}T00:00:00`).getTime() : undefined;
+    const to = createdTo ? new Date(`${createdTo}T23:59:59.999`).getTime() : undefined;
+    return mappedRequests.filter((request) => {
+      if (request.status && hiddenFilters.includes(request.status.name.toLowerCase())) return false;
+      if (from && request.createdAt < from) return false;
+      if (to && request.createdAt > to) return false;
+      return true;
+    });
+  }, [createdFrom, createdTo, hiddenFilters, mappedRequests]);
 
   const columns = useMemo<ColumnDef<RequestEntry>[]>(
     () => [
@@ -127,7 +144,10 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            disabled={isBulkMutationPending}
+            disabled={
+              isBulkMutationPending ||
+              (selectedIds.length >= MAX_BULK_REQUESTS && !table.getIsAllPageRowsSelected())
+            }
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           />
         ),
@@ -176,6 +196,22 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         },
       },
       {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <SortButton
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            sort={column.getIsSorted()}
+          >
+            Created
+          </SortButton>
+        ),
+        cell: (info) => (
+          <time className="whitespace-nowrap text-muted-foreground">
+            {formatDate(info.getValue<number>())}
+          </time>
+        ),
+      },
+      {
         accessorKey: "status",
         header: ({ column }) => (
           <SortButton
@@ -220,15 +256,27 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
         />
       )}
       <EntityTable
-        data={mappedRequests}
+        data={filteredRequests}
         columns={columns}
         getRowId={(row) => row._id}
         initialSorting={[{ id: "title", desc: true }]}
         getSearchText={(row) => [row.title, row.description, row.status?.name]}
-        getFilterText={(row) => [row.status?.name]}
-        filters={filters}
         rowSelection={rowSelection}
         onRowSelectionChange={handleRowSelectionChange}
+        searchPlaceholder="Search requests"
+        toolbar={
+          <RequestTableFilters
+            filters={filters}
+            hiddenFilters={hiddenFilters}
+            createdFrom={createdFrom}
+            createdTo={createdTo}
+            onHiddenFiltersChange={setHiddenFilters}
+            onDateRangeChange={(from, to) => {
+              setCreatedFrom(from);
+              setCreatedTo(to);
+            }}
+          />
+        }
       />
     </div>
   );

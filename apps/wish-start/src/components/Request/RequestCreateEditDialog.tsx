@@ -7,14 +7,13 @@ import { useMutation, useQuery } from "convex/react";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -38,6 +37,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { getRequestDialogDefaultStatus } from "@/lib/requestBoard/defaultStatus";
 
+import RequestSubmissionControls from "./RequestSubmissionControls";
+
 interface Props extends React.ComponentProps<typeof Dialog> {
   method?: "create" | "edit";
   request?: Doc<"requests">;
@@ -56,6 +57,7 @@ export default function RequestCreateEditDialog({
   onOpenChange,
 }: Props) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [submissionError, setSubmissionError] = useState<string>();
   const createRequest = useMutation(api.requests.create);
   const editRequest = useMutation(api.requests.edit);
   const statuses = useQuery(api.requestStatuses.getByProject, {
@@ -88,8 +90,19 @@ export default function RequestCreateEditDialog({
   });
 
   const { handleSubmit, reset, setValue, getValues } = form;
+  const { isSubmitting } = form.formState;
+  const dialogOpen = open === undefined ? isOpen : open;
+
+  function setDialogOpen(nextOpen: boolean) {
+    if (onOpenChange) {
+      onOpenChange(nextOpen);
+      return;
+    }
+    setIsOpen(nextOpen);
+  }
 
   async function onSubmit(values: typeof ArkSchema.infer) {
+    setSubmissionError(undefined);
     try {
       const description =
         values.description && values.description.length > 0 ? values.description : "";
@@ -109,19 +122,23 @@ export default function RequestCreateEditDialog({
           id: request._id,
         });
       }
-      setIsOpen(false);
+      toast.success(isEditMode ? "Request updated" : "Request created");
+      setDialogOpen(false);
       reset();
     } catch (error) {
       console.error(error);
+      const message = isEditMode ? "Unable to update the request" : "Unable to create the request";
+      setSubmissionError(message);
+      toast.error(message);
     }
   }
 
   useEffect(() => {
-    if (!isOpen) reset();
-  }, [isOpen, reset]);
+    if (!dialogOpen) reset();
+  }, [dialogOpen, reset]);
 
   useEffect(() => {
-    if (!isOpen || !setDefaultStatus) {
+    if (!dialogOpen || !setDefaultStatus) {
       return;
     }
 
@@ -135,12 +152,14 @@ export default function RequestCreateEditDialog({
       shouldTouch: false,
       shouldValidate: true,
     });
-  }, [getValues, isEditMode, isOpen, setDefaultStatus, setValue]);
+  }, [dialogOpen, getValues, isEditMode, setDefaultStatus, setValue]);
 
   return (
     <Dialog
-      open={open === undefined ? isOpen : open}
-      onOpenChange={onOpenChange === undefined ? setIsOpen : onOpenChange}
+      open={dialogOpen}
+      onOpenChange={(nextOpen) => {
+        if (!isSubmitting) setDialogOpen(nextOpen);
+      }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -158,7 +177,7 @@ export default function RequestCreateEditDialog({
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="My App" {...field} />
+                      <Input placeholder="My App" disabled={isSubmitting} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,7 +190,11 @@ export default function RequestCreateEditDialog({
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Optional details..." {...field} />
+                      <Textarea
+                        placeholder="Optional details..."
+                        disabled={isSubmitting}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -185,6 +208,7 @@ export default function RequestCreateEditDialog({
                     <FormLabel>Status</FormLabel>
                     <FormControl>
                       <Select
+                        disabled={isSubmitting}
                         value={field.value}
                         onValueChange={(v) => field.onChange(v as Id<"requestStatuses">)}
                       >
@@ -206,14 +230,11 @@ export default function RequestCreateEditDialog({
                 )}
               />
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit">{isEditMode ? "Save" : "Create"}</Button>
-            </DialogFooter>
+            <RequestSubmissionControls
+              isSubmitting={isSubmitting}
+              isEditMode={Boolean(isEditMode)}
+              errorMessage={submissionError}
+            />
           </form>
         </Form>
       </DialogContent>

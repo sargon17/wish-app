@@ -16,6 +16,7 @@ function ProjectChangelogView() {
 
   return (
     <DashboardPage
+      projectId={projectId as never}
       title="Changelog"
       breadcrumbs={[
         { url: `/dashboard/project/${projectId}`, label: "Project" },

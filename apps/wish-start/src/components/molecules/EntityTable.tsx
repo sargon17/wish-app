@@ -29,59 +29,44 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { TableProperties } from "lucide-react";
-import { useMemo, useState, type ComponentProps } from "react";
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 
 import { Skeleton } from "../ui/skeleton";
-
-import FilterList from "./FilterList";
-
-type FieldsFN<T> = (row: T) => Array<string | undefined | null>;
-
-interface EntityTableProps<T> extends Pick<ComponentProps<typeof FilterList>, "filters"> {
-  data: readonly T[];
-  columns: ColumnDef<T>[];
-  initialSorting: SortingState;
-  getSearchText: FieldsFN<T>;
-  getFilterText?: FieldsFN<T>;
-  getRowId?: (row: T) => string;
-  isLoading?: boolean;
-  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
-  rowSelection?: RowSelectionState;
-}
-
-const filterData = <T,>(row: T, query: string, fieldsFn?: FieldsFN<T>): boolean => {
-  if (!fieldsFn) return true;
-
-  return fieldsFn(row).some((field) => field?.toLowerCase().includes(query));
-};
 
 const EntityTable = <T,>({
   data,
   columns,
   isLoading,
   getSearchText,
-  getFilterText,
   getRowId,
   initialSorting,
   onRowSelectionChange,
   rowSelection,
-  filters,
-}: EntityTableProps<T>) => {
+  searchPlaceholder = "Search",
+  toolbar,
+}: {
+  data: readonly T[];
+  columns: ColumnDef<T>[];
+  initialSorting: SortingState;
+  getSearchText: (row: T) => Array<string | undefined | null>;
+  getRowId?: (row: T) => string;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  rowSelection?: RowSelectionState;
+  searchPlaceholder?: string;
+  toolbar?: ReactNode;
+  isLoading?: boolean;
+}) => {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-
   const filteredData = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    const normalizedActiveFilter = activeFilter.trim().toLowerCase();
-
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return [...data];
     return data.filter((row) =>
-      filterData(row, normalizedSearch, getSearchText) && normalizedActiveFilter === "all"
-        ? true
-        : filterData(row, normalizedActiveFilter, getFilterText),
+      getSearchText(row).some((field) => field?.toLowerCase().includes(query)),
     );
-  }, [searchTerm, data, getSearchText, activeFilter, getFilterText]);
+  }, [data, getSearchText, searchTerm]);
 
   const table = useReactTable({
     data: filteredData,
@@ -94,26 +79,25 @@ const EntityTable = <T,>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      sorting,
-    },
   });
-
-  const pagesNumber = useMemo(() => table.getPageCount(), [table]);
+  const pagesNumber = table.getPageCount();
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <Input
-          className="max-w-80"
+          className="max-w-80 flex-1"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search"
+          onChange={(event) => {
+            setSearchTerm(event.target.value);
+            setPagination((current) => ({ ...current, pageIndex: 0 }));
+          }}
+          placeholder={searchPlaceholder}
         />
+        {toolbar}
       </div>
-      <FilterList active={activeFilter} onChange={(v) => setActiveFilter(v)} filters={filters} />
-      <div className="**:data-[slot=table-container]:overflow-visiblep min-h-0 flex-1 overflow-auto rounded-md outline">
-        <Table>
+      <div className="max-h-[calc(100dvh-20rem)] overflow-auto rounded-md border">
+        <Table className="min-w-[48rem]">
           <TableHeader className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -132,22 +116,20 @@ const EntityTable = <T,>({
           </TableHeader>
           <TableBody>
             {isLoading &&
-              Array.from({ length: 5 }).map((_, idx) => (
-                <TableRow key={`loading-${idx}`}>
-                  <TableCell colSpan={4}>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`loading-${index}`}>
+                  <TableCell colSpan={columns.length}>
                     <Skeleton className="h-10 w-full rounded-lg" />
                   </TableCell>
                 </TableRow>
               ))}
-
-            {!isLoading && table.getRowModel().rows.length === 0 && (
+            {!isLoading && table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length}>
                   <EmptyEntityTable />
                 </TableCell>
               </TableRow>
-            )}
-
+            ) : null}
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id} className="group">
                 {row.getVisibleCells().map((cell) => (
@@ -160,45 +142,59 @@ const EntityTable = <T,>({
           </TableBody>
         </Table>
       </div>
-      {pagesNumber > 1 && (
+      {pagesNumber > 1 ? (
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious href="#" onClick={() => table.previousPage()} />
+              <PaginationPrevious
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault();
+                  table.previousPage();
+                }}
+              />
             </PaginationItem>
-            {Array.from({ length: pagesNumber }).map((_, idx) => {
-              if (idx - 4 >= pagination.pageIndex || idx + 4 <= pagination.pageIndex) return null;
-
-              if (idx - 3 >= pagination.pageIndex || idx + 3 <= pagination.pageIndex)
+            {Array.from({ length: pagesNumber }).map((_, index) => {
+              if (Math.abs(index - pagination.pageIndex) >= 4) return null;
+              if (Math.abs(index - pagination.pageIndex) === 3) {
                 return (
-                  <PaginationItem key={idx}>
+                  <PaginationItem key={index}>
                     <PaginationEllipsis />
                   </PaginationItem>
                 );
-
+              }
               return (
-                <PaginationItem key={idx}>
+                <PaginationItem key={index}>
                   <PaginationLink
                     href="#"
-                    isActive={pagination.pageIndex === idx}
-                    onClick={() => table.setPageIndex(idx)}
+                    isActive={pagination.pageIndex === index}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      table.setPageIndex(index);
+                    }}
                   >
-                    {idx + 1}
+                    {index + 1}
                   </PaginationLink>
                 </PaginationItem>
               );
             })}
             <PaginationItem>
-              <PaginationNext href="#" onClick={() => table.nextPage()} />
+              <PaginationNext
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault();
+                  table.nextPage();
+                }}
+              />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
-      )}
+      ) : null}
     </div>
   );
 };
 
-const EmptyEntityTable = () => {
+function EmptyEntityTable() {
   return (
     <Empty>
       <EmptyHeader>
@@ -210,6 +206,6 @@ const EmptyEntityTable = () => {
       </EmptyHeader>
     </Empty>
   );
-};
+}
 
 export default EntityTable;

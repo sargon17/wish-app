@@ -142,6 +142,7 @@ _Avoid_: global integration, notification connector
 - A **Request** or **Complaint** cannot be deleted while its **Work Item Handoff** is pending or has an uncertain outcome
 - Deleting a **Request** or **Complaint** removes its settled **Work Item Handoffs** from Wish but does not delete their **External Work Items**
 - A **Work Tracker Connection** cannot be disconnected while one of its **Work Item Handoffs** is pending or has an uncertain outcome
+- A **Work Tracker Connection** cannot change destination while one of its **Work Item Handoffs** is pending or has an uncertain outcome
 - A **Work Tracker Connection** belongs to exactly one **Project Board** and identifies one destination team, with an optional default project when the Work Tracker supports it
 - A Linear **Work Tracker Connection** identifies one destination team in v1 and does not assign **External Work Items** to a Linear project
 - Sending a **Request** or **Complaint** to a **Work Tracker** creates the **External Work Item** immediately without an intermediate editing step

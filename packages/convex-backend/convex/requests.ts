@@ -257,7 +257,9 @@ export async function deleteOwnedRequests(ctx: MutationCtx, ids: Id<"requests">[
   const requests = await getBulkRequests(ctx, ids);
 
   await assertProjectOwner(ctx, requests[0].project, user._id);
-  await Promise.all(requests.map((request) => deleteRequestCascade(ctx, request)));
+  for (const request of requests) {
+    await deleteRequestCascade(ctx, request);
+  }
 }
 
 export const deleteRequests = mutation({
