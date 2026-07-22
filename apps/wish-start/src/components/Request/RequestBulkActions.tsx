@@ -47,7 +47,7 @@ export function RequestBulkActions({
   return (
     <div
       aria-live="polite"
-      className="fixed right-4 bottom-4 z-40 flex w-max max-w-[calc(100vw-2rem)] animate-in flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50/95 p-2 shadow-xl fade-in-0 slide-in-from-bottom-2 duration-150 motion-reduce:animate-none dark:border-orange-900 dark:bg-orange-950/95"
+      className="fixed right-4 bottom-28 z-40 flex w-max max-w-[calc(100vw-2rem)] animate-in flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-orange-50/95 p-2 shadow-xl fade-in-0 slide-in-from-bottom-2 duration-150 motion-reduce:animate-none dark:border-orange-900 dark:bg-orange-950/95"
     >
       <span className="mr-auto px-1 text-sm font-medium">
         {count} {kind}
