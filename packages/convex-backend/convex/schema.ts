@@ -5,6 +5,14 @@ import {
   notificationConnectorKindValidator,
   notificationEventTypeValidator,
 } from "./lib/notificationTypes";
+import {
+  workItemHandoffLifecycleValidator,
+  workItemHandoffRecoveryValidator,
+  workTrackerConnectionDataValidator,
+  workTrackerConnectionHealthValidator,
+  workTrackerOAuthSetupDataValidator,
+  workTrackerProviderValidator,
+} from "./lib/workTrackerTypes";
 
 export default defineSchema({
   users: defineTable({
@@ -110,6 +118,47 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_status", ["status"])
     .index("by_project", ["projectId"]),
+
+  workTrackerConnections: defineTable({
+    projectId: v.id("projects"),
+    provider: workTrackerProviderValidator,
+    health: workTrackerConnectionHealthValidator,
+    destinationLabel: v.string(),
+    data: workTrackerConnectionDataValidator,
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_provider", ["projectId", "provider"]),
+
+  workTrackerOAuthSetups: defineTable({
+    projectId: v.id("projects"),
+    provider: workTrackerProviderValidator,
+    stateHash: v.string(),
+    data: workTrackerOAuthSetupDataValidator,
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+  })
+    .index("by_state_hash", ["stateHash"])
+    .index("by_project_provider", ["projectId", "provider"])
+    .index("by_expires_at", ["expiresAt"]),
+
+  workItemHandoffs: defineTable({
+    projectId: v.id("projects"),
+    requestId: v.id("requests"),
+    provider: workTrackerProviderValidator,
+    attemptCount: v.number(),
+    reconciliationCount: v.number(),
+    recovery: workItemHandoffRecoveryValidator,
+    lifecycle: workItemHandoffLifecycleValidator,
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_request_provider", ["requestId", "provider"])
+    .index("by_project_provider_state", ["projectId", "provider", "lifecycle.state"]),
 
   requests: defineTable({
     text: v.string(),

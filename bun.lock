@@ -95,6 +95,7 @@
       },
       "devDependencies": {
         "@types/node": "^25.5.0",
+        "convex-test": "0.0.54",
         "typescript": "^5.9.3",
       },
     },
@@ -916,6 +917,8 @@
     "convex": ["convex@1.33.1", "", { "dependencies": { "esbuild": "0.27.0", "prettier": "3.8.1", "ws": "8.18.0" }, "optionalDependencies": { "@clerk/clerk-react": "5.61.3", "react": "19.2.4" }, "bin": { "convex": "bin/main.js" } }, "sha512-mRhR1XqZPLhgJsUepecM/kOgQVRCWKJtHHtyEX/XYY4zmzfItG0D1GNh5fjNEkuO5+72X4PCkzbEFA6327rxog=="],
 
     "convex-helpers": ["convex-helpers@0.1.114", "", { "optionalDependencies": { "@standard-schema/spec": "1.1.0", "hono": "4.12.8", "react": "19.2.4", "typescript": "5.9.3", "zod": "4.3.6" }, "peerDependencies": { "convex": "1.33.1" }, "bin": { "convex-helpers": "bin.cjs" } }, "sha512-elEdh+gG6BDv2dWIWVvBeJPbHnDQS5+WexUuwlGVJXz1EbMkXz/UIQwFIfLMZIXUwW6ot4JYf/1JJKNStrE6lg=="],
+
+    "convex-test": ["convex-test@0.0.54", "", { "peerDependencies": { "convex": "^1.32.0" } }, "sha512-C0v2SQcuxrELAJRNzE6fQ686XDPor7UFoC22jcoJXeCRqhLo8ZIMZ4jyUHoo1UdAL2enCb0AbiprCVpLDN8u9Q=="],
 
     "cookie": ["cookie@0.7.2", "", {}, "sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w=="],
 

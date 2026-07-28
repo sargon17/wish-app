@@ -32,6 +32,9 @@ import type * as lib_requestStatusStarterData from "../lib/requestStatusStarterD
 import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js";
 import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
 import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
+import type * as lib_workItemHandoff from "../lib/workItemHandoff.js";
+import type * as lib_workTrackerSecrets from "../lib/workTrackerSecrets.js";
+import type * as lib_workTrackerTypes from "../lib/workTrackerTypes.js";
 import type * as mcpTokens from "../mcpTokens.js";
 import type * as notificationConnectors from "../notificationConnectors.js";
 import type * as notificationEvents from "../notificationEvents.js";
@@ -47,6 +50,7 @@ import type * as telegramBot from "../telegramBot.js";
 import type * as telegramNotifications from "../telegramNotifications.js";
 import type * as users from "../users.js";
 import type * as waitlist from "../waitlist.js";
+import type * as workItemHandoffs from "../workItemHandoffs.js";
 
 import type {
   ApiFromModules,
@@ -79,6 +83,9 @@ declare const fullApi: ApiFromModules<{
   "lib/requestStatusWorkflow": typeof lib_requestStatusWorkflow;
   "lib/requesterIdentity": typeof lib_requesterIdentity;
   "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
+  "lib/workItemHandoff": typeof lib_workItemHandoff;
+  "lib/workTrackerSecrets": typeof lib_workTrackerSecrets;
+  "lib/workTrackerTypes": typeof lib_workTrackerTypes;
   mcpTokens: typeof mcpTokens;
   notificationConnectors: typeof notificationConnectors;
   notificationEvents: typeof notificationEvents;
@@ -94,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   telegramNotifications: typeof telegramNotifications;
   users: typeof users;
   waitlist: typeof waitlist;
+  workItemHandoffs: typeof workItemHandoffs;
 }>;
 
 /**
