@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
@@ -9,6 +9,7 @@ import { getRequestKind } from "./lib/requestKind";
 import { MAX_BULK_REQUESTS } from "./lib/requestLimits";
 import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
 import { isHandoffBlocking } from "./lib/workItemHandoff";
+import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import { emitNotificationEvent } from "./notificationEvents";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
@@ -55,7 +56,7 @@ async function deleteRequestCascade(ctx: MutationCtx, request: Doc<"requests">) 
     .withIndex("by_request", (q) => q.eq("requestId", id))
     .collect();
   if (handoffs.some((handoff) => isHandoffBlocking(handoff.lifecycle.state))) {
-    throw new Error("Request cannot be deleted while a Work Item Handoff is unresolved");
+    throw new ConvexError(unresolvedWorkItemHandoffError);
   }
 
   await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
@@ -256,6 +257,7 @@ export const deleteRequest = mutation({
     try {
       await deleteOwnedRequests(ctx, [args.id]);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete request");
     }
@@ -278,6 +280,7 @@ export const deleteRequests = mutation({
     try {
       await deleteOwnedRequests(ctx, args.ids);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete requests");
     }
@@ -298,6 +301,7 @@ export const deleteRequestByApiKeyInternal = internalMutation({
 
       await deleteRequestCascade(ctx, request);
     } catch (error) {
+      if (error instanceof ConvexError) throw error;
       console.error(error);
       throw new Error("Failed to delete request");
     }

@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { getWorkTrackerError } from "@/lib/workTrackerErrors";
+
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -31,6 +33,7 @@ import {
 } from "../ui/dropdown-menu";
 
 import RequestCreateEditDialog from "./RequestCreateEditDialog";
+import { Spinner } from "../ui/spinner";
 
 interface Props {
   request: Doc<"requests">;
@@ -46,7 +49,8 @@ export default function RequestCardActions({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const deleteProject = useMutation(api.requests.deleteRequest);
+  const [deleting, setDeleting] = useState(false);
+  const deleteRequest = useMutation(api.requests.deleteRequest);
   const updateStatus = useMutation(api.requests.updateStatus);
 
   async function moveToStatus(status: Doc<"requestStatuses">) {
@@ -61,9 +65,24 @@ export default function RequestCardActions({
     }
   }
 
-  const handleSubmit = () => {
-    deleteProject({ id: request._id });
-    setIsOpen(false);
+  const handleSubmit = async () => {
+    setDeleting(true);
+    try {
+      await deleteRequest({ id: request._id });
+      setIsOpen(false);
+      toast.success(`${label} deleted`);
+    } catch (error) {
+      const workTrackerError = getWorkTrackerError(error);
+      if (workTrackerError) {
+        toast.error(`${label} cannot be deleted yet`, {
+          description: workTrackerError.message,
+        });
+      } else {
+        toast.error(`Could not delete ${label.toLowerCase()}`);
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -139,12 +158,13 @@ export default function RequestCardActions({
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" disabled={deleting}>
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" variant="destructive">
-                Delete
+              <Button type="submit" variant="destructive" disabled={deleting}>
+                {deleting ? <Spinner /> : null}
+                {deleting ? "Deleting" : "Delete"}
               </Button>
             </DialogFooter>
           </form>

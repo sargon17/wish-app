@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { getInitialLinearTeamId, parseLinearCallbackResult } from "@/lib/linearWorkTrackerUi";
+import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
 const callbackMessages = {
   authorized: {
@@ -74,6 +75,10 @@ const callbackMessages = {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function workTrackerChangeError(error: unknown, fallback: string) {
+  return getWorkTrackerError(error)?.message ?? errorMessage(error, fallback);
 }
 
 export default function LinearWorkTrackerCard({
@@ -147,7 +152,7 @@ export default function LinearWorkTrackerCard({
         setAvailableTeams(null);
         toast.success(`Linear destination changed to ${result.team.name}`);
       } catch (error) {
-        toast.error(errorMessage(error, "Could not change the Linear team"));
+        toast.error(workTrackerChangeError(error, "Could not change the Linear team"));
       }
     });
   }
@@ -159,7 +164,7 @@ export default function LinearWorkTrackerCard({
         setAvailableTeams(null);
         toast.success("Linear disconnected");
       } catch (error) {
-        toast.error(errorMessage(error, "Could not disconnect Linear"));
+        toast.error(workTrackerChangeError(error, "Could not disconnect Linear"));
       }
     });
   }
@@ -262,7 +267,7 @@ export default function LinearWorkTrackerCard({
                     });
                     toast.success(`Linear connected to ${result.team.name}`);
                   } catch (error) {
-                    toast.error(errorMessage(error, "Could not save the Linear destination"));
+                    toast.error(workTrackerChangeError(error, "Could not save the Linear destination"));
                   }
                 });
               }}
