@@ -92,6 +92,18 @@ function failedResult(
   };
 }
 
+function definiteRejectionResult(codes: string[], correlationId?: string) {
+  const needsAttention = codes.some((code) => code !== "RATELIMITED");
+  return failedResult(
+    needsAttention ? "linear_connection_invalid" : "linear_rate_limited",
+    needsAttention
+      ? "Linear rejected the connection or destination"
+      : "Linear rate limited the request",
+    correlationId,
+    needsAttention,
+  );
+}
+
 async function requestLinear(accessToken: string, query: string, variables: unknown) {
   return await fetch(LINEAR_GRAPHQL_URL, {
     method: "POST",
@@ -168,16 +180,29 @@ export async function createLinearIssue(args: {
   }
 
   const errors = readGraphQLErrors(body);
+  const result =
+    isRecord(body) && isRecord(body.data) && isRecord(body.data.issueCreate)
+      ? body.data.issueCreate
+      : undefined;
+  if (
+    !response.ok &&
+    errors.present &&
+    errors.codes?.every((code) => definiteRejectionCodes.has(code)) &&
+    (!result ||
+      (result.success === false && (result.issue === null || result.issue === undefined)))
+  ) {
+    return definiteRejectionResult(errors.codes, correlationId);
+  }
   if (!response.ok || !isRecord(body) || !isRecord(body.data)) {
     return unknownResult(correlationId);
   }
 
-  const result = body.data.issueCreate;
-  if (!isRecord(result) || typeof result.success !== "boolean") {
+  const issueCreate = body.data.issueCreate;
+  if (!isRecord(issueCreate) || typeof issueCreate.success !== "boolean") {
     return unknownResult(correlationId);
   }
-  if (result.success) {
-    const externalIdentity = readIssue(result.issue, args.issueId);
+  if (issueCreate.success) {
+    const externalIdentity = readIssue(issueCreate.issue, args.issueId);
     if (!externalIdentity || (errors.present && !errors.codes)) {
       return unknownResult(correlationId);
     }
@@ -187,19 +212,12 @@ export async function createLinearIssue(args: {
     if (!errors.codes || !errors.codes.every((code) => definiteRejectionCodes.has(code))) {
       return unknownResult(correlationId);
     }
-    if (result.issue !== null && result.issue !== undefined) return unknownResult(correlationId);
-
-    const needsAttention = errors.codes.some((code) => code !== "RATELIMITED");
-    return failedResult(
-      needsAttention ? "linear_connection_invalid" : "linear_rate_limited",
-      needsAttention
-        ? "Linear rejected the connection or destination"
-        : "Linear rate limited the request",
-      correlationId,
-      needsAttention,
-    );
+    if (issueCreate.issue !== null && issueCreate.issue !== undefined) {
+      return unknownResult(correlationId);
+    }
+    return definiteRejectionResult(errors.codes, correlationId);
   }
-  if (!result.success && (result.issue === null || result.issue === undefined)) {
+  if (!issueCreate.success && (issueCreate.issue === null || issueCreate.issue === undefined)) {
     return failedResult("linear_rejected", "Linear rejected the issue", correlationId);
   }
   return unknownResult(correlationId);

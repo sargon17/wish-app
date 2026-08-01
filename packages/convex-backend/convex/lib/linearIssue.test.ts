@@ -119,6 +119,50 @@ describe("Linear issue delivery", () => {
     await expect(createLinearIssue(args)).resolves.toMatchObject({ state: "unknown" });
   });
 
+  it("classifies definite GraphQL rejections in non-success HTTP responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json(
+            {
+              errors: [{ extensions: { code: "RATELIMITED" } }],
+              data: { issueCreate: { success: false, issue: null } },
+            },
+            { status: 400 },
+          ),
+        )
+        .mockResolvedValueOnce(
+          Response.json(
+            {
+              errors: [{ extensions: { code: "BAD_USER_INPUT" } }],
+              data: { issueCreate: { success: false, issue: null } },
+            },
+            { status: 400 },
+          ),
+        ),
+    );
+
+    const args = {
+      accessToken: "access",
+      issueId: "issue-id",
+      teamId: "team-id",
+      title: "Export reports",
+      description: "Description",
+    };
+    await expect(createLinearIssue(args)).resolves.toMatchObject({
+      state: "failed",
+      errorCode: "linear_rate_limited",
+      needsAttention: false,
+    });
+    await expect(createLinearIssue(args)).resolves.toMatchObject({
+      state: "failed",
+      errorCode: "linear_connection_invalid",
+      needsAttention: true,
+    });
+  });
+
   it("treats malformed and contradictory success responses as unknown", async () => {
     vi.stubGlobal(
       "fetch",

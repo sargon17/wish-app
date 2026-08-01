@@ -10,7 +10,7 @@ import RequestDetailView from "./RequestDeatailView";
 
 interface Props {
   projectId: Id<"projects">;
-  itemId: string;
+  itemId: string | null;
   kind?: "request" | "complaint";
 }
 
@@ -18,11 +18,14 @@ export default function RequestDeepLink({ projectId, itemId, kind }: Props) {
   const requests = useRequests(projectId, kind);
   const location = useLocation();
   const router = useRouter();
-  const lastRejectedItem = useRef<string | undefined>(undefined);
-  const request = requests.value?.find((candidate) => candidate._id === itemId);
+  const lastRejectedItem = useRef<string | null | undefined>(undefined);
+  const request = itemId
+    ? requests.value?.find((candidate) => candidate._id === itemId)
+    : undefined;
+  const isMalformedItem = itemId === null;
 
   useEffect(() => {
-    if (requests.isPending || requests.error || request) return;
+    if (!isMalformedItem && (requests.isPending || requests.error || request)) return;
 
     if (lastRejectedItem.current !== itemId) {
       toast.error(kind === "complaint" ? "Complaint not found" : "Request not found");
@@ -32,6 +35,7 @@ export default function RequestDeepLink({ projectId, itemId, kind }: Props) {
     router.history.replace(locationWithoutRequestItem(location.pathname, location.searchStr));
   }, [
     itemId,
+    isMalformedItem,
     kind,
     location.pathname,
     location.searchStr,

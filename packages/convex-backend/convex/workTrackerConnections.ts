@@ -2,8 +2,8 @@ import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import type { ActionCtx } from "./_generated/server";
-import { action, internalMutation, internalQuery, mutation } from "./_generated/server";
+import type { ActionCtx, MutationCtx } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   getLinearConfig,
@@ -292,9 +292,26 @@ export async function getFreshLinearConnection(
   if (!connection) {
     throw new Error("Linear connection not found");
   }
-  let credentials = parseStoredCredentials(
-    await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
-  );
+  const parseCredentials = async (currentConnection: NonNullable<typeof connection>) => {
+    try {
+      return parseStoredCredentials(
+        await decryptWorkTrackerSecret(
+          currentConnection.data.encryptedCredentials,
+          config.encryptionKey,
+        ),
+      );
+    } catch (error) {
+      await ctx.runMutation(
+        internal.workTrackerConnections.markLinearConnectionNeedsAttentionInternal,
+        {
+          connectionId: currentConnection._id,
+          credentialCiphertext: currentConnection.data.encryptedCredentials.ciphertext,
+        },
+      );
+      throw error;
+    }
+  };
+  let credentials = await parseCredentials(connection);
   if (!forceRefresh && credentials.expiresAt > Date.now() + LINEAR_REFRESH_EARLY_MS) {
     return { connection, credentials };
   }
@@ -318,9 +335,7 @@ export async function getFreshLinearConnection(
     if (!connection) {
       throw new Error("Linear connection not found");
     }
-    credentials = parseStoredCredentials(
-      await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
-    );
+    credentials = await parseCredentials(connection);
     if (
       (forceRefresh && connection.data.encryptedCredentials.ciphertext === credentialCiphertext) ||
       (!forceRefresh && credentials.expiresAt <= Date.now() + LINEAR_REFRESH_EARLY_MS)
@@ -437,28 +452,42 @@ export const syncLinearDiscoveryInternal = internalMutation({
   },
 });
 
+async function markLinearConnectionNeedsAttention(
+  ctx: Pick<MutationCtx, "db">,
+  args: { connectionId: Id<"workTrackerConnections">; credentialCiphertext: string },
+) {
+  const connection = await ctx.db.get(args.connectionId);
+  const now = Date.now();
+  if (
+    !connection ||
+    connection.provider !== "linear" ||
+    connection.data.encryptedCredentials.ciphertext !== args.credentialCiphertext ||
+    isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, now)
+  ) {
+    return false;
+  }
+  await ctx.db.patch(connection._id, {
+    health: "needs_attention",
+    data: { ...connection.data, credentialLease: undefined },
+    updatedAt: now,
+  });
+  return true;
+}
+
 export const markLinearConnectionNeedsAttentionInternal = internalMutation({
   args: { connectionId: v.id("workTrackerConnections"), credentialCiphertext: v.string() },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const connection = await ctx.db.get(args.connectionId);
-    if (!connection) {
-      return;
-    }
+    if (!connection) return false;
     await assertProjectOwner(ctx, connection.projectId, user._id);
-    const now = Date.now();
-    if (
-      connection.data.encryptedCredentials.ciphertext !== args.credentialCiphertext ||
-      isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, now)
-    ) {
-      return;
-    }
-    await ctx.db.patch(connection._id, {
-      health: "needs_attention",
-      data: { ...connection.data, credentialLease: undefined },
-      updatedAt: now,
-    });
+    return await markLinearConnectionNeedsAttention(ctx, args);
   },
+});
+
+export const markLinearConnectionNeedsAttentionForReconciliationInternal = internalMutation({
+  args: { connectionId: v.id("workTrackerConnections"), credentialCiphertext: v.string() },
+  handler: async (ctx, args) => await markLinearConnectionNeedsAttention(ctx, args),
 });
 
 export const listLinearTeams = action({
@@ -656,6 +685,7 @@ export const disconnectLinear = action({
             connectionId: connection._id,
             message: error instanceof Error ? error.message.slice(0, 200) : "Unknown error",
           });
+          throw error;
         }
       }
       const result = await ctx.runMutation(

@@ -200,9 +200,7 @@ export default function ProjectChangelogEditor({
                     value={feature.icon}
                     onValueChange={(icon) =>
                       setFeatures((current) =>
-                        current.map((item) =>
-                          item.id === feature.id ? { ...item, icon } : item,
-                        ),
+                        current.map((item) => (item.id === feature.id ? { ...item, icon } : item)),
                       )
                     }
                   >
@@ -239,7 +237,9 @@ export default function ProjectChangelogEditor({
                   onChange={(event) =>
                     setFeatures((current) =>
                       current.map((item) =>
-                        item.id === feature.id ? { ...item, description: event.target.value } : item,
+                        item.id === feature.id
+                          ? { ...item, description: event.target.value }
+                          : item,
                       ),
                     )
                   }
