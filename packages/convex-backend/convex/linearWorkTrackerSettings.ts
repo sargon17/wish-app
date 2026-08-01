@@ -3,24 +3,32 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { isLinearConfigured } from "./lib/linearConnection";
+import {
+  linearConnectionOrNull,
+  linearSetupOrNull,
+} from "./lib/workTrackerConnection";
 
 export const getLinearSettings = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    const connection = await ctx.db
-      .query("workTrackerConnections")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.projectId).eq("provider", "linear"),
-      )
-      .unique();
-    const setup = await ctx.db
-      .query("workTrackerOAuthSetups")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.projectId).eq("provider", "linear"),
-      )
-      .unique();
+    const connection = linearConnectionOrNull(
+      await ctx.db
+        .query("workTrackerConnections")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", args.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
+    const setup = linearSetupOrNull(
+      await ctx.db
+        .query("workTrackerOAuthSetups")
+        .withIndex("by_project_provider", (q) =>
+          q.eq("projectId", args.projectId).eq("provider", "linear"),
+        )
+        .unique(),
+    );
     const readySetup =
       setup?.data.stage === "ready" && setup.expiresAt > Date.now()
         ? {

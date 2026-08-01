@@ -8,6 +8,11 @@ const MAX_TEAM_PAGES = 10;
 const MAX_TEAMS = 500;
 const MAX_TOKEN_LIFETIME_SECONDS = 365 * 24 * 60 * 60;
 
+export {
+  createWorkTrackerOAuthState as createLinearOAuthState,
+  hashWorkTrackerOAuthState as hashLinearOAuthState,
+} from "./workTrackerOAuthState";
+
 const discoveryQuery = `query ConfigureLinearConnection($first: Int!, $after: String) {
   organization { id name urlKey }
   teams(first: $first, after: $after) {
@@ -22,22 +27,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function encodeBase64Url(value: Uint8Array) {
-  return btoa(String.fromCharCode(...value))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-}
-
-export function createLinearOAuthState() {
-  return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
-}
-
-export async function hashLinearOAuthState(state: string) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(state));
-  return encodeBase64Url(new Uint8Array(digest));
 }
 
 export function buildLinearAuthorizationUrl(args: {

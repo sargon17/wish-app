@@ -8,8 +8,14 @@ import { cors } from "hono/cors";
 import { api, internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
+import { getGitHubWebhookConfig } from "./lib/githubConnection";
+import {
+  parseGitHubWebhook,
+  readGitHubWebhookBody,
+  verifyGitHubWebhookSignature,
+} from "./lib/githubWebhook";
 import { handleMcpRequest } from "./lib/mcpServer";
-import { validateWishAppBaseUrl } from "./lib/linearConnection";
+import { validateWishAppBaseUrl } from "./lib/workTrackerConfig";
 import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
 import { toPublicProject } from "./lib/projectPublic";
 import { createPublicError, publicErrorJson, toPublicErrorResponse } from "./lib/publicErrors";
@@ -68,6 +74,98 @@ app.get("/work-trackers/linear/callback", async (c) => {
   redirectUrl.searchParams.set("settings", "work-trackers");
   redirectUrl.searchParams.set("linear", result.ok ? "authorized" : result.errorCode);
   return c.redirect(redirectUrl.toString(), 303);
+});
+
+app.get("/work-trackers/github/callback", async (c) => {
+  c.header("Cache-Control", "no-store");
+  c.header("Referrer-Policy", "no-referrer");
+  let appBaseUrl: string;
+  try {
+    appBaseUrl = validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
+  } catch {
+    return c.text("GitHub callback is not configured", 500);
+  }
+
+  let result;
+  try {
+    result = await c.env.runAction(
+      internal.githubWorkTrackerOAuth.completeGitHubSetupInternal,
+      {
+        code: c.req.query("code") ?? "",
+        state: c.req.query("state") ?? "",
+        installationId: c.req.query("installation_id") ?? "",
+        providerError: c.req.query("error"),
+      },
+    );
+  } catch {
+    result = { ok: false as const, errorCode: "invalid_callback" };
+  }
+  const redirectUrl = new URL(
+    result.projectId && result.projectSlug
+      ? `/dashboard/project/${encodeURIComponent(result.projectId)}/${encodeURIComponent(result.projectSlug)}/requests`
+      : "/dashboard",
+    appBaseUrl,
+  );
+  redirectUrl.searchParams.set("settings", "work-trackers");
+  redirectUrl.searchParams.set("github", result.ok ? "authorized" : result.errorCode);
+  return c.redirect(redirectUrl.toString(), 303);
+});
+
+app.post("/work-trackers/github/webhook", async (c) => {
+  const contentLength = Number(c.req.header("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > 1_000_000) {
+    return c.text("Payload too large", 413);
+  }
+  let config;
+  try {
+    config = getGitHubWebhookConfig();
+  } catch {
+    return c.text("GitHub webhook is not configured", 500);
+  }
+  let body: Uint8Array;
+  try {
+    body = await readGitHubWebhookBody(c.req.raw, 1_000_000);
+  } catch {
+    return c.text("Payload too large", 413);
+  }
+  if (
+    !(await verifyGitHubWebhookSignature(
+      config.webhookSecret,
+      body,
+      c.req.header("x-hub-signature-256"),
+    ))
+  ) {
+    return c.text("Invalid signature", 401);
+  }
+  let payload: unknown;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return c.text("Invalid payload", 400);
+  }
+  const event = parseGitHubWebhook(payload, c.req.header("x-github-event"));
+  if (!event) return c.text("Invalid payload", 400);
+  if (event.kind === "installation_unavailable") {
+    await c.env.runMutation(
+      internal.githubWorkTrackerWebhooks.applyGitHubWebhookInternal,
+      {
+        installationId: event.installationId,
+        installationUnavailable: true,
+        removedRepositoryIds: [],
+      },
+    );
+  }
+  if (event.kind === "repositories_removed") {
+    await c.env.runMutation(
+      internal.githubWorkTrackerWebhooks.applyGitHubWebhookInternal,
+      {
+        installationId: event.installationId,
+        installationUnavailable: false,
+        removedRepositoryIds: event.repositoryIds,
+      },
+    );
+  }
+  return c.text("Accepted", 202);
 });
 
 // The project API authenticates with public client keys, so browser embeds

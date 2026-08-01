@@ -18,4 +18,11 @@ crons.interval(
   {},
 );
 
+crons.interval(
+  "delete expired GitHub setups",
+  { minutes: 5 },
+  internal.githubWorkTrackerCleanup.cleanupExpiredGitHubSetupsInternal,
+  {},
+);
+
 export default crons;

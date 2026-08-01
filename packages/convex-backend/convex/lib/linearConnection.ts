@@ -1,4 +1,7 @@
-import { validateWorkTrackerEncryptionKey } from "./workTrackerSecrets";
+import {
+  getWorkTrackerEncryptionKey,
+  validateWishAppBaseUrl,
+} from "./workTrackerConfig";
 
 export const LINEAR_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 export const LINEAR_AUTHORIZED_SETUP_TTL_MS = 30 * 60 * 1000;
@@ -25,33 +28,11 @@ export function validateLinearRedirectUri(value: string) {
   }
 }
 
-export function validateWishAppBaseUrl(value: string) {
-  try {
-    const url = new URL(value);
-    const validProtocol =
-      url.protocol === "https:" || (url.protocol === "http:" && url.hostname === "localhost");
-    if (
-      !validProtocol ||
-      url.pathname !== "/" ||
-      url.search ||
-      url.hash ||
-      url.username ||
-      url.password
-    ) {
-      throw new Error();
-    }
-    return url.origin;
-  } catch {
-    throw new Error("Wish app base URL is invalid");
-  }
-}
-
 export function getLinearConfig() {
   const clientId = process.env.LINEAR_CLIENT_ID?.trim();
   const clientSecret = process.env.LINEAR_CLIENT_SECRET?.trim();
   const redirectUri = process.env.LINEAR_REDIRECT_URI?.trim();
-  const encryptionKey = process.env.WORK_TRACKER_ENCRYPTION_KEY?.trim();
-  if (!clientId || !clientSecret || !redirectUri || !encryptionKey) {
+  if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Linear OAuth is not configured");
   }
   const baseUrl = validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
@@ -59,15 +40,9 @@ export function getLinearConfig() {
     clientId,
     clientSecret,
     redirectUri: validateLinearRedirectUri(redirectUri),
-    encryptionKey: validateWorkTrackerEncryptionKey(encryptionKey),
+    encryptionKey: getWorkTrackerEncryptionKey(),
     baseUrl,
   };
-}
-
-export function getWorkTrackerEncryptionKey() {
-  const encryptionKey = process.env.WORK_TRACKER_ENCRYPTION_KEY?.trim();
-  if (!encryptionKey) throw new Error("Work Tracker encryption key is not configured");
-  return validateWorkTrackerEncryptionKey(encryptionKey);
 }
 
 export function isLinearHandoffCreationEnabled() {

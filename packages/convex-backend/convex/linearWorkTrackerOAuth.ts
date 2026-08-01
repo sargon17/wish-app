@@ -10,13 +10,13 @@ import {
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import {
   getLinearConfig,
-  getWorkTrackerEncryptionKey,
   LINEAR_AUTHORIZED_SETUP_TTL_MS,
   LINEAR_OAUTH_STATE_TTL_MS,
   parseStoredCredentials,
   serializeCredentials,
   validateLinearRedirectUri,
 } from "./lib/linearConnection";
+import { getWorkTrackerEncryptionKey } from "./lib/workTrackerConfig";
 import {
   buildLinearAuthorizationUrl,
   createLinearOAuthState,
@@ -29,6 +29,7 @@ import {
   decryptWorkTrackerSecret,
   encryptWorkTrackerSecret,
 } from "./lib/workTrackerSecrets";
+import { linearSetupOrNull } from "./lib/workTrackerConnection";
 
 export const createLinearOAuthSetupInternal = internalMutation({
   args: {
@@ -305,8 +306,8 @@ export const claimLinearOAuthSetupDiscardInternal = internalMutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.projectId, user._id);
-    const setup = await ctx.db.get(args.setupId);
-    if (!setup || setup.projectId !== args.projectId || setup.provider !== "linear") {
+    const setup = linearSetupOrNull(await ctx.db.get(args.setupId));
+    if (!setup || setup.projectId !== args.projectId) {
       return null;
     }
     if (setup.data.stage === "pending") {
