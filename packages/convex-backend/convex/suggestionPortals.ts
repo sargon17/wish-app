@@ -114,7 +114,9 @@ export const getPublishedPortal = query({
     projectSlug: v.string(),
     clientId: v.optional(v.string()),
     search: v.optional(v.string()),
-    statusId: v.optional(v.string()),
+    statusIds: v.optional(v.array(v.string())),
+    createdFrom: v.optional(v.number()),
+    createdTo: v.optional(v.number()),
     sort: v.optional(v.string()),
     cursor: v.optional(v.number()),
     limit: v.optional(v.number()),
@@ -133,7 +135,10 @@ export const getPublishedPortal = query({
       statuses.map((status) => [status._id.toString(), status.position ?? 0]),
     );
     const statusIds = new Set(statuses.map((status) => status._id.toString()));
-    const statusId = args.statusId && statusIds.has(args.statusId) ? args.statusId : undefined;
+    const selectedStatusIds =
+      args.statusIds === undefined
+        ? undefined
+        : new Set(args.statusIds.filter((id) => statusIds.has(id)));
     const search = normalizePortalQuery(args.search);
     const sort = normalizePortalSort(args.sort);
     const commentCounts = await countCommentsByRequest(ctx, project._id);
@@ -145,7 +150,12 @@ export const getPublishedPortal = query({
     const visibleRequests = sortPortalRequests(
       requests
         .filter((request) => getRequestKind(request) === "request")
-        .filter((request) => !statusId || request.status.toString() === statusId)
+        .filter(
+          (request) =>
+            selectedStatusIds === undefined || selectedStatusIds.has(request.status.toString()),
+        )
+        .filter((request) => !args.createdFrom || request._creationTime >= args.createdFrom)
+        .filter((request) => !args.createdTo || request._creationTime <= args.createdTo)
         .filter((request) => portalRequestMatchesSearch(request, search)),
       sort,
     );

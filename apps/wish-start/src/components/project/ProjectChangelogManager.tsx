@@ -315,7 +315,7 @@ export default function ProjectChangelogManager({
             Loading changelog entries...
           </div>
         ) : entries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-gradient-to-br from-orange-500/8 via-background to-background p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed bg-gradient-to-br from-brand/8 via-background to-background p-8 text-center text-sm text-muted-foreground">
             No changelog entries yet. Create the first release note, publish it, and your hosted
             page and API feed will update automatically.
           </div>
@@ -389,7 +389,7 @@ export default function ProjectChangelogManager({
                   <ul className="grid gap-2 rounded-xl border bg-muted/20 p-4">
                     {entry.features.map((feature) => (
                       <li key={feature.title} className="flex items-start gap-2 text-sm">
-                        <span className="mt-0.5 text-orange-600 [&>svg]:size-4 dark:text-orange-400">
+                        <span className="mt-0.5 text-brand [&>svg]:size-4">
                           <ChangelogFeatureIcon name={feature.icon} />
                         </span>
                         <span>

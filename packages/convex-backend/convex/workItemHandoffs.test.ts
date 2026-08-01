@@ -190,6 +190,35 @@ describe("Work Item Handoff delivery lifecycle", () => {
     expect(JSON.stringify(log.mock.calls)).not.toContain("Let customers export reports");
   });
 
+  it("marks malformed stored credentials for attention before failing delivery", async () => {
+    const { ids, owner, t } = await seed();
+    await configureLinearDelivery(t, ids);
+    await t.run(async (ctx) => {
+      const connection = await ctx.db.get(ids.connectionId);
+      if (!connection) throw new Error("Expected connection");
+      await ctx.db.patch(connection._id, {
+        data: {
+          ...connection.data,
+          encryptedCredentials: { ciphertext: "invalid", iv: "invalid" },
+        },
+      });
+    });
+
+    const result = await owner.action(api.workItemHandoffs.send, {
+      projectId: ids.projectId,
+      requestId: ids.requestId,
+      provider: "linear" as const,
+    });
+
+    expect(result.lifecycle).toMatchObject({
+      state: "failed",
+      errorCode: "linear_connection_unavailable",
+    });
+    expect(await t.run(async (ctx) => ctx.db.get(ids.connectionId))).toMatchObject({
+      health: "needs_attention",
+    });
+  });
+
   it("blocks new creation unless the emergency flag is explicitly enabled", async () => {
     const { ids, owner, t } = await seed();
     vi.stubEnv("LINEAR_HANDOFF_CREATION_ENABLED", "false");
@@ -601,6 +630,18 @@ describe("Work Item Handoff delivery lifecycle", () => {
       owner.mutation(api.requests.deleteRequest, { id: ids.requestId }),
     ).resolves.toBeNull();
     expect(await t.run(async (ctx) => ctx.db.get(reservation.handoff._id))).toBeNull();
+  });
+
+  it("preserves the unresolved-handoff error for bulk deletion", async () => {
+    const { ids, owner } = await seed();
+    await owner.mutation(
+      internal.workItemHandoffs.reserveInternal,
+      reservationArgs(ids, "stable-issue-id"),
+    );
+
+    await expect(
+      owner.mutation(api.requests.deleteRequests, { ids: [ids.requestId] }),
+    ).rejects.toMatchObject({ data: { code: "WORK_ITEM_HANDOFF_UNRESOLVED" } });
   });
 
   it("does not let another Project Owner reserve a Handoff", async () => {
