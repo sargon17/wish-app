@@ -23,7 +23,7 @@ interface Props {
 export default function DashboardHeading({ title, actions, breadcrumbs }: Props) {
   return (
     <div className="sticky top-0 z-50 flex w-full flex-col gap-3 pb-2 backdrop-blur-2xl md:pt-6">
-      <div className="flex items-center justify-between gap-4 overflow-hidden sidebar-offset-pl max-md:px-2 md:pr-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 pr-2 sidebar-offset-pl md:flex-nowrap md:gap-4 md:pr-6">
         <div className="flex h-10 min-w-0 flex-1 items-center gap-4">
           <SidebarTrigger />
           <Separator orientation="vertical" />
@@ -31,7 +31,9 @@ export default function DashboardHeading({ title, actions, breadcrumbs }: Props)
             {title}
           </h1>
         </div>
-        <div className="flex flex-none shrink-0">{actions}</div>
+        <div className="order-2 flex w-full min-w-0 overflow-x-auto pb-1 md:order-none md:w-auto md:flex-none md:shrink-0 md:overflow-visible md:pb-0">
+          {actions}
+        </div>
       </div>
       <Separator />
       <Breadcrumb className="sidebar-offset-pl max-md:px-2 md:pr-6">
