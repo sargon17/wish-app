@@ -8,6 +8,7 @@ import { ensureProjectPublicChangelogSlug } from "./lib/projectChangelog";
 import { toPublicProject } from "./lib/projectPublic";
 import { createUniqueProjectSlug } from "./lib/projectSlug";
 import { STARTER_PROJECT_STATUSES } from "./lib/requestStatusStarterData";
+import { isHandoffBlocking, WORK_ITEM_HANDOFF_STATES } from "./lib/workItemHandoff";
 
 // export const getForCurrentUser = query({
 //   args: {},
@@ -243,15 +244,26 @@ export const deleteProject = mutation({
       .first();
     const workTrackerSetup = await ctx.db
       .query("workTrackerOAuthSetups")
-      .withIndex("by_project_provider", (q) =>
-        q.eq("projectId", args.id).eq("provider", "linear"),
-      )
+      .withIndex("by_project_provider", (q) => q.eq("projectId", args.id).eq("provider", "linear"))
       .unique();
-    if (
-      workTrackerConnection ||
-      (workTrackerSetup && workTrackerSetup.data.stage !== "pending")
-    ) {
+    if (workTrackerConnection || (workTrackerSetup && workTrackerSetup.data.stage !== "pending")) {
       throw new Error("Disconnect Work Trackers before deleting this project");
+    }
+
+    const handoffs = (
+      await Promise.all(
+        WORK_ITEM_HANDOFF_STATES.map((state) =>
+          ctx.db
+            .query("workItemHandoffs")
+            .withIndex("by_project_state", (q) =>
+              q.eq("projectId", args.id).eq("lifecycle.state", state),
+            )
+            .collect(),
+        ),
+      )
+    ).flat();
+    if (handoffs.some((handoff) => isHandoffBlocking(handoff.lifecycle.state))) {
+      throw new Error("Project cannot be deleted while a Work Item Handoff is unresolved");
     }
 
     await Promise.all(upvotes.map((upvote) => ctx.db.delete(upvote._id)));
@@ -260,6 +272,7 @@ export const deleteProject = mutation({
     await Promise.all(statuses.map((status) => ctx.db.delete(status._id)));
     await Promise.all(apiKeys.map((apiKey) => ctx.db.delete(apiKey._id)));
     await Promise.all(changelogEntries.map((entry) => ctx.db.delete(entry._id)));
+    await Promise.all(handoffs.map((handoff) => ctx.db.delete(handoff._id)));
     if (workTrackerSetup) await ctx.db.delete(workTrackerSetup._id);
 
     await ctx.db.delete(args.id);

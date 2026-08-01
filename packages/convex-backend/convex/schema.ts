@@ -158,7 +158,9 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_request", ["requestId"])
     .index("by_request_provider", ["requestId", "provider"])
+    .index("by_project_state", ["projectId", "lifecycle.state"])
     .index("by_project_provider_state", ["projectId", "provider", "lifecycle.state"]),
 
   requests: defineTable({
