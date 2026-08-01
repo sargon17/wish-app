@@ -5,32 +5,12 @@ import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 import { useAction, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import {
-  AlertTriangle,
-  Check,
-  ChartNoAxesGantt,
-  Link2,
-  RefreshCw,
-  Unplug,
-} from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { AlertTriangle, Check, ChartNoAxesGantt, Link2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -38,40 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import { getInitialLinearTeamId, parseLinearCallbackResult } from "@/lib/linearWorkTrackerUi";
+import { getInitialLinearTeamId } from "@/lib/linearWorkTrackerUi";
+import { getWorkTrackerCallbackMessage } from "@/lib/workTrackerCallbackUi";
 import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
-const callbackMessages = {
-  authorized: {
-    title: "Linear authorized",
-    description: "Choose the team that should receive new External Work Items.",
-  },
-  invalid_callback: {
-    title: "Linear did not complete authorization",
-    description: "Start the connection again from this page.",
-  },
-  invalid_state: {
-    title: "This Linear connection link expired",
-    description: "OAuth links are single-use and expire after ten minutes. Start again.",
-  },
-  authorization_denied: {
-    title: "Linear authorization was canceled",
-    description: "No active connection was changed.",
-  },
-  linear_exchange_failed: {
-    title: "Linear rejected the authorization exchange",
-    description: "No active connection was changed. Start again or check the Linear app settings.",
-  },
-  linear_discovery_failed: {
-    title: "Wish could not load Linear teams",
-    description: "No active connection was changed. Reauthorize and try again.",
-  },
-  linear_persistence_failed: {
-    title: "Wish could not save the Linear authorization",
-    description: "The new authorization was revoked. Start again.",
-  },
-};
+import {
+  WorkTrackerCallbackAlert,
+  WorkTrackerCard,
+  WorkTrackerCleanupAlert,
+  WorkTrackerConnectionFact,
+  WorkTrackerConnectionActions,
+  WorkTrackerConfigurationAlert,
+  WorkTrackerDestinationEditor,
+  WorkTrackerSetupFlow,
+  WorkTrackerSetupStep,
+} from "./WorkTrackerSetup";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -169,88 +130,48 @@ export default function LinearWorkTrackerCard({
     });
   }
 
-  const parsedLinearResult = parseLinearCallbackResult(linearResult);
-  const callbackMessage = parsedLinearResult ? callbackMessages[parsedLinearResult] : null;
+  const callbackMessage = getWorkTrackerCallbackMessage("linear", linearResult);
   const showCallbackMessage =
-    callbackMessage && (parsedLinearResult !== "authorized" || Boolean(settings?.setup));
+    callbackMessage && (!callbackMessage.successful || Boolean(settings?.setup));
 
   return (
     <div className="space-y-5">
       {showCallbackMessage ? (
-        <Alert variant={parsedLinearResult === "authorized" ? "default" : "destructive"}>
-          {parsedLinearResult === "authorized" ? <Check /> : <AlertTriangle />}
-          <AlertTitle>{callbackMessage.title}</AlertTitle>
-          <AlertDescription>{callbackMessage.description}</AlertDescription>
-        </Alert>
+        <WorkTrackerCallbackAlert {...callbackMessage} />
       ) : null}
 
       {settings && !settings.configured ? (
-        <Alert variant="destructive">
-          <AlertTriangle />
-          <AlertTitle>Linear is not configured</AlertTitle>
-          <AlertDescription>
-            A deployment administrator must configure Linear OAuth before Project Owners can use
-            this connection.
-          </AlertDescription>
-        </Alert>
+        <WorkTrackerConfigurationAlert
+          provider="Linear"
+          description="A deployment administrator must configure Linear OAuth before Project Owners can use this connection."
+        />
       ) : null}
 
       {settings?.cleanupSetupId ? (
-        <Alert variant="destructive">
-          <AlertTriangle />
-          <AlertTitle>A failed Linear authorization still needs cleanup</AlertTitle>
-          <AlertDescription className="space-y-3">
-            <p>No active connection was changed. Revoke the failed authorization before retrying.</p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={connectionBusy}
-              onClick={() => void cancelAuthorization(settings.cleanupSetupId!)}
-            >
-              Discard authorization
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <WorkTrackerCleanupAlert
+          busy={connectionBusy}
+          title="A failed Linear authorization still needs cleanup"
+          description="No active connection was changed. Revoke the failed authorization before retrying."
+          onDiscard={() => void cancelAuthorization(settings.cleanupSetupId!)}
+        />
       ) : null}
 
-      <Card className="overflow-hidden border-orange-500/15 bg-card/75 shadow-sm">
-        <CardHeader className="border-b bg-muted/20">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-foreground text-background">
-                <ChartNoAxesGantt className="size-5" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Linear</CardTitle>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  One workspace and one destination team for this Project Board.
-                </p>
-              </div>
-            </div>
-            <Badge
-              variant={
-                settings?.connection?.health === "active"
-                  ? "default"
-                  : settings?.connection
-                    ? "destructive"
-                    : "secondary"
-              }
-            >
-              {settings?.connection?.health === "active"
-                ? "Connected"
-                : settings?.connection
-                  ? "Needs attention"
-                  : "Not connected"}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-5 pt-5">
-          {settings === undefined ? (
-            <div className="flex min-h-32 items-center justify-center">
-              <Spinner />
-            </div>
-          ) : settings.setup ? (
+      <WorkTrackerCard
+        title="Linear"
+        description="One workspace and one destination team for this Project Board."
+        icon={<ChartNoAxesGantt className="size-5" />}
+        loading={settings === undefined}
+        configured={settings?.configured ?? false}
+        connectionHealth={
+          settings?.connection?.health === "active"
+            ? "active"
+            : settings?.connection
+              ? "attention"
+              : undefined
+        }
+        unavailableText="Linear authorization is unavailable until the deployment is configured."
+        setupContent={
+          settings?.setup ? (
             <AuthorizedLinearSetup
               key={settings.setup.id}
               setup={settings.setup}
@@ -272,25 +193,32 @@ export default function LinearWorkTrackerCard({
                 });
               }}
             />
-          ) : settings.connection ? (
+          ) : undefined
+        }
+        connectedContent={
+          settings?.connection ? (
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
-                <ConnectionFact label="Workspace" value={settings.connection.organization.name} />
-                <ConnectionFact
+                <WorkTrackerConnectionFact
+                  label="Workspace"
+                  value={settings.connection.organization.name}
+                />
+                <WorkTrackerConnectionFact
                   label="Destination team"
                   value={`${settings.connection.team.name} · ${settings.connection.team.key}`}
                 />
               </div>
 
               {availableTeams ? (
-                <div className="rounded-xl border bg-muted/20 p-4">
-                  <div className="mb-3">
-                    <p className="font-medium">Change destination team</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      This affects future sends only. Existing Linear links do not move.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                <WorkTrackerDestinationEditor
+                  title="Change destination team"
+                  description="This affects future sends only. Existing Linear links do not move."
+                  saveLabel="Save team"
+                  saveDisabled={!selectedTeamId}
+                  busy={connectionBusy}
+                  onSave={() => void saveTeam()}
+                  onCancel={() => setAvailableTeams(null)}
+                >
                     <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                       <SelectTrigger className="min-w-64" aria-label="Linear destination team">
                         <SelectValue placeholder="Choose a team" />
@@ -303,92 +231,41 @@ export default function LinearWorkTrackerCard({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      type="button"
-                      disabled={!selectedTeamId || connectionBusy}
-                      onClick={() => void saveTeam()}
-                    >
-                      Save team
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={connectionBusy}
-                      onClick={() => setAvailableTeams(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
+                </WorkTrackerDestinationEditor>
               ) : null}
 
-              <div className="flex flex-wrap gap-2 border-t pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={connectionBusy}
-                  onClick={() => void loadTeams()}
-                >
-                  <RefreshCw /> Change team
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={connectionBusy}
-                  onClick={() => void startAuthorization(true)}
-                >
-                  <Link2 /> Connect another workspace
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button type="button" variant="ghost" disabled={connectionBusy}>
-                      <Unplug /> Disconnect
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Disconnect Linear?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Wish will revoke its Linear access. Historical External Work Item links stay
-                        available, and Linear issues are never deleted.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => void disconnect()}>
-                        Disconnect Linear
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+              <WorkTrackerConnectionActions
+                provider="Linear"
+                busy={connectionBusy}
+                changeLabel="Change team"
+                connectLabel="Connect another workspace"
+                disconnectLabel="Disconnect Linear"
+                disconnectDescription="Wish will revoke its Linear access. Historical External Work Item links stay available, and Linear issues are never deleted."
+                onChange={() => void loadTeams()}
+                onConnect={() => void startAuthorization(true)}
+                onDisconnect={() => void disconnect()}
+              />
             </div>
-          ) : settings.configured ? (
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
-              <SetupStep number="1" title="Authorize Linear" active>
-                A Linear workspace admin grants Wish read and issue-creation access.
-                <div className="mt-4">
-                  <Button
-                    type="button"
-                    disabled={connectionBusy}
-                    onClick={() => void startAuthorization()}
-                  >
-                    <Link2 /> Authorize Linear
-                  </Button>
-                </div>
-              </SetupStep>
-              <div className="hidden items-center text-muted-foreground sm:flex">→</div>
-              <SetupStep number="2" title="Choose a team">
-                After authorization, choose exactly one destination team for future sends.
-              </SetupStep>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Linear authorization is unavailable until the deployment is configured.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          ) : undefined
+        }
+        disconnectedContent={
+          <WorkTrackerSetupFlow
+            firstTitle="Authorize Linear"
+            firstDescription="A Linear workspace admin grants Wish read and issue-creation access."
+            action={
+              <Button
+                type="button"
+                disabled={connectionBusy}
+                onClick={() => void startAuthorization()}
+              >
+                <Link2 /> Authorize Linear
+              </Button>
+            }
+            secondTitle="Choose a team"
+            secondDescription="After authorization, choose exactly one destination team for future sends."
+          />
+        }
+      />
     </div>
   );
 }
@@ -413,15 +290,15 @@ function AuthorizedLinearSetup({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
-        <SetupStep number="1" title="Linear authorized" complete>
+        <WorkTrackerSetupStep number="1" title="Linear authorized" complete>
           {setup.organization.name} granted access. Credentials stay encrypted in Wish.
-        </SetupStep>
+        </WorkTrackerSetupStep>
         <div className="hidden items-center text-muted-foreground sm:flex">→</div>
-        <SetupStep number="2" title="Choose a team" active>
+        <WorkTrackerSetupStep number="2" title="Choose a team" active>
           {setup.teams.length > 0
             ? "Select the Linear team that should receive future External Work Items."
             : "This installation does not expose any teams to Wish."}
-        </SetupStep>
+        </WorkTrackerSetupStep>
       </div>
 
       {setup.replacesWorkspace ? (
@@ -459,45 +336,6 @@ function AuthorizedLinearSetup({
           Start again
         </Button>
       </div>
-    </div>
-  );
-}
-
-function SetupStep({
-  active,
-  children,
-  complete,
-  number,
-  title,
-}: {
-  active?: boolean;
-  children: ReactNode;
-  complete?: boolean;
-  number: string;
-  title: string;
-}) {
-  return (
-    <div
-      className={`rounded-xl border p-4 ${active ? "border-orange-500/30 bg-orange-500/5" : "bg-muted/15"}`}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-foreground text-background" : active ? "bg-orange-600 text-white" : "bg-muted text-muted-foreground"}`}
-        >
-          {complete ? <Check className="size-3.5" /> : number}
-        </span>
-        <p className="font-medium">{title}</p>
-      </div>
-      <div className="mt-2 text-sm leading-6 text-muted-foreground">{children}</div>
-    </div>
-  );
-}
-
-function ConnectionFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border bg-muted/15 p-4">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className="mt-1 font-medium">{value}</p>
     </div>
   );
 }

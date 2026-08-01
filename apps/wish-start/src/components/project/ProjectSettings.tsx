@@ -15,6 +15,7 @@ import ProjectWorkTrackersManager from "./ProjectWorkTrackersManager";
 interface ProjectSettingsProps {
   projectID: Id<"projects">;
   children: ReactElement;
+  githubResult?: string;
   linearResult?: string;
   onUrlClose?: () => void;
   requestedSection?: string;
@@ -22,6 +23,7 @@ interface ProjectSettingsProps {
 
 export default function ProjectSettings({
   children,
+  githubResult,
   linearResult,
   onUrlClose,
   projectID,
@@ -52,7 +54,13 @@ export default function ProjectSettings({
     {
       key: "work-trackers",
       label: "Work Trackers",
-      content: <ProjectWorkTrackersManager projectId={projectID} linearResult={linearResult} />,
+      content: (
+        <ProjectWorkTrackersManager
+          projectId={projectID}
+          githubResult={githubResult}
+          linearResult={linearResult}
+        />
+      ),
     },
   ];
 

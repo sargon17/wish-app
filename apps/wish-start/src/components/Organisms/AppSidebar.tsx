@@ -14,7 +14,13 @@ import {
 import type { ReactNode } from "react";
 
 import ProjectSettings from "@/components/project/ProjectSettings";
+import { WorkTrackerCallbackAlert } from "@/components/project/WorkTrackerSetup";
+import { parseGitHubCallbackResult } from "@/lib/githubWorkTrackerUi";
 import { parseLinearCallbackResult } from "@/lib/linearWorkTrackerUi";
+import {
+  getWorkTrackerCallbackDismissUrl,
+  getWorkTrackerCallbackMessage,
+} from "@/lib/workTrackerCallbackUi";
 import {
   Sidebar,
   SidebarContent,
@@ -79,6 +85,14 @@ export function AppSidebar({ footer }: Props) {
   const location = useLocation();
   const router = useRouter();
   const search = new URLSearchParams(location.searchStr);
+  const githubResult = parseGitHubCallbackResult(search.get("github"));
+  const linearResult = parseLinearCallbackResult(search.get("linear"));
+
+  function clearCallbackResult(provider: "github" | "linear") {
+    router.history.replace(
+      getWorkTrackerCallbackDismissUrl(location.pathname, location.searchStr, provider),
+    );
+  }
 
   return (
     <Sidebar variant="floating" className="z-20">
@@ -88,16 +102,22 @@ export function AppSidebar({ footer }: Props) {
             projectId={projectId}
             slug={slug}
             requestedSettings={search.get("settings") === "work-trackers" ? "work-trackers" : undefined}
-            linearResult={parseLinearCallbackResult(search.get("linear"))}
+            githubResult={githubResult}
+            linearResult={linearResult}
             onSettingsClose={() => {
               search.delete("settings");
+              search.delete("github");
               search.delete("linear");
               const suffix = search.toString();
               router.history.replace(`${location.pathname}${suffix ? `?${suffix}` : ""}`);
             }}
           />
         ) : (
-          <GlobalNav />
+          <GlobalNav
+            githubResult={githubResult}
+            linearResult={linearResult}
+            onDismiss={clearCallbackResult}
+          />
         )}
       </SidebarContent>
       <SidebarFooter>{footer}</SidebarFooter>
@@ -105,35 +125,68 @@ export function AppSidebar({ footer }: Props) {
   );
 }
 
-function GlobalNav() {
+function GlobalNav({
+  githubResult,
+  linearResult,
+  onDismiss,
+}: {
+  githubResult?: string;
+  linearResult?: string;
+  onDismiss: (provider: "github" | "linear") => void;
+}) {
+  const githubMessage = getWorkTrackerCallbackMessage("github", githubResult);
+  const linearMessage = getWorkTrackerCallbackMessage("linear", linearResult);
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Wish App</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <Link to={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <>
+      {githubMessage || linearMessage ? (
+        <SidebarGroup>
+          <div className="space-y-2">
+            {githubMessage ? (
+              <WorkTrackerCallbackAlert
+                {...githubMessage}
+                onDismiss={() => onDismiss("github")}
+              />
+            ) : null}
+            {linearMessage ? (
+              <WorkTrackerCallbackAlert
+                {...linearMessage}
+                onDismiss={() => onDismiss("linear")}
+              />
+            ) : null}
+          </div>
+        </SidebarGroup>
+      ) : null}
+      <SidebarGroup>
+        <SidebarGroupLabel>Wish App</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <Link to={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </>
   );
 }
 
 function ProjectNav({
+  githubResult,
   linearResult,
   onSettingsClose,
   projectId,
   requestedSettings,
   slug,
 }: {
+  githubResult?: string;
   linearResult?: string;
   onSettingsClose: () => void;
   projectId: string;
@@ -180,6 +233,7 @@ function ProjectNav({
               <ProjectSettings
                 projectID={projectId as never}
                 requestedSection={requestedSettings}
+                githubResult={githubResult}
                 linearResult={linearResult}
                 onUrlClose={onSettingsClose}
               >
