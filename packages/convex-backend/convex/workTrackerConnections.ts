@@ -656,6 +656,7 @@ export const disconnectLinear = action({
             connectionId: connection._id,
             message: error instanceof Error ? error.message.slice(0, 200) : "Unknown error",
           });
+          throw error;
         }
       }
       const result = await ctx.runMutation(

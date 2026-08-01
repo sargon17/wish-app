@@ -12,7 +12,7 @@ interface Props {
   projectId: Id<"projects">;
   boardType: BoardType;
   kind?: "request" | "complaint";
-  itemId?: string;
+  itemId?: string | null;
 }
 export default function DashboardBoard({ projectId, boardType, kind, itemId }: Props) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
@@ -20,15 +20,21 @@ export default function DashboardBoard({ projectId, boardType, kind, itemId }: P
   if (!project) return null;
 
   return (
-    // <div className="sidebar-offset-pl h-full">
-    <div className="flex h-full w-full gap-2 overflow-x-scroll pt-px pr-6 sidebar-offset-pl ">
-      {itemId ? <RequestDeepLink projectId={projectId} kind={kind} itemId={itemId} /> : null}
+    <div
+      className={
+        boardType === "kanban"
+          ? "flex h-full w-full max-w-full min-w-0 gap-2 overflow-x-auto overscroll-x-contain pt-px pr-2 sidebar-offset-pl md:pr-6"
+          : "flex h-full w-full max-w-full min-w-0 gap-2 pt-px pr-2 sidebar-offset-pl md:pr-6"
+      }
+    >
+      {itemId !== undefined ? (
+        <RequestDeepLink projectId={projectId} kind={kind} itemId={itemId} />
+      ) : null}
       {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} kind={kind} />
       ) : (
-        <RequestTable projectId={projectId} kind={kind} />
+        <RequestTable key={`${projectId}:${kind ?? "request"}`} projectId={projectId} kind={kind} />
       )}
     </div>
-    // </div>
   );
 }
