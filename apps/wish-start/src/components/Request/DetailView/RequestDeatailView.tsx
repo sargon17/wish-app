@@ -31,12 +31,20 @@ import { useRequestStatus } from "@/hooks/useRequestStatus";
 import { findCurrentStatus } from "@/lib/requestStatus/findCurrentStatus";
 
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
   request: Doc<"requests">;
   showUpvoteButton?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function RequestDetailView({ children, request, showUpvoteButton = true }: Props) {
+export default function RequestDetailView({
+  children,
+  request,
+  showUpvoteButton = true,
+  open,
+  onOpenChange,
+}: Props) {
   const isMobile = useIsMobile();
   const [activeRequestId, setActiveRequestId] = useState(request._id);
   const requests = useRequests(request.project);
@@ -198,10 +206,12 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
 
   if (isMobile) {
     return (
-      <Drawer>
-        <DrawerTrigger asChild className="cursor-pointer">
-          {children}
-        </DrawerTrigger>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        {children ? (
+          <DrawerTrigger asChild className="cursor-pointer">
+            {children}
+          </DrawerTrigger>
+        ) : null}
         <DrawerContent className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <DrawerTitle className="sr-only">Request details</DrawerTitle>
           <DrawerDescription className="sr-only">
@@ -214,10 +224,12 @@ export default function RequestDetailView({ children, request, showUpvoteButton 
   }
 
   return (
-    <Dialog>
-      <DialogTrigger asChild className="cursor-pointer">
-        {children}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children ? (
+        <DialogTrigger asChild className="cursor-pointer">
+          {children}
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-106.25 md:max-w-5xl">
         <DialogTitle className="sr-only">Request details</DialogTitle>
         <DialogDescription className="sr-only">

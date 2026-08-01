@@ -5,14 +5,16 @@ import { api } from "@wish/convex-backend/api";
 import type { Id } from "@wish/convex-backend/data-model";
 import { useQuery } from "convex/react";
 
+import RequestDeepLink from "../Request/DetailView/RequestDeepLink";
 import RequestTable from "../Request/RequestTable";
 
 interface Props {
   projectId: Id<"projects">;
   boardType: BoardType;
   kind?: "request" | "complaint";
+  itemId?: string | null;
 }
-export default function DashboardBoard({ projectId, boardType, kind }: Props) {
+export default function DashboardBoard({ projectId, boardType, kind, itemId }: Props) {
   const project = useQuery(api.projects.getProjectById, { id: projectId });
 
   if (!project) return null;
@@ -25,6 +27,9 @@ export default function DashboardBoard({ projectId, boardType, kind }: Props) {
           : "flex h-full w-full max-w-full min-w-0 gap-2 pt-px pr-2 sidebar-offset-pl md:pr-6"
       }
     >
+      {itemId !== undefined ? (
+        <RequestDeepLink projectId={projectId} kind={kind} itemId={itemId} />
+      ) : null}
       {boardType === "kanban" ? (
         <RequestKanban projectId={project._id} kind={kind} />
       ) : (
