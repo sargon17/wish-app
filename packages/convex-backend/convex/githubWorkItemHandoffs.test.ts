@@ -2,7 +2,8 @@ import { convexTest } from "convex-test";
 import { exportPKCS8, generateKeyPair } from "jose";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
+import { buildGitHubHandoffMarker } from "./lib/githubIssue";
 import schema from "./schema";
 
 const modules = {
@@ -122,10 +123,11 @@ describe("GitHub Work Item Handoff delivery", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const body = String(fetchMock.mock.calls[1]?.[1]?.body);
     expect(body).toContain("[View original in Wish](https://wish.example/dashboard/project/");
+    expect(body).toContain(buildGitHubHandoffMarker(first._id));
     expect(body).not.toContain("client");
   });
 
-  it("never repeats an uncertain creation and reconciles by the Wish link", async () => {
+  it("never repeats an uncertain creation and reconciles by the handoff marker", async () => {
     const { ids, owner } = await seed();
     const fetchMock = vi
       .fn()
@@ -144,21 +146,22 @@ describe("GitHub Work Item Handoff delivery", () => {
     expect(first.lifecycle.state).toBe("unknown");
     expect(second.lifecycle.state).toBe("unknown");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    if (first.recovery.provider !== "github") throw new Error("Expected GitHub recovery data");
-
     fetchMock
       .mockResolvedValueOnce(Response.json({ token: "installation-token" }))
       .mockResolvedValueOnce(
-        Response.json([
-          {
-            id: 42,
-            node_id: "I_42",
-            number: 7,
-            html_url: "https://github.com/wishco/product/issues/7",
-            body: `[View original in Wish](${first.recovery.sourceUrl})`,
-            created_at: new Date(first.recovery.startedAt + 1).toISOString(),
-          },
-        ]),
+        Response.json({
+          total_count: 1,
+          incomplete_results: false,
+          items: [
+            {
+              id: 42,
+              node_id: "I_42",
+              number: 7,
+              html_url: "https://github.com/wishco/product/issues/7",
+              body: buildGitHubHandoffMarker(first._id),
+            },
+          ],
+        }),
       );
 
     await expect(owner.action(api.workItemHandoffs.check, args)).resolves.toMatchObject({
@@ -204,9 +207,6 @@ describe("GitHub Work Item Handoff delivery", () => {
       provider: "github" as const,
     };
     const handoff = await owner.action(api.workItemHandoffs.send, args);
-    if (handoff.recovery.provider !== "github") {
-      throw new Error("Expected GitHub recovery data");
-    }
     await t.run(async (ctx) => {
       const connection = await ctx.db.get(ids.connectionId);
       if (!connection || connection.data.provider !== "github") {
@@ -230,16 +230,19 @@ describe("GitHub Work Item Handoff delivery", () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ token: "installation-token" }))
       .mockResolvedValueOnce(
-        Response.json([
-          {
-            id: 42,
-            node_id: "I_42",
-            number: 7,
-            html_url: "https://github.com/wishhq/renamed/issues/7",
-            body: `[View original in Wish](${handoff.recovery.sourceUrl})`,
-            created_at: new Date(handoff.recovery.startedAt + 1).toISOString(),
-          },
-        ]),
+        Response.json({
+          total_count: 1,
+          incomplete_results: false,
+          items: [
+            {
+              id: 42,
+              node_id: "I_42",
+              number: 7,
+              html_url: "https://github.com/wishhq/renamed/issues/7",
+              body: buildGitHubHandoffMarker(handoff._id),
+            },
+          ],
+        }),
       );
 
     await expect(owner.action(api.workItemHandoffs.check, args)).resolves.toMatchObject({
@@ -248,9 +251,7 @@ describe("GitHub Work Item Handoff delivery", () => {
         externalIdentity: { identifier: "wishhq/renamed#7" },
       },
     });
-    expect(String(fetchMock.mock.calls[3]?.[0])).toContain(
-      "/repos/wishhq/renamed/issues",
-    );
+    expect(String(fetchMock.mock.calls[3]?.[0])).toContain("/search/issues");
   });
 
   it("marks the connection when GitHub rejects repository access", async () => {
@@ -289,6 +290,32 @@ describe("GitHub Work Item Handoff delivery", () => {
     ).resolves.toMatchObject({ lifecycle: { state: "failed" } });
     await expect(t.run(async (ctx) => ctx.db.get(ids.connectionId))).resolves.toMatchObject({
       health: "needs_attention",
+    });
+  });
+
+  it("does not mark a repaired connection from a stale delivery result", async () => {
+    const { ids, t } = await seed();
+    const connection = await t.run(async (ctx) => ctx.db.get(ids.connectionId));
+    if (!connection || connection.data.provider !== "github") {
+      throw new Error("Expected GitHub connection");
+    }
+    await t.run(async (ctx) => {
+      await ctx.db.patch(connection._id, {
+        health: "active",
+        updatedAt: connection.updatedAt + 1,
+      });
+    });
+
+    await expect(
+      t.mutation(internal.githubWorkItemHandoffs.markConnectionNeedsAttentionInternal, {
+        connectionId: connection._id,
+        installationId: connection.data.installationId,
+        repositoryId: connection.data.repository.id,
+        connectionUpdatedAt: connection.updatedAt,
+      }),
+    ).resolves.toBe(false);
+    await expect(t.run(async (ctx) => ctx.db.get(connection._id))).resolves.toMatchObject({
+      health: "active",
     });
   });
 });

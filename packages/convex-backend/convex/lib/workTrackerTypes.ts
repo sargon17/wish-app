@@ -5,7 +5,7 @@ export const workTrackerConnectionProviderValidator = v.union(
   v.literal("github"),
 );
 
-export const workTrackerProviderValidator = v.union(
+export const workItemHandoffProviderValidator = v.union(
   v.literal("linear"),
   v.literal("github"),
 );
@@ -132,8 +132,6 @@ export const workItemHandoffRecoveryValidator = v.union(
     repositoryId: v.string(),
     repositoryOwner: v.string(),
     repositoryName: v.string(),
-    sourceUrl: v.string(),
-    startedAt: v.number(),
   }),
 );
 

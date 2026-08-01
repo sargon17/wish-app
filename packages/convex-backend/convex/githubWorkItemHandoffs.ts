@@ -9,7 +9,7 @@ import {
   GitHubInstallationTokenError,
 } from "./lib/githubApp";
 import { getGitHubAppAuthConfig } from "./lib/githubConnection";
-import { findGitHubIssueBySource } from "./lib/githubIssue";
+import { findGitHubIssueByHandoff } from "./lib/githubIssue";
 import { githubConnectionOrNull } from "./lib/workTrackerConnection";
 
 export const getDeliveryContextInternal = internalQuery({
@@ -69,13 +69,15 @@ export const markConnectionNeedsAttentionInternal = internalMutation({
     connectionId: v.id("workTrackerConnections"),
     installationId: v.string(),
     repositoryId: v.string(),
+    connectionUpdatedAt: v.number(),
   },
   handler: async (ctx, args) => {
     const connection = githubConnectionOrNull(await ctx.db.get(args.connectionId));
     if (
       !connection ||
       connection.data.installationId !== args.installationId ||
-      connection.data.repository.id !== args.repositoryId
+      connection.data.repository.id !== args.repositoryId ||
+      connection.updatedAt !== args.connectionUpdatedAt
     ) {
       return false;
     }
@@ -111,6 +113,7 @@ export const reconcileInternal = internalAction({
             connectionId: target.connection._id,
             installationId: target.connection.data.installationId,
             repositoryId: target.connection.data.repository.id,
+            connectionUpdatedAt: target.connection.updatedAt,
           },
         );
       } else {
@@ -123,15 +126,14 @@ export const reconcileInternal = internalAction({
     }
 
     const repository = target.connection.data.repository;
-    const result = await findGitHubIssueBySource({
+    const result = await findGitHubIssueByHandoff({
       accessToken,
       repository: {
         id: repository.id,
         owner: repository.owner,
         name: repository.name,
       },
-      sourceUrl: target.handoff.recovery.sourceUrl,
-      startedAt: target.handoff.recovery.startedAt,
+      handoffId: target.handoff._id,
     });
     console.info("work_item_handoff_reconciliation", {
       provider: "github",
@@ -148,6 +150,7 @@ export const reconcileInternal = internalAction({
           connectionId: target.connection._id,
           installationId: target.connection.data.installationId,
           repositoryId: target.connection.data.repository.id,
+          connectionUpdatedAt: target.connection.updatedAt,
         },
       );
       return await ctx.runQuery(internal.workItemHandoffs.getByIdInternal, args);

@@ -18,9 +18,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useRequesterIdentity } from "@/hooks/useRequesterIdentity";
 import { requestSlug } from "@/lib/slug";
 
@@ -34,6 +43,7 @@ export function PublicRequestSubmitDialog({
   children: ReactNode;
 }) {
   const clientId = useRequesterIdentity();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const createRequest = useMutation(api.suggestionPortals.createRequest);
   const [open, setOpen] = useState(false);
@@ -102,7 +112,13 @@ export function PublicRequestSubmitDialog({
           requestId: result.requestId,
           requestSlug: requestSlug(cleanTitle),
         },
-        search: { q: undefined, status: undefined, sort: "top" },
+        search: {
+          q: undefined,
+          statuses: undefined,
+          from: undefined,
+          to: undefined,
+          sort: "top",
+        },
       });
     } catch (error) {
       console.error(error);
@@ -112,101 +128,130 @@ export function PublicRequestSubmitDialog({
     }
   }
 
+  const form = (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <Label htmlFor="portal-request-title">Title</Label>
+        <Input
+          id="portal-request-title"
+          value={title}
+          maxLength={120}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Let me export reports as CSV"
+        />
+      </div>
+
+      {similarSuggestions && similarSuggestions.length > 0 ? (
+        <div className="space-y-2 rounded-lg border bg-muted/25 p-3">
+          <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+            Similar suggestions
+          </p>
+          <div className="space-y-2">
+            {similarSuggestions.map((suggestion) => (
+              <Link
+                key={suggestion._id}
+                className="flex items-start justify-between gap-3 rounded-md bg-background p-3 transition-colors hover:bg-muted"
+                to="/p/$projectSlug/r/$requestId/$requestSlug"
+                params={{
+                  projectSlug,
+                  requestId: suggestion._id,
+                  requestSlug: requestSlug(suggestion.text),
+                }}
+                search={{
+                  q: undefined,
+                  statuses: undefined,
+                  from: undefined,
+                  to: undefined,
+                  sort: "top",
+                }}
+                onClick={() => setOpen(false)}
+              >
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm leading-5 font-medium">{suggestion.text}</p>
+                  {suggestion.status ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {suggestion.status}
+                    </Badge>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                  <ArrowBigUp className="size-3.5" />
+                  <span>{suggestion.upvoteCount}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-request-description">Details</Label>
+        <Textarea
+          id="portal-request-description"
+          value={description}
+          maxLength={1000}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="What are you trying to do? What would this help with?"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="portal-request-email">Email for follow-up</Label>
+        <Input
+          id="portal-request-email"
+          type="email"
+          value={requesterEmail}
+          onChange={(event) => setRequesterEmail(event.target.value)}
+          placeholder="you@example.com"
+        />
+        <p className="text-xs text-muted-foreground">
+          Optional. The project owner may use it to ask a follow-up question.
+        </p>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="submit" disabled={isSubmitting || !clientId || cleanTitle.length < 3}>
+          <Send />
+          {isSubmitting ? "Submitting..." : "Submit request"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={handleOpenChange}>
+        <DrawerTrigger asChild>{children}</DrawerTrigger>
+        <DrawerContent className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <DrawerHeader className="px-0">
+            <DrawerTitle className="flex items-center gap-2">
+              <Lightbulb className="size-5 text-brand" />
+              Submit a request
+            </DrawerTitle>
+            <DrawerDescription>
+              Add a clear title and enough context for the team to understand the problem.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="min-h-0 overflow-y-auto pb-1">{form}</div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lightbulb className="size-5 text-orange-600" />
+            <Lightbulb className="size-5 text-brand" />
             Submit a request
           </DialogTitle>
           <DialogDescription>
             Add a clear title and enough context for the team to understand the problem.
           </DialogDescription>
         </DialogHeader>
-
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="portal-request-title">Title</Label>
-            <Input
-              id="portal-request-title"
-              value={title}
-              maxLength={120}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Let me export reports as CSV"
-            />
-          </div>
-
-          {similarSuggestions && similarSuggestions.length > 0 ? (
-            <div className="space-y-2 rounded-lg border bg-muted/25 p-3">
-              <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
-                Similar suggestions
-              </p>
-              <div className="space-y-2">
-                {similarSuggestions.map((suggestion) => (
-                  <Link
-                    key={suggestion._id}
-                    className="flex items-start justify-between gap-3 rounded-md bg-background p-3 transition-colors hover:bg-muted"
-                    to="/p/$projectSlug/r/$requestId/$requestSlug"
-                    params={{
-                      projectSlug,
-                      requestId: suggestion._id,
-                      requestSlug: requestSlug(suggestion.text),
-                    }}
-                    search={{ q: undefined, status: undefined, sort: "top" }}
-                    onClick={() => setOpen(false)}
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <p className="text-sm leading-5 font-medium">{suggestion.text}</p>
-                      {suggestion.status ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {suggestion.status}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                      <ArrowBigUp className="size-3.5" />
-                      <span>{suggestion.upvoteCount}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <Label htmlFor="portal-request-description">Details</Label>
-            <Textarea
-              id="portal-request-description"
-              value={description}
-              maxLength={1000}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="What are you trying to do? What would this help with?"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="portal-request-email">Email for follow-up</Label>
-            <Input
-              id="portal-request-email"
-              type="email"
-              value={requesterEmail}
-              onChange={(event) => setRequesterEmail(event.target.value)}
-              placeholder="you@example.com"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional. The project owner may use it to ask a follow-up question.
-            </p>
-          </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting || !clientId || cleanTitle.length < 3}>
-              <Send />
-              {isSubmitting ? "Submitting..." : "Submit request"}
-            </Button>
-          </div>
-        </form>
+        {form}
       </DialogContent>
     </Dialog>
   );

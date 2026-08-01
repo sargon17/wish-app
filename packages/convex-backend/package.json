@@ -18,6 +18,10 @@
     "./work-tracker-errors": {
       "types": "./convex/lib/workTrackerErrors.ts",
       "default": "./convex/lib/workTrackerErrors.ts"
+    },
+    "./request-limits": {
+      "types": "./convex/lib/requestLimits.ts",
+      "default": "./convex/lib/requestLimits.ts"
     }
   },
   "scripts": {

@@ -218,6 +218,7 @@ export const completeGitHubSetupInternal = internalAction({
       | Awaited<ReturnType<typeof exchangeGitHubUserCode>>
       | undefined;
     let revocationPersisted = false;
+    let credentialsRevoked = false;
     let stage = "state";
     try {
       const claimedSetup = await ctx.runMutation(
@@ -275,6 +276,7 @@ export const completeGitHubSetupInternal = internalAction({
         clientSecret: config.clientSecret,
         credentials: userCredentials,
       });
+      credentialsRevoked = true;
       userCredentials = undefined;
       stage = "persistence";
       await ctx.runMutation(internal.githubWorkTrackerOAuth.saveGitHubSetupInternal, {
@@ -289,7 +291,7 @@ export const completeGitHubSetupInternal = internalAction({
         projectSlug: claimedSetup.projectSlug,
       };
     } catch (error) {
-      if (claimed && !revocationPersisted) {
+      if (claimed && (!revocationPersisted || credentialsRevoked)) {
         await ctx.runMutation(internal.githubWorkTrackerOAuth.deleteGitHubSetupInternal, {
           setupId: claimed.setupId,
         });

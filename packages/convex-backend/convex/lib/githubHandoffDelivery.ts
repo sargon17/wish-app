@@ -12,12 +12,9 @@ import {
   getGitHubAppAuthConfig,
   isGitHubHandoffCreationEnabled,
 } from "./githubConnection";
-import { createGitHubIssue } from "./githubIssue";
+import { buildGitHubIssueBody, createGitHubIssue } from "./githubIssue";
 import { getRequestKind } from "./requestKind";
-import {
-  buildWishSourceUrl,
-  buildWorkItemDescription,
-} from "./workItemHandoffPayload";
+import { buildWishSourceUrl } from "./workItemHandoffPayload";
 import { getWishAppBaseUrl } from "./workTrackerConfig";
 import {
   handoffCreationDisabledError,
@@ -78,8 +75,6 @@ export async function sendGitHubHandoff(
       repositoryId: repository.id,
       repositoryOwner: repository.owner,
       repositoryName: repository.name,
-      sourceUrl,
-      startedAt: Date.now(),
     },
   });
   if (!reservation.shouldSend || reservation.handoff.recovery.provider !== "github") {
@@ -101,6 +96,7 @@ export async function sendGitHubHandoff(
           connectionId: context.connection._id,
           installationId: context.connection.data.installationId,
           repositoryId: repository.id,
+          connectionUpdatedAt: context.connection.updatedAt,
         },
       );
     }
@@ -126,7 +122,11 @@ export async function sendGitHubHandoff(
       name: reservation.handoff.recovery.repositoryName,
     },
     title: reservation.request.text,
-    body: buildWorkItemDescription(reservation.request.description, sourceUrl),
+    body: buildGitHubIssueBody(
+      reservation.request.description,
+      sourceUrl,
+      reservation.handoff._id,
+    ),
   });
   console.info("work_item_handoff_delivery", {
     provider: "github",
@@ -144,6 +144,7 @@ export async function sendGitHubHandoff(
         connectionId: context.connection._id,
         installationId: context.connection.data.installationId,
         repositoryId: repository.id,
+        connectionUpdatedAt: context.connection.updatedAt,
       },
     );
   }

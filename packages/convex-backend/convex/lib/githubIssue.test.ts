@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createGitHubIssue, findGitHubIssueBySource } from "./githubIssue";
+import {
+  buildGitHubHandoffMarker,
+  buildGitHubIssueBody,
+  createGitHubIssue,
+  findGitHubIssueByHandoff,
+} from "./githubIssue";
 
 const repository = { id: "101", owner: "wishco", name: "product" };
 const issue = {
@@ -13,6 +18,18 @@ const issue = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("GitHub issue delivery", () => {
+  it("builds a body with the canonical handoff marker", () => {
+    expect(
+      buildGitHubIssueBody(
+        undefined,
+        "https://wish.example/source",
+        "handoff-1",
+      ),
+    ).toBe(
+      "[View original in Wish](https://wish.example/source)\n\n<!-- wish-handoff:handoff-1 -->",
+    );
+  });
+
   it("creates an issue with the minimum payload", async () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json(issue, { status: 201 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -91,73 +108,107 @@ describe("GitHub issue delivery", () => {
     });
   });
 
-  it("finds the exact Wish source marker and ignores pull requests", async () => {
-    const sourceUrl = "https://wish.example/dashboard/project/p/project/requests?item=r";
-    const createdAt = new Date().toISOString();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        Response.json([
+  it("finds the exact handoff marker in a consistent issue response", async () => {
+    const handoffId = "handoff-1";
+    const marker = buildGitHubHandoffMarker(handoffId);
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        total_count: 1,
+        incomplete_results: false,
+        items: [
           {
             ...issue,
-            number: 6,
-            html_url: "https://github.com/wishco/product/issues/6",
-            body: `[View original in Wish](${sourceUrl})`,
-            created_at: createdAt,
-            pull_request: {},
+            body: `Description\n\n---\n\n${marker}`,
           },
-          { body: "First unrelated issue", created_at: createdAt },
-          { body: "Second unrelated issue", created_at: createdAt },
-        ]),
-      )
-      .mockResolvedValueOnce(
-        Response.json([
-          {
-            ...issue,
-            body: `Description\n\n---\n\n[View original in Wish](${sourceUrl})`,
-            created_at: createdAt,
-          },
-        ]),
-      );
+        ],
+      }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      findGitHubIssueBySource({
+      findGitHubIssueByHandoff({
         accessToken: "installation-token",
         repository,
-        sourceUrl,
-        startedAt: Date.now() - 1_000,
+        handoffId,
       }),
     ).resolves.toMatchObject({
       state: "succeeded",
       externalIdentity: { identifier: "wishco/product#7" },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("per_page=3");
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("page=2");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const searchUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(searchUrl.pathname).toBe("/search/issues");
+    expect(searchUrl.searchParams.get("q")).toBe(
+      `repo:wishco/product is:issue in:body "wish-handoff:${handoffId}"`,
+    );
   });
 
-  it("confirms absence only after scanning past the creation window", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        Response.json([
+  it("rejects contradictory search results and pull requests", async () => {
+    const handoffId = "handoff-invalid";
+    const marker = buildGitHubHandoffMarker(handoffId);
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        total_count: 1,
+        incomplete_results: false,
+        items: [
           {
             ...issue,
-            body: "Unrelated issue",
-            created_at: new Date(0).toISOString(),
+            html_url: "https://github.com/wishco/product/pull/7",
+            body: marker,
+            pull_request: {},
           },
-        ]),
-      ),
+          { ...issue, body: marker },
+        ],
+      }),
     );
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      findGitHubIssueBySource({
+      findGitHubIssueByHandoff({
         accessToken: "installation-token",
         repository,
-        sourceUrl: "https://wish.example/source",
-        startedAt: Date.now(),
+        handoffId,
       }),
-    ).resolves.toEqual({ state: "absent", needsAttention: false });
+    ).resolves.toEqual({ state: "unknown", needsAttention: false });
+  });
+
+  it("does not choose between duplicate handoff markers", async () => {
+    const handoffId = "handoff-duplicate";
+    const marker = buildGitHubHandoffMarker(handoffId);
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        total_count: 2,
+        incomplete_results: false,
+        items: [
+          { ...issue, body: marker },
+          { ...issue, number: 8, html_url: "https://github.com/wishco/product/issues/8", body: marker },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      findGitHubIssueByHandoff({
+        accessToken: "installation-token",
+        repository,
+        handoffId,
+      }),
+    ).resolves.toEqual({ state: "unknown", needsAttention: false });
+  });
+
+  it("keeps uncertain outcomes bounded when the marker is not indexed", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({ total_count: 0, incomplete_results: false, items: [] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      findGitHubIssueByHandoff({
+        accessToken: "installation-token",
+        repository,
+        handoffId: "handoff-missing",
+      }),
+    ).resolves.toEqual({ state: "unknown", needsAttention: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

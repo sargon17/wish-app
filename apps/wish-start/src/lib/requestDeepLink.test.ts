@@ -7,10 +7,11 @@ describe("request deep links", () => {
     expect(requestItemFromSearch(" request-123 ")).toBe("request-123");
   });
 
-  it("rejects missing and empty request ids", () => {
+  it("distinguishes missing request ids from malformed ones", () => {
     expect(requestItemFromSearch(undefined)).toBeUndefined();
-    expect(requestItemFromSearch(123)).toBeUndefined();
-    expect(requestItemFromSearch("   ")).toBeUndefined();
+    expect(requestItemFromSearch(123)).toBeNull();
+    expect(requestItemFromSearch(["request-1", "request-2"])).toBeNull();
+    expect(requestItemFromSearch("   ")).toBeNull();
   });
 
   it("removes the item while preserving other search parameters", () => {
