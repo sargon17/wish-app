@@ -1,9 +1,10 @@
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 import { parseStoredCredentials } from "./lib/linearConnection";
+import { encryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 
 const modules = {
   "./_generated/server.ts": () => import("./_generated/server"),
@@ -16,6 +17,12 @@ const modules = {
 
 const encryptedCredentials = { ciphertext: "new-ciphertext", iv: "new-iv" };
 const oldEncryptedCredentials = { ciphertext: "old-ciphertext", iv: "old-iv" };
+const testEncryptionKey = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 async function seed() {
   const t = convexTest(schema, modules);
@@ -396,6 +403,47 @@ describe("Work Tracker connections", () => {
       }),
     ).resolves.toEqual({ disconnected: false });
     expect(await t.run(async (ctx) => await ctx.db.get(ids.connectionId))).not.toBeNull();
+  });
+
+  it("keeps the credential-bearing connection when revocation fails", async () => {
+    const { ids, owner, t } = await seed();
+    vi.stubEnv("LINEAR_CLIENT_ID", "client");
+    vi.stubEnv("LINEAR_CLIENT_SECRET", "secret");
+    vi.stubEnv("LINEAR_REDIRECT_URI", "https://api.example.com/work-trackers/linear/callback");
+    vi.stubEnv("WISH_APP_BASE_URL", "http://localhost");
+    vi.stubEnv("WORK_TRACKER_ENCRYPTION_KEY", testEncryptionKey);
+
+    const storedCredentials = await encryptWorkTrackerSecret(
+      JSON.stringify({
+        accessToken: "access",
+        refreshToken: "refresh",
+        expiresAt: Date.now() + 60_000,
+        scopes: ["read", "issues:create"],
+      }),
+      testEncryptionKey,
+    );
+    await t.run(async (ctx) => {
+      const connection = await ctx.db.get(ids.connectionId);
+      await ctx.db.patch(ids.connectionId, {
+        data: { ...connection!.data, encryptedCredentials: storedCredentials },
+      });
+    });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      owner.action(api.workTrackerConnections.disconnectLinear, { projectId: ids.projectId }),
+    ).rejects.toThrow("Linear credential revocation failed");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await t.run(async (ctx) => await ctx.db.get(ids.connectionId))).toMatchObject({
+      _id: ids.connectionId,
+      health: "needs_attention",
+      data: {
+        encryptedCredentials: storedCredentials,
+        credentialLease: { id: expect.any(String) },
+      },
+    });
   });
 
   it("serializes Handoff reservation against disconnect", async () => {
