@@ -290,6 +290,82 @@ describe("GitHub Work Tracker connections", () => {
     expect(setup).toBeNull();
   });
 
+  it("deletes the cleanup record when persistence fails after revocation", async () => {
+    const { ids, t } = await seed();
+    const state = "c".repeat(48);
+    await t.run(async (ctx) => {
+      await ctx.db.patch(ids.setupId, {
+        consumedAt: undefined,
+        stateHash: await hashWorkTrackerOAuthState(state),
+        data: {
+          provider: "github",
+          stage: "pending",
+          redirectUri: "https://api.example.com/work-trackers/github/callback",
+        },
+      });
+    });
+    stubGitHubConfig("-----BEGIN PRIVATE KEY-----\na2V5\n-----END PRIVATE KEY-----");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          access_token: "temporary-user-token",
+          token_type: "bearer",
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          installations: [
+            {
+              id: 501,
+              account: { login: "wishco" },
+              suspended_at: null,
+              permissions: { issues: "write" },
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          repositories: [
+            {
+              id: 101,
+              node_id: "R_101",
+              owner: { login: "wishco" },
+              name: "product",
+              full_name: "wishco/product",
+              html_url: "https://github.com/wishco/product",
+              has_issues: true,
+              archived: false,
+              disabled: false,
+            },
+          ],
+        }),
+      )
+      .mockImplementationOnce(async () => {
+        await t.run(async (ctx) => {
+          await ctx.db.patch(ids.setupId, {
+            data: {
+              provider: "github",
+              stage: "pending",
+              redirectUri: "https://api.example.com/work-trackers/github/callback",
+            },
+          });
+        });
+        return new Response(null, { status: 204 });
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      t.action(internal.githubWorkTrackerOAuth.completeGitHubSetupInternal, {
+        code: "temporary-code",
+        state,
+        installationId: "501",
+      }),
+    ).resolves.toMatchObject({ ok: false, errorCode: "github_persistence_failed" });
+    expect(await t.run(async (ctx) => await ctx.db.get(ids.setupId))).toBeNull();
+  });
+
   it("selects only a repository verified during setup", async () => {
     const { ids, owner, t } = await seed();
     await expect(

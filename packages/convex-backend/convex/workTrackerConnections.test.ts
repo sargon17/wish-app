@@ -501,7 +501,7 @@ describe("Work Tracker connections", () => {
       testEncryptionKey,
     );
     await t.run(async (ctx) => {
-      const connection = await ctx.db.get(ids.connectionId);
+      const connection = linearConnectionOrNull(await ctx.db.get(ids.connectionId));
       await ctx.db.patch(ids.connectionId, {
         data: { ...connection!.data, encryptedCredentials: storedCredentials },
       });

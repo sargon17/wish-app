@@ -194,7 +194,7 @@ describe("Work Item Handoff delivery lifecycle", () => {
     const { ids, owner, t } = await seed();
     await configureLinearDelivery(t, ids);
     await t.run(async (ctx) => {
-      const connection = await ctx.db.get(ids.connectionId);
+      const connection = linearConnectionOrNull(await ctx.db.get(ids.connectionId));
       if (!connection) throw new Error("Expected connection");
       await ctx.db.patch(connection._id, {
         data: {

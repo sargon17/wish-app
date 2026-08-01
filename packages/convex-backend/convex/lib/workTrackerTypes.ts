@@ -5,7 +5,7 @@ export const workTrackerConnectionProviderValidator = v.union(
   v.literal("github"),
 );
 
-export const workTrackerProviderValidator = v.literal("linear");
+export const workItemHandoffProviderValidator = v.literal("linear");
 
 export const workTrackerConnectionHealthValidator = v.union(
   v.literal("active"),
