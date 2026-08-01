@@ -12,7 +12,7 @@ import {
   workTrackerConnectionDataValidator,
   workTrackerConnectionHealthValidator,
   workTrackerOAuthSetupDataValidator,
-  workTrackerProviderValidator,
+  workItemHandoffProviderValidator,
 } from "./lib/workTrackerTypes";
 
 export default defineSchema({
@@ -154,7 +154,7 @@ export default defineSchema({
   workItemHandoffs: defineTable({
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
     attemptCount: v.number(),
     reconciliationCount: v.number(),
     recovery: workItemHandoffRecoveryValidator,

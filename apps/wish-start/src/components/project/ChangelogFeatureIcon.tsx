@@ -19,8 +19,7 @@ export const CHANGELOG_FEATURE_ICONS = [
 ] as const;
 
 export function ChangelogFeatureIcon({ name }: { name?: string }) {
-  const Icon =
-    CHANGELOG_FEATURE_ICONS.find((option) => option.value === name)?.icon ?? Sparkles;
+  const Icon = CHANGELOG_FEATURE_ICONS.find((option) => option.value === name)?.icon ?? Sparkles;
 
   return <Icon aria-hidden="true" />;
 }

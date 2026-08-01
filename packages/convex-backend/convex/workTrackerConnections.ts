@@ -305,9 +305,26 @@ export async function getFreshLinearConnection(
   if (!connection) {
     throw new Error("Linear connection not found");
   }
-  let credentials = parseStoredCredentials(
-    await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
-  );
+  const parseCredentials = async (currentConnection: NonNullable<typeof connection>) => {
+    try {
+      return parseStoredCredentials(
+        await decryptWorkTrackerSecret(
+          currentConnection.data.encryptedCredentials,
+          config.encryptionKey,
+        ),
+      );
+    } catch (error) {
+      await ctx.runMutation(
+        internal.workTrackerConnections.markLinearConnectionNeedsAttentionInternal,
+        {
+          connectionId: currentConnection._id,
+          credentialCiphertext: currentConnection.data.encryptedCredentials.ciphertext,
+        },
+      );
+      throw error;
+    }
+  };
+  let credentials = await parseCredentials(connection);
   if (!forceRefresh && credentials.expiresAt > Date.now() + LINEAR_REFRESH_EARLY_MS) {
     return { connection, credentials };
   }
@@ -331,9 +348,7 @@ export async function getFreshLinearConnection(
     if (!connection) {
       throw new Error("Linear connection not found");
     }
-    credentials = parseStoredCredentials(
-      await decryptWorkTrackerSecret(connection.data.encryptedCredentials, config.encryptionKey),
-    );
+    credentials = await parseCredentials(connection);
     if (
       (forceRefresh && connection.data.encryptedCredentials.ciphertext === credentialCiphertext) ||
       (!forceRefresh && credentials.expiresAt <= Date.now() + LINEAR_REFRESH_EARLY_MS)
@@ -671,6 +686,7 @@ export const disconnectLinear = action({
             connectionId: connection._id,
             message: error instanceof Error ? error.message.slice(0, 200) : "Unknown error",
           });
+          throw error;
         }
       }
       const result = await ctx.runMutation(

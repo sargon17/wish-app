@@ -2,7 +2,7 @@
 import { api } from "@wish/convex-backend/api";
 import type { Doc } from "@wish/convex-backend/data-model";
 import { useMutation } from "convex/react";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, MoveRight } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
 import { Button } from "../ui/button";
@@ -23,20 +24,26 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Spinner } from "../ui/spinner";
 
 import RequestCreateEditDialog from "./RequestCreateEditDialog";
+import { Spinner } from "../ui/spinner";
 
 interface Props {
   request: Doc<"requests">;
+  statuses?: Doc<"requestStatuses">[];
   alwaysVisible?: boolean;
   label?: string;
 }
 export default function RequestCardActions({
   request,
+  statuses,
   alwaysVisible = false,
   label = "Request",
 }: Props) {
@@ -44,6 +51,19 @@ export default function RequestCardActions({
   const [isEdit, setIsEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const deleteRequest = useMutation(api.requests.deleteRequest);
+  const updateStatus = useMutation(api.requests.updateStatus);
+
+  async function moveToStatus(status: Doc<"requestStatuses">) {
+    if (status._id === request.status) return;
+
+    try {
+      await updateStatus({ id: request._id, status: status._id });
+      toast.success(`Request moved to ${status.displayName}`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to move the request");
+    }
+  }
 
   const handleSubmit = async () => {
     setDeleting(true);
@@ -72,11 +92,8 @@ export default function RequestCardActions({
           <Button
             variant="ghost"
             size="icon"
-            className={
-              alwaysVisible
-                ? undefined
-                : "opacity-0 transition-all group-hover/request-card:opacity-100"
-            }
+            aria-label={`${label} actions`}
+            className={alwaysVisible ? undefined : "opacity-100"}
           >
             <Ellipsis />
           </Button>
@@ -84,6 +101,27 @@ export default function RequestCardActions({
         <DropdownMenuContent>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {statuses && statuses.length > 0 ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <MoveRight />
+                Move to Status
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  {statuses.map((status) => (
+                    <DropdownMenuItem
+                      key={status._id}
+                      disabled={status._id === request.status}
+                      onSelect={() => void moveToStatus(status)}
+                    >
+                      {status.displayName}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          ) : null}
           <DropdownMenuItem
             onClick={() => {
               setIsEdit(true);

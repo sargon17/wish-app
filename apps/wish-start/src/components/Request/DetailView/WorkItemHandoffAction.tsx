@@ -82,6 +82,7 @@ export default function WorkItemHandoffAction({
 
   function openSettings() {
     const search = new URLSearchParams(location.searchStr);
+    search.delete("item");
     search.set("settings", "work-trackers");
     router.history.push(`${location.pathname}?${search.toString()}`);
   }

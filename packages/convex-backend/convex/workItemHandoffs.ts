@@ -23,7 +23,7 @@ import { isWorkTrackerCredentialLeaseActive } from "./lib/workTrackerConnection"
 import {
   externalWorkItemIdentityValidator,
   workItemHandoffRecoveryValidator,
-  workTrackerProviderValidator,
+  workItemHandoffProviderValidator,
 } from "./lib/workTrackerTypes";
 
 async function getOwnedHandoff(
@@ -66,7 +66,7 @@ export const get = query({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
   },
   handler: async (ctx, args) => await getOwnedHandoff(ctx, args),
 });
@@ -75,7 +75,7 @@ export const getSurface = query({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
   },
   handler: async (ctx, args) => {
     const handoff = await getOwnedHandoff(ctx, args);
@@ -98,7 +98,7 @@ export const getOwnedInternal = internalQuery({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
   },
   handler: async (ctx, args) => await getOwnedHandoff(ctx, args),
 });
@@ -112,7 +112,7 @@ export const reserveInternal = internalMutation({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
     connectionId: v.id("workTrackerConnections"),
     connectionUpdatedAt: v.number(),
     recovery: workItemHandoffRecoveryValidator,
@@ -166,6 +166,7 @@ export const reserveInternal = internalMutation({
       !connection ||
       connection.projectId !== args.projectId ||
       connection.provider !== args.provider ||
+      connection.data.provider !== args.provider ||
       connection.updatedAt !== args.connectionUpdatedAt ||
       connection.health !== "active" ||
       isWorkTrackerCredentialLeaseActive(
@@ -385,7 +386,7 @@ export const send = action({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
   },
   handler: async (ctx, args): Promise<Doc<"workItemHandoffs">> => {
     switch (args.provider) {
@@ -419,7 +420,7 @@ export const check = action({
   args: {
     projectId: v.id("projects"),
     requestId: v.id("requests"),
-    provider: workTrackerProviderValidator,
+    provider: workItemHandoffProviderValidator,
   },
   handler: async (ctx, args): Promise<Doc<"workItemHandoffs"> | null> => {
     const handoff: Doc<"workItemHandoffs"> | null = await ctx.runQuery(
