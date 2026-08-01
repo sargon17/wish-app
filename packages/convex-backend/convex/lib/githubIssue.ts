@@ -1,15 +1,11 @@
 import {
   GITHUB_API_URL,
-  GITHUB_API_VERSION,
   GITHUB_TIMEOUT_MS,
   githubHeaders,
   isGitHubRateLimitedResponse,
   readGitHubJson,
 } from "./githubApp";
-
-const RECONCILIATION_PAGE_SIZE = 3;
-const MAX_RECONCILIATION_PAGES = 34;
-const RECONCILIATION_CLOCK_SAFETY_MS = 5_000;
+import { buildWorkItemDescription } from "./workItemHandoffPayload";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -99,6 +95,29 @@ function issueUrl(owner: string, repository: string) {
   return `${GITHUB_API_URL}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/issues`;
 }
 
+function buildGitHubHandoffSearchTerm(handoffId: string) {
+  return `wish-handoff:${handoffId}`;
+}
+
+export function buildGitHubHandoffMarker(handoffId: string) {
+  return `<!-- ${buildGitHubHandoffSearchTerm(handoffId)} -->`;
+}
+
+export function buildGitHubIssueBody(
+  description: string | undefined,
+  sourceUrl: string,
+  handoffId: string,
+) {
+  return `${buildWorkItemDescription(description, sourceUrl)}\n\n${buildGitHubHandoffMarker(handoffId)}`;
+}
+
+function issueSearchUrl(owner: string, repository: string, searchTerm: string) {
+  const url = new URL(`${GITHUB_API_URL}/search/issues`);
+  url.searchParams.set("q", `repo:${owner}/${repository} is:issue in:body "${searchTerm}"`);
+  url.searchParams.set("per_page", "2");
+  return url;
+}
+
 export async function createGitHubIssue(args: {
   accessToken: string;
   repository: { id: string; owner: string; name: string };
@@ -167,74 +186,67 @@ export async function createGitHubIssue(args: {
     : unknownResult(correlationId);
 }
 
-export async function findGitHubIssueBySource(args: {
+export async function findGitHubIssueByHandoff(args: {
   accessToken: string;
   repository: { id: string; owner: string; name: string };
-  sourceUrl: string;
-  startedAt: number;
+  handoffId: string;
 }) {
-  const sourceMarker = `[View original in Wish](${args.sourceUrl})`;
-  const cutoff = args.startedAt - RECONCILIATION_CLOCK_SAFETY_MS;
-  for (let page = 1; page <= MAX_RECONCILIATION_PAGES; page += 1) {
-    const url = new URL(issueUrl(args.repository.owner, args.repository.name));
-    url.searchParams.set("state", "all");
-    url.searchParams.set("sort", "created");
-    url.searchParams.set("direction", "desc");
-    // ponytail: small pages keep full issue bodies below the shared 1 MB cap.
-    url.searchParams.set("per_page", String(RECONCILIATION_PAGE_SIZE));
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("since", new Date(cutoff).toISOString());
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
+  let response: Response;
+  try {
+    response = await fetch(
+      issueSearchUrl(
+        args.repository.owner,
+        args.repository.name,
+        buildGitHubHandoffSearchTerm(args.handoffId),
+      ),
+      {
         headers: githubHeaders(args.accessToken),
         signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
-      });
-    } catch {
-      return { state: "unknown" as const, needsAttention: false };
-    }
-    if (
-      response.status === 401 ||
-      response.status === 403 ||
-      response.status === 404 ||
-      response.status === 410
-    ) {
-      return {
-        state: "unknown" as const,
-        needsAttention: !isGitHubRateLimitedResponse(response),
-      };
-    }
-    if (!response.ok) return { state: "unknown" as const, needsAttention: false };
-
-    let body: unknown;
-    try {
-      body = await readGitHubJson(response);
-    } catch {
-      return { state: "unknown" as const, needsAttention: false };
-    }
-    if (!Array.isArray(body)) {
-      return { state: "unknown" as const, needsAttention: false };
-    }
-    for (const issue of body) {
-      if (!isRecord(issue)) return { state: "unknown" as const, needsAttention: false };
-      const createdAtValue = readString(issue.created_at, 100);
-      const createdAt = createdAtValue ? Date.parse(createdAtValue) : Number.NaN;
-      if (!Number.isFinite(createdAt)) {
-        return { state: "unknown" as const, needsAttention: false };
-      }
-      if (createdAt < cutoff) return { state: "absent" as const, needsAttention: false };
-      if (issue.pull_request !== undefined) continue;
-      if (typeof issue.body === "string" && issue.body.includes(sourceMarker)) {
-        const externalIdentity = readGitHubIssueIdentity(issue, args.repository);
-        return externalIdentity
-          ? { state: "succeeded" as const, externalIdentity, needsAttention: false }
-          : { state: "unknown" as const, needsAttention: false };
-      }
-    }
-    if (body.length < RECONCILIATION_PAGE_SIZE) {
-      return { state: "absent" as const, needsAttention: false };
-    }
+      },
+    );
+  } catch {
+    return { state: "unknown" as const, needsAttention: false };
   }
-  return { state: "unknown" as const, needsAttention: false };
+  if (
+    response.status === 401 ||
+    response.status === 403 ||
+    response.status === 404 ||
+    response.status === 410
+  ) {
+    return {
+      state: "unknown" as const,
+      needsAttention: !isGitHubRateLimitedResponse(response),
+    };
+  }
+  if (!response.ok) return { state: "unknown" as const, needsAttention: false };
+
+  let body: unknown;
+  try {
+    body = await readGitHubJson(response);
+  } catch {
+    return { state: "unknown" as const, needsAttention: false };
+  }
+  if (
+    !isRecord(body) ||
+    body.total_count !== 1 ||
+    body.incomplete_results !== false ||
+    !Array.isArray(body.items) ||
+    body.items.length !== 1
+  ) {
+    return { state: "unknown" as const, needsAttention: false };
+  }
+  const marker = buildGitHubHandoffMarker(args.handoffId);
+  const issue = body.items[0];
+  if (
+    !isRecord(issue) ||
+    issue.pull_request !== undefined ||
+    typeof issue.body !== "string" ||
+    !issue.body.includes(marker)
+  ) {
+    return { state: "unknown" as const, needsAttention: false };
+  }
+  const externalIdentity = readGitHubIssueIdentity(issue, args.repository);
+  return externalIdentity
+    ? { state: "succeeded" as const, externalIdentity, needsAttention: false }
+    : { state: "unknown" as const, needsAttention: false };
 }

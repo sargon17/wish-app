@@ -577,8 +577,6 @@ describe("GitHub Work Tracker connections", () => {
           repositoryId: firstRepository.id,
           repositoryOwner: firstRepository.owner,
           repositoryName: firstRepository.name,
-          sourceUrl: "https://wish.example/source",
-          startedAt: 1,
         },
         lifecycle: { state: "pending", leaseExpiresAt: Date.now() + 60_000 },
         createdAt: 1,

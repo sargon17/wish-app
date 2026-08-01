@@ -132,8 +132,6 @@ export const workItemHandoffRecoveryValidator = v.union(
     repositoryId: v.string(),
     repositoryOwner: v.string(),
     repositoryName: v.string(),
-    sourceUrl: v.string(),
-    startedAt: v.number(),
   }),
 );
 
