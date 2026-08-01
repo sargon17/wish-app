@@ -2,10 +2,9 @@ import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import { internalAction, internalMutation, internalQuery } from "./_generated/server";
+import { internalAction, internalQuery } from "./_generated/server";
 import { getWorkTrackerEncryptionKey, parseStoredCredentials } from "./lib/linearConnection";
 import { findLinearIssue } from "./lib/linearIssue";
-import { isWorkTrackerCredentialLeaseActive } from "./lib/workTrackerConnection";
 import { decryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 import { getFreshLinearConnection } from "./workTrackerConnections";
 
@@ -23,24 +22,6 @@ export const getForReconciliationInternal = internalQuery({
       )
       .unique();
     return connection ? { connection, handoff } : null;
-  },
-});
-
-export const markConnectionNeedsAttentionInternal = internalMutation({
-  args: { connectionId: v.id("workTrackerConnections"), credentialCiphertext: v.string() },
-  handler: async (ctx, args) => {
-    const connection = await ctx.db.get(args.connectionId);
-    const now = Date.now();
-    if (
-      !connection ||
-      connection.provider !== "linear" ||
-      connection.data.encryptedCredentials.ciphertext !== args.credentialCiphertext ||
-      isWorkTrackerCredentialLeaseActive(connection.data.credentialLease, now)
-    ) {
-      return false;
-    }
-    await ctx.db.patch(connection._id, { health: "needs_attention", updatedAt: now });
-    return true;
   },
 });
 
@@ -92,7 +73,7 @@ export const reconcileInternal = internalAction({
     if (!accessToken) {
       if (needsAttention) {
         await ctx.runMutation(
-          internal.linearWorkItemHandoffs.markConnectionNeedsAttentionInternal,
+          internal.workTrackerConnections.markLinearConnectionNeedsAttentionForReconciliationInternal,
           {
             connectionId: target.connection._id,
             credentialCiphertext: target.connection.data.encryptedCredentials.ciphertext,
@@ -138,10 +119,13 @@ export const reconcileInternal = internalAction({
       needsAttention: needsAttention || result.needsAttention,
     });
     if (result.needsAttention) {
-      await ctx.runMutation(internal.linearWorkItemHandoffs.markConnectionNeedsAttentionInternal, {
-        connectionId: target.connection._id,
-        credentialCiphertext,
-      });
+      await ctx.runMutation(
+        internal.workTrackerConnections.markLinearConnectionNeedsAttentionForReconciliationInternal,
+        {
+          connectionId: target.connection._id,
+          credentialCiphertext,
+        },
+      );
       return await ctx.runQuery(internal.workItemHandoffs.getByIdInternal, args);
     }
 
