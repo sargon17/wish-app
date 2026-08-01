@@ -11,6 +11,7 @@
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
 import type * as crons from "../crons.js";
+import type * as githubWorkItemHandoffs from "../githubWorkItemHandoffs.js";
 import type * as githubWorkTrackerCleanup from "../githubWorkTrackerCleanup.js";
 import type * as githubWorkTrackerConnections from "../githubWorkTrackerConnections.js";
 import type * as githubWorkTrackerOAuth from "../githubWorkTrackerOAuth.js";
@@ -22,6 +23,8 @@ import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_changelogIntake from "../lib/changelogIntake.js";
 import type * as lib_githubApp from "../lib/githubApp.js";
 import type * as lib_githubConnection from "../lib/githubConnection.js";
+import type * as lib_githubHandoffDelivery from "../lib/githubHandoffDelivery.js";
+import type * as lib_githubIssue from "../lib/githubIssue.js";
 import type * as lib_githubWebhook from "../lib/githubWebhook.js";
 import type * as lib_linearConnection from "../lib/linearConnection.js";
 import type * as lib_linearHandoffDelivery from "../lib/linearHandoffDelivery.js";
@@ -46,6 +49,7 @@ import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js
 import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
 import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
 import type * as lib_workItemHandoff from "../lib/workItemHandoff.js";
+import type * as lib_workItemHandoffPayload from "../lib/workItemHandoffPayload.js";
 import type * as lib_workTrackerConfig from "../lib/workTrackerConfig.js";
 import type * as lib_workTrackerConnection from "../lib/workTrackerConnection.js";
 import type * as lib_workTrackerErrors from "../lib/workTrackerErrors.js";
@@ -85,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
   crons: typeof crons;
+  githubWorkItemHandoffs: typeof githubWorkItemHandoffs;
   githubWorkTrackerCleanup: typeof githubWorkTrackerCleanup;
   githubWorkTrackerConnections: typeof githubWorkTrackerConnections;
   githubWorkTrackerOAuth: typeof githubWorkTrackerOAuth;
@@ -96,6 +101,8 @@ declare const fullApi: ApiFromModules<{
   "lib/changelogIntake": typeof lib_changelogIntake;
   "lib/githubApp": typeof lib_githubApp;
   "lib/githubConnection": typeof lib_githubConnection;
+  "lib/githubHandoffDelivery": typeof lib_githubHandoffDelivery;
+  "lib/githubIssue": typeof lib_githubIssue;
   "lib/githubWebhook": typeof lib_githubWebhook;
   "lib/linearConnection": typeof lib_linearConnection;
   "lib/linearHandoffDelivery": typeof lib_linearHandoffDelivery;
@@ -120,6 +127,7 @@ declare const fullApi: ApiFromModules<{
   "lib/requesterIdentity": typeof lib_requesterIdentity;
   "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
   "lib/workItemHandoff": typeof lib_workItemHandoff;
+  "lib/workItemHandoffPayload": typeof lib_workItemHandoffPayload;
   "lib/workTrackerConfig": typeof lib_workTrackerConfig;
   "lib/workTrackerConnection": typeof lib_workTrackerConnection;
   "lib/workTrackerErrors": typeof lib_workTrackerErrors;

@@ -17,7 +17,12 @@ export const getForReconciliationInternal = internalQuery({
   args: { handoffId: v.id("workItemHandoffs") },
   handler: async (ctx, args) => {
     const handoff = await ctx.db.get(args.handoffId);
-    if (!handoff || handoff.provider !== "linear" || handoff.lifecycle.state !== "unknown") {
+    if (
+      !handoff ||
+      handoff.provider !== "linear" ||
+      handoff.recovery.provider !== "linear" ||
+      handoff.lifecycle.state !== "unknown"
+    ) {
       return null;
     }
     const connection = linearConnectionOrNull(
@@ -57,7 +62,7 @@ export const reconcileInternal = internalAction({
       internal.linearWorkItemHandoffs.getForReconciliationInternal,
       args,
     );
-    if (!target) return null;
+    if (!target || target.handoff.recovery.provider !== "linear") return null;
 
     let accessToken: string | undefined;
     let credentialCiphertext = target.connection.data.encryptedCredentials.ciphertext;

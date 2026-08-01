@@ -1,35 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import {
-  buildLinearIssueDescription,
-  buildWishSourceUrl,
-  createLinearIssue,
-  findLinearIssue,
-} from "./linearIssue";
+import { createLinearIssue, findLinearIssue } from "./linearIssue";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Linear issue delivery", () => {
-  it("builds owner deep links and copies only the agreed description", () => {
-    const sourceUrl = buildWishSourceUrl(
-      "https://wish.example.com",
-      "project-id",
-      "product-roadmap",
-      "complaint",
-      "request-id",
-    );
-
-    expect(sourceUrl).toBe(
-      "https://wish.example.com/dashboard/project/project-id/product-roadmap/complaints?item=request-id",
-    );
-    expect(buildLinearIssueDescription("Original description", sourceUrl)).toBe(
-      `Original description\n\n---\n\n[View original in Wish](${sourceUrl})`,
-    );
-    expect(buildLinearIssueDescription(undefined, sourceUrl)).toBe(
-      `[View original in Wish](${sourceUrl})`,
-    );
-  });
-
   it("creates an issue with the preallocated id and minimum payload", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({

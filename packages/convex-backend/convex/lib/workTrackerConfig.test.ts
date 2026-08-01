@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  getWishAppBaseUrl,
   getWorkTrackerEncryptionKey,
   validateWishAppBaseUrl,
 } from "./workTrackerConfig";
@@ -28,5 +29,11 @@ describe("Work Tracker configuration", () => {
     vi.stubEnv("WORK_TRACKER_ENCRYPTION_KEY", encryptionKey);
 
     expect(getWorkTrackerEncryptionKey()).toBe(encryptionKey);
+  });
+
+  it("loads the canonical Wish origin", () => {
+    vi.stubEnv("WISH_APP_BASE_URL", "https://wish.example.com/");
+
+    expect(getWishAppBaseUrl()).toBe("https://wish.example.com");
   });
 });

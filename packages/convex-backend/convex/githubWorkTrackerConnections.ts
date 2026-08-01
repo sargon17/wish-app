@@ -8,6 +8,7 @@ import {
   listGitHubInstallationRepositories,
 } from "./lib/githubApp";
 import { getGitHubAppAuthConfig } from "./lib/githubConnection";
+import { assertNoBlockingWorkTrackerHandoffs } from "./lib/workTrackerGuards";
 import {
   githubConnectionOrNull,
   githubSetupOrNull,
@@ -89,6 +90,17 @@ export const selectGitHubRepositoryInternal = internalMutation({
       : existing === null;
     if (!connectionIsCurrent) {
       throw new Error("GitHub connection changed; reload and try again");
+    }
+    if (existing) {
+      const sameDestination =
+        existing.data.installationId === setup.data.installationId &&
+        existing.data.repository.id === args.repository.id;
+      await assertNoBlockingWorkTrackerHandoffs(
+        ctx,
+        args.projectId,
+        "github",
+        sameDestination,
+      );
     }
     const now = Date.now();
     const data = {
@@ -267,6 +279,12 @@ export const changeGitHubRepositoryInternal = internalMutation({
     ) {
       throw new Error("GitHub connection changed; reload and try again");
     }
+    await assertNoBlockingWorkTrackerHandoffs(
+      ctx,
+      args.projectId,
+      "github",
+      connection.data.repository.id === args.repository.id,
+    );
     await ctx.db.patch(connection._id, {
       health: "active",
       destinationLabel: args.repository.fullName,
@@ -326,7 +344,10 @@ export const disconnectGitHub = mutation({
         )
         .unique(),
     );
-    if (connection) await ctx.db.delete(connection._id);
+    if (connection) {
+      await assertNoBlockingWorkTrackerHandoffs(ctx, args.projectId, "github");
+      await ctx.db.delete(connection._id);
+    }
     return { disconnected: true };
   },
 });

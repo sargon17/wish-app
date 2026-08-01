@@ -47,6 +47,10 @@ GitHub stays disabled until all six GitHub App configuration variables exist:
 The encryption key protects temporary GitHub credentials only while authorization cleanup must be
 retried.
 
+GitHub issue creation has a separate emergency brake:
+
+- `GITHUB_HANDOFF_CREATION_ENABLED`
+
 Create a public GitHub App with these settings:
 
 - Request user authorization during installation: enabled
@@ -78,4 +82,6 @@ stored only as one encrypted cleanup record until GitHub accepts revocation. If 
 fails, cleanup submits both tokens to GitHub's credential revocation endpoint without depending on
 the GitHub App client credentials. Runtime repository discovery uses short-lived installation tokens.
 Disconnecting GitHub in Wish removes only the local connection; it does not uninstall the GitHub
-App.
+App. Set `GITHUB_HANDOFF_CREATION_ENABLED=true` only after issue creation is ready for Project
+Owners. Set it to `false` to stop new and failed-retry creations without disabling connection
+management, existing issue links, or reconciliation of uncertain outcomes.
