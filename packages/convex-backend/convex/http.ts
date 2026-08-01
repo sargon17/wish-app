@@ -1,15 +1,16 @@
 import { type } from "arktype";
 import type { HonoWithConvex } from "convex-helpers/server/hono";
 import { HttpRouterWithHono } from "convex-helpers/server/hono";
+import { makeFunctionReference } from "convex/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { api, internal } from "./_generated/api";
-import { makeFunctionReference } from "convex/server";
 import type { ActionCtx } from "./_generated/server";
 import { getWhatsNewEntry, listPublicChangelog } from "./lib/changelogIntake";
-import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
 import { handleMcpRequest } from "./lib/mcpServer";
+import { validateWishAppBaseUrl } from "./lib/linearConnection";
+import { getClientIpAddress, IP_RATE_LIMIT } from "./lib/projectKeyAuthorization";
 import { toPublicProject } from "./lib/projectPublic";
 import { createPublicError, publicErrorJson, toPublicErrorResponse } from "./lib/publicErrors";
 import {
@@ -33,6 +34,40 @@ app.all("/mcp", async (c) => {
   } catch (error) {
     return publicErrorJson(c, toPublicErrorResponse(error));
   }
+});
+
+app.get("/work-trackers/linear/callback", async (c) => {
+  c.header("Cache-Control", "no-store");
+  c.header("Referrer-Policy", "no-referrer");
+  let appBaseUrl: string;
+  try {
+    appBaseUrl = validateWishAppBaseUrl(process.env.WISH_APP_BASE_URL?.trim() ?? "");
+  } catch {
+    return c.text("Linear callback is not configured", 500);
+  }
+
+  let result;
+  try {
+    result = await c.env.runAction(
+      internal.linearWorkTrackerOAuth.completeLinearOAuthInternal,
+      {
+        code: c.req.query("code") ?? "",
+        state: c.req.query("state") ?? "",
+        providerError: c.req.query("error"),
+      },
+    );
+  } catch {
+    result = { ok: false as const, errorCode: "invalid_callback" };
+  }
+  const redirectUrl = new URL(
+    result.projectId && result.projectSlug
+      ? `/dashboard/project/${encodeURIComponent(result.projectId)}/${encodeURIComponent(result.projectSlug)}/requests`
+      : "/dashboard",
+    appBaseUrl,
+  );
+  redirectUrl.searchParams.set("settings", "work-trackers");
+  redirectUrl.searchParams.set("linear", result.ok ? "authorized" : result.errorCode);
+  return c.redirect(redirectUrl.toString(), 303);
 });
 
 // The project API authenticates with public client keys, so browser embeds

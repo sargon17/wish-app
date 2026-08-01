@@ -30,6 +30,25 @@ describe("Work Item Handoff reservation", () => {
         status: statusId,
         project: projectId,
       });
+      await ctx.db.insert("workTrackerConnections", {
+        projectId,
+        provider: "linear",
+        health: "active",
+        destinationLabel: "Engineering",
+        data: {
+          provider: "linear",
+          organizationId: "org",
+          organizationName: "Workspace",
+          organizationUrlKey: "workspace",
+          teamId: "team",
+          teamKey: "ENG",
+          teamName: "Engineering",
+          encryptedCredentials: { ciphertext: "ciphertext", iv: "iv" },
+        },
+        createdBy: userId,
+        createdAt: 1,
+        updatedAt: 1,
+      });
       return { projectId, requestId };
     });
 

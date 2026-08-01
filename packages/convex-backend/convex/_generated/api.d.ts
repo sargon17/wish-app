@@ -10,10 +10,13 @@
 
 import type * as apiKeys from "../apiKeys.js";
 import type * as changelogEntries from "../changelogEntries.js";
+import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as lib_apiKeys from "../lib/apiKeys.js";
 import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_changelogIntake from "../lib/changelogIntake.js";
+import type * as lib_linearConnection from "../lib/linearConnection.js";
+import type * as lib_linearOAuth from "../lib/linearOAuth.js";
 import type * as lib_mcpServer from "../lib/mcpServer.js";
 import type * as lib_mcpToken from "../lib/mcpToken.js";
 import type * as lib_notificationEventTypes from "../lib/notificationEventTypes.js";
@@ -33,8 +36,12 @@ import type * as lib_requestStatusWorkflow from "../lib/requestStatusWorkflow.js
 import type * as lib_requesterIdentity from "../lib/requesterIdentity.js";
 import type * as lib_suggestionPortalReadModel from "../lib/suggestionPortalReadModel.js";
 import type * as lib_workItemHandoff from "../lib/workItemHandoff.js";
+import type * as lib_workTrackerGuards from "../lib/workTrackerGuards.js";
 import type * as lib_workTrackerSecrets from "../lib/workTrackerSecrets.js";
 import type * as lib_workTrackerTypes from "../lib/workTrackerTypes.js";
+import type * as linearWorkTrackerCleanup from "../linearWorkTrackerCleanup.js";
+import type * as linearWorkTrackerOAuth from "../linearWorkTrackerOAuth.js";
+import type * as linearWorkTrackerSettings from "../linearWorkTrackerSettings.js";
 import type * as mcpTokens from "../mcpTokens.js";
 import type * as notificationConnectors from "../notificationConnectors.js";
 import type * as notificationEvents from "../notificationEvents.js";
@@ -51,6 +58,7 @@ import type * as telegramNotifications from "../telegramNotifications.js";
 import type * as users from "../users.js";
 import type * as waitlist from "../waitlist.js";
 import type * as workItemHandoffs from "../workItemHandoffs.js";
+import type * as workTrackerConnections from "../workTrackerConnections.js";
 
 import type {
   ApiFromModules,
@@ -61,10 +69,13 @@ import type {
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   changelogEntries: typeof changelogEntries;
+  crons: typeof crons;
   http: typeof http;
   "lib/apiKeys": typeof lib_apiKeys;
   "lib/authorization": typeof lib_authorization;
   "lib/changelogIntake": typeof lib_changelogIntake;
+  "lib/linearConnection": typeof lib_linearConnection;
+  "lib/linearOAuth": typeof lib_linearOAuth;
   "lib/mcpServer": typeof lib_mcpServer;
   "lib/mcpToken": typeof lib_mcpToken;
   "lib/notificationEventTypes": typeof lib_notificationEventTypes;
@@ -84,8 +95,12 @@ declare const fullApi: ApiFromModules<{
   "lib/requesterIdentity": typeof lib_requesterIdentity;
   "lib/suggestionPortalReadModel": typeof lib_suggestionPortalReadModel;
   "lib/workItemHandoff": typeof lib_workItemHandoff;
+  "lib/workTrackerGuards": typeof lib_workTrackerGuards;
   "lib/workTrackerSecrets": typeof lib_workTrackerSecrets;
   "lib/workTrackerTypes": typeof lib_workTrackerTypes;
+  linearWorkTrackerCleanup: typeof linearWorkTrackerCleanup;
+  linearWorkTrackerOAuth: typeof linearWorkTrackerOAuth;
+  linearWorkTrackerSettings: typeof linearWorkTrackerSettings;
   mcpTokens: typeof mcpTokens;
   notificationConnectors: typeof notificationConnectors;
   notificationEvents: typeof notificationEvents;
@@ -102,6 +117,7 @@ declare const fullApi: ApiFromModules<{
   users: typeof users;
   waitlist: typeof waitlist;
   workItemHandoffs: typeof workItemHandoffs;
+  workTrackerConnections: typeof workTrackerConnections;
 }>;
 
 /**
