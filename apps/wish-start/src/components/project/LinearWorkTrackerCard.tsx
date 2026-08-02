@@ -8,7 +8,6 @@ import type { FunctionReturnType } from "convex/server";
 import {
   AlertTriangle,
   Check,
-  ChartNoAxesGantt,
   Link2,
   RefreshCw,
   Unplug,
@@ -218,7 +217,12 @@ export default function LinearWorkTrackerCard({
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-foreground text-background">
-                <ChartNoAxesGantt className="size-5" />
+                <img
+                  src="/linear-logo-dark.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="size-5 invert dark:invert-0"
+                />
               </div>
               <div>
                 <CardTitle className="text-base">Linear</CardTitle>
