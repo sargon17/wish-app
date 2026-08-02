@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd ../.. && bun install --frozen-lockfile",
-  "buildCommand": "NITRO_PRESET=vercel bun run build"
+  "installCommand": "if [ -f apps/wish-start/package.json ]; then bun install --frozen-lockfile; else cd ../.. && bun install --frozen-lockfile; fi",
+  "buildCommand": "if [ -f apps/wish-start/package.json ]; then cd apps/wish-start && NITRO_PRESET=vercel bun run build; else NITRO_PRESET=vercel bun run build; fi"
 }
