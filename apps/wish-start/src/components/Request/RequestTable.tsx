@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import type { Filter } from "@/lib/requestBoard/buildFilters";
 import { formatDate } from "@/lib/time";
+import { getWorkTrackerError } from "@/lib/workTrackerErrors";
 
 import EntityTable from "../molecules/EntityTable";
 import StatusChip from "../Status/StatusChip";
@@ -97,7 +98,14 @@ const RequestTable = ({ projectId, kind }: RequestTableProps) => {
       return true;
     } catch (error) {
       console.error(error);
-      toast.error("Unable to delete the selected items");
+      const workTrackerError = getWorkTrackerError(error);
+      if (workTrackerError) {
+        toast.error("The selected items cannot be deleted yet", {
+          description: workTrackerError.message,
+        });
+      } else {
+        toast.error("Unable to delete the selected items");
+      }
       return false;
     } finally {
       bulkMutationInFlight.current = false;

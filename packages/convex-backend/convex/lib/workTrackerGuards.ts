@@ -1,5 +1,9 @@
+import { ConvexError } from "convex/values";
+
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
+
+import { unresolvedWorkItemHandoffError } from "./workTrackerErrors";
 
 export async function assertNoBlockingLinearHandoffs(
   ctx: MutationCtx,
@@ -15,7 +19,7 @@ export async function assertNoBlockingLinearHandoffs(
       )
       .first();
     if (handoff) {
-      throw new Error("Work Tracker change is blocked while a Handoff is unresolved");
+      throw new ConvexError(unresolvedWorkItemHandoffError);
     }
   }
 }

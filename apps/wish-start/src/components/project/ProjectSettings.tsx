@@ -51,7 +51,7 @@ export default function ProjectSettings({
     },
     {
       key: "work-trackers",
-      label: "Work Trackers",
+      label: "Work tools",
       content: <ProjectWorkTrackersManager projectId={projectID} linearResult={linearResult} />,
     },
   ];
@@ -76,7 +76,7 @@ export default function ProjectSettings({
       <DialogContent className="max-h-[88vh] w-[96vw] overflow-y-auto sm:w-[92vw] sm:max-w-none lg:w-295 xl:w-330">
         <DialogTitle className="sr-only">Project settings</DialogTitle>
         <DialogDescription className="sr-only">
-          Manage the project name, statuses, API keys, connectors, and Work Trackers.
+          Manage the project name, statuses, API keys, connectors, and work tools.
         </DialogDescription>
 
         <SettingsView

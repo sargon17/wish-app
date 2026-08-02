@@ -1,3 +1,5 @@
+import { ConvexError } from "convex/values";
+
 import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
@@ -6,6 +8,10 @@ import { getFreshLinearConnection } from "../workTrackerConnections";
 import { getLinearConfig, isLinearHandoffCreationEnabled } from "./linearConnection";
 import { buildLinearIssueDescription, buildWishSourceUrl, createLinearIssue } from "./linearIssue";
 import { getRequestKind } from "./requestKind";
+import {
+  handoffCreationDisabledError,
+  workTrackerConnectionNeedsAttentionError,
+} from "./workTrackerErrors";
 
 export async function sendLinearHandoff(
   ctx: ActionCtx,
@@ -30,7 +36,7 @@ export async function sendLinearHandoff(
   }
   if (handoff && handoff.lifecycle.state !== "failed") return handoff;
   if (!isLinearHandoffCreationEnabled()) {
-    throw new Error("Linear Handoff creation is disabled");
+    throw new ConvexError(handoffCreationDisabledError);
   }
 
   const config = getLinearConfig();
@@ -39,7 +45,7 @@ export async function sendLinearHandoff(
     { projectId: args.projectId },
   );
   if (!currentConnection || currentConnection.health !== "active") {
-    throw new Error("Linear connection needs attention");
+    throw new ConvexError(workTrackerConnectionNeedsAttentionError);
   }
 
   const reservation: {
