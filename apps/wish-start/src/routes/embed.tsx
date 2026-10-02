@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowBigUp, ArrowLeft, MessageCircle, Plus } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { ChangelogFeatureIcon } from "@/components/project/ChangelogFeatureIcon";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import env from "@/env";
+import { useEmbedContentState } from "@/hooks/useEmbedContentState";
+import { useEmbedResource } from "@/hooks/useEmbedResource";
 import { getConvexHttpBaseUrl } from "@/lib/convexHttp";
 import {
   createEmbedComment,
@@ -48,30 +50,18 @@ export const Route = createFileRoute("/embed")({
 
 type EmbedScreen = { name: "list" } | { name: "new" } | { name: "detail"; requestId: string };
 
-function useEmbedResource<T>(loader: () => Promise<T>) {
-  const [data, setData] = useState<T | undefined>();
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setLoadError(null);
-    setData(undefined);
-    try {
-      setData(await loader());
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Something went wrong.");
-    }
-  }, [loader]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  return { data, setData, loadError, reload };
+function getEmbedHttpBaseUrl() {
+  try {
+    const baseUrl = getConvexHttpBaseUrl(import.meta.env.VITE_CONVEX_URL);
+    return baseUrl.startsWith("https://") || baseUrl.startsWith("http://") ? baseUrl : "";
+  } catch {
+    return "";
+  }
 }
 
 function EmbedPage() {
   const { projectId, clientId, clientKey, view, appVersion } = Route.useSearch();
-  const baseUrl = getConvexHttpBaseUrl(env.VITE_CONVEX_URL);
+  const baseUrl = getEmbedHttpBaseUrl();
   const config = useMemo(
     () =>
       projectId && clientId && clientKey && baseUrl
@@ -80,19 +70,26 @@ function EmbedPage() {
     [baseUrl, projectId, clientId, clientKey],
   );
 
+  const identity = JSON.stringify([baseUrl, projectId, clientId, clientKey, view, appVersion]);
+  useEmbedContentState(
+    view,
+    !config || (view === "whats-new" && !appVersion) ? "error" : undefined,
+    appVersion,
+  );
+
   if (!config) {
     return (
       <EmbedShell>
         <EmbedNotice
           title="Feedback is unavailable"
-          description="This embed is missing its configuration. Check the appId, clientKey, and externalUserId passed to Wish.configure."
+          description="This embed has missing or invalid configuration. Check the appId, clientKey, and externalUserId passed to Wish.configure."
         />
       </EmbedShell>
     );
   }
 
   if (view === "changelog") {
-    return <EmbedChangelogApp config={config} />;
+    return <EmbedChangelogApp key={identity} config={config} />;
   }
 
   if (view === "whats-new") {
@@ -107,58 +104,110 @@ function EmbedPage() {
       );
     }
 
-    return <EmbedWhatsNewApp config={config} appVersion={appVersion} />;
+    return <EmbedWhatsNewApp key={identity} config={config} appVersion={appVersion} />;
   }
 
-  return <EmbedRequestsApp config={config} />;
+  return <EmbedRequestsApp key={identity} config={config} />;
 }
 
 function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
   const [screen, setScreen] = useState<EmbedScreen>({ name: "list" });
 
-  const loadRequests = useCallback(async () => {
-    const [nextRequests, nextUpvoted] = await Promise.all([
-      listEmbedRequests(config),
-      listEmbedUpvotedRequestIds(config),
-    ]);
-    nextRequests.sort((a, b) => b._creationTime - a._creationTime);
-    return { requests: nextRequests, upvoted: nextUpvoted };
-  }, [config]);
+  const pendingVotes = useRef(new Set<string>());
+  const voteOverrides = useRef(new Map<string, boolean>());
+  const needsVoteReconciliation = useRef(false);
+  const isActive = useRef(true);
+  useEffect(() => {
+    isActive.current = true;
+    return () => {
+      isActive.current = false;
+    };
+  }, []);
+  const [voting, setVoting] = useState(new Set<string>());
 
-  const { data, setData, loadError, reload } = useEmbedResource(loadRequests);
+  const loadRequests = useCallback(
+    async (signal: AbortSignal) => {
+      const [nextRequests, nextUpvoted] = await Promise.all([
+        listEmbedRequests(config, signal),
+        listEmbedUpvotedRequestIds(config, signal),
+      ]);
+      if (voteOverrides.current.size) {
+        needsVoteReconciliation.current = true;
+        for (const request of nextRequests) {
+          const wanted = voteOverrides.current.get(request._id);
+          if (wanted === undefined || wanted === nextUpvoted.has(request._id)) continue;
+          request.upvoteCount = Math.max(0, (request.upvoteCount ?? 0) + (wanted ? 1 : -1));
+          if (wanted) nextUpvoted.add(request._id);
+          else nextUpvoted.delete(request._id);
+        }
+      }
+      nextRequests.sort((a, b) => b._creationTime - a._creationTime);
+      return { requests: nextRequests, upvoted: nextUpvoted };
+    },
+    [config],
+  );
+
+  const { data, setData, loadError, isLoading, reload } = useEmbedResource(loadRequests);
+  useEmbedContentState("requests", loadError ? "error" : data ? "ready" : undefined);
   const requests = data?.requests;
   const upvoted = data?.upvoted ?? new Set<string>();
 
-  async function handleUpvote(requestId: string) {
-    const wasUpvoted = upvoted.has(requestId);
+  function setVote(requestId: string, wanted: boolean) {
     setData((current) => {
       if (!current) {
         return current;
       }
       const nextUpvoted = new Set(current.upvoted);
-      if (wasUpvoted) nextUpvoted.delete(requestId);
-      else nextUpvoted.add(requestId);
+      const delta = Number(wanted) - Number(current.upvoted.has(requestId));
+      if (wanted) nextUpvoted.add(requestId);
+      else nextUpvoted.delete(requestId);
       return {
         upvoted: nextUpvoted,
         requests: current.requests.map((request) =>
           request._id === requestId
             ? {
                 ...request,
-                upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + (wasUpvoted ? -1 : 1)),
+                upvoteCount: Math.max(0, (request.upvoteCount ?? 0) + delta),
               }
             : request,
         ),
       };
     });
+  }
+
+  async function handleUpvote(requestId: string) {
+    if (pendingVotes.current.has(requestId)) return;
+    pendingVotes.current.add(requestId);
+    setVoting(new Set(pendingVotes.current));
+    if (pendingVotes.current.size > 1 || isLoading) needsVoteReconciliation.current = true;
+    const wasUpvoted = upvoted.has(requestId);
+    voteOverrides.current.set(requestId, !wasUpvoted);
+    setVote(requestId, !wasUpvoted);
 
     try {
       await toggleEmbedUpvote(config, requestId);
-    } catch {
-      void reload();
+    } catch (error) {
+      if (!isActive.current) return;
+      toast.error(error instanceof Error ? error.message : "Could not update the vote.");
+      voteOverrides.current.set(requestId, wasUpvoted);
+      setVote(requestId, wasUpvoted);
+      needsVoteReconciliation.current = true;
+    } finally {
+      pendingVotes.current.delete(requestId);
+      if (isActive.current) {
+        setVoting(new Set(pendingVotes.current));
+        if (pendingVotes.current.size === 0) {
+          voteOverrides.current.clear();
+          if (needsVoteReconciliation.current) {
+            needsVoteReconciliation.current = false;
+            await reload(true);
+          }
+        }
+      }
     }
   }
 
-  if (loadError) {
+  if (loadError && data === undefined) {
     return (
       <EmbedShell>
         <EmbedNotice title="Could not load feedback" description={loadError}>
@@ -188,7 +237,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
           onBack={() => setScreen({ name: "list" })}
           onCreated={() => {
             setScreen({ name: "list" });
-            void reload();
+            void reload(true);
           }}
         />
       </EmbedShell>
@@ -204,6 +253,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
             config={config}
             request={request}
             isUpvoted={upvoted.has(request._id)}
+            isVoting={voting.has(request._id)}
             onUpvote={() => void handleUpvote(request._id)}
             onBack={() => setScreen({ name: "list" })}
           />
@@ -225,6 +275,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
 
   return (
     <EmbedShell>
+      <EmbedRefreshState isLoading={isLoading} loadError={loadError} onRetry={reload} />
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Feature requests</h1>
         <Button type="button" size="sm" onClick={() => setScreen({ name: "new" })}>
@@ -249,6 +300,7 @@ function EmbedRequestsApp({ config }: { config: EmbedApiConfig }) {
               <UpvoteButton
                 upvoteCount={request.upvoteCount ?? 0}
                 isUpvoted={upvoted.has(request._id)}
+                isPending={voting.has(request._id)}
                 onClick={() => void handleUpvote(request._id)}
               />
               <button
@@ -283,12 +335,14 @@ function EmbedRequestDetail({
   config,
   request,
   isUpvoted,
+  isVoting,
   onUpvote,
   onBack,
 }: {
   config: EmbedApiConfig;
   request: EmbedRequest;
   isUpvoted: boolean;
+  isVoting: boolean;
   onUpvote: () => void;
   onBack: () => void;
 }) {
@@ -297,14 +351,17 @@ function EmbedRequestDetail({
   const [sendError, setSendError] = useState<string | null>(null);
 
   const loadComments = useCallback(
-    () => listEmbedComments(config, request._id),
+    (signal: AbortSignal) => listEmbedComments(config, request._id, signal),
     [config, request._id],
   );
   const {
     data: comments,
     loadError: commentsError,
+    isLoading: commentsLoading,
     reload: reloadComments,
   } = useEmbedResource(loadComments);
+
+  useEmbedContentState("comments", commentsError ? "error" : comments ? "ready" : undefined);
 
   async function submitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -318,7 +375,7 @@ function EmbedRequestDetail({
     try {
       await createEmbedComment(config, request._id, body);
       setCommentText("");
-      await reloadComments();
+      await reloadComments(true);
     } catch (error) {
       setSendError(error instanceof Error ? error.message : "Could not post the comment.");
     } finally {
@@ -337,6 +394,7 @@ function EmbedRequestDetail({
         <UpvoteButton
           upvoteCount={request.upvoteCount ?? 0}
           isUpvoted={isUpvoted}
+          isPending={isVoting}
           onClick={onUpvote}
         />
         <div className="min-w-0 flex-1 space-y-1">
@@ -365,7 +423,14 @@ function EmbedRequestDetail({
           Comments
         </h2>
 
-        {commentsError ? (
+        {comments !== undefined ? (
+          <EmbedRefreshState
+            isLoading={commentsLoading}
+            loadError={commentsError}
+            onRetry={reloadComments}
+          />
+        ) : null}
+        {commentsError && comments === undefined ? (
           <EmbedNotice title="Could not load comments" description={commentsError}>
             <Button type="button" variant="outline" size="sm" onClick={() => void reloadComments()}>
               Retry
@@ -478,10 +543,17 @@ function EmbedNewRequest({
 }
 
 function EmbedChangelogApp({ config }: { config: EmbedApiConfig }) {
-  const loadFeed = useCallback(() => getEmbedChangelog(config), [config]);
-  const { data: feed, loadError, reload } = useEmbedResource(loadFeed);
+  const loadFeed = useCallback(
+    (signal: AbortSignal) => getEmbedChangelog(config, signal),
+    [config],
+  );
+  const { data: feed, loadError, isLoading, reload } = useEmbedResource(loadFeed);
+  useEmbedContentState(
+    "changelog",
+    loadError ? "error" : feed ? (feed.entries.length ? "ready" : "empty") : undefined,
+  );
 
-  if (loadError) {
+  if (loadError && feed === undefined) {
     return (
       <EmbedShell>
         <EmbedNotice title="Could not load updates" description={loadError}>
@@ -505,6 +577,7 @@ function EmbedChangelogApp({ config }: { config: EmbedApiConfig }) {
 
   return (
     <EmbedShell>
+      <EmbedRefreshState isLoading={isLoading} loadError={loadError} onRetry={reload} />
       <div>
         <h1 className="text-lg font-semibold tracking-tight">What's new</h1>
         {feed.project.title ? (
@@ -563,10 +636,18 @@ function EmbedChangelogEntryCard({ entry }: { entry: EmbedChangelogEntry }) {
 }
 
 function EmbedWhatsNewApp({ config, appVersion }: { config: EmbedApiConfig; appVersion: string }) {
-  const loadEntry = useCallback(() => getEmbedWhatsNew(config, appVersion), [config, appVersion]);
-  const { data: entry, loadError, reload } = useEmbedResource(loadEntry);
+  const loadEntry = useCallback(
+    (signal: AbortSignal) => getEmbedWhatsNew(config, appVersion, signal),
+    [config, appVersion],
+  );
+  const { data: entry, loadError, isLoading, reload } = useEmbedResource(loadEntry);
+  useEmbedContentState(
+    "whats-new",
+    loadError ? "error" : entry === undefined ? undefined : entry ? "ready" : "empty",
+    appVersion,
+  );
 
-  if (loadError) {
+  if (loadError && entry === undefined) {
     return (
       <EmbedShell>
         <EmbedNotice title="Could not load updates" description={loadError}>
@@ -590,6 +671,7 @@ function EmbedWhatsNewApp({ config, appVersion }: { config: EmbedApiConfig; appV
 
   return (
     <EmbedShell>
+      <EmbedRefreshState isLoading={isLoading} loadError={loadError} onRetry={reload} />
       <h1 className="text-lg font-semibold tracking-tight">What's new</h1>
       <Separator className="my-4" />
       {entry ? (
@@ -605,10 +687,12 @@ function UpvoteButton({
   upvoteCount,
   isUpvoted,
   onClick,
+  isPending = false,
 }: {
   upvoteCount: number;
   isUpvoted: boolean;
   onClick: () => void;
+  isPending?: boolean;
 }) {
   return (
     <Button
@@ -616,6 +700,8 @@ function UpvoteButton({
       variant={isUpvoted ? "default" : "outline"}
       className="h-10 shrink-0 gap-1.5 px-3"
       aria-pressed={isUpvoted}
+      aria-busy={isPending}
+      disabled={isPending}
       onClick={onClick}
     >
       <ArrowBigUp className="size-4" />
@@ -648,4 +734,31 @@ function EmbedNotice({
       {children ? <div className="mt-3">{children}</div> : null}
     </div>
   );
+}
+
+function EmbedRefreshState({
+  isLoading,
+  loadError,
+  onRetry,
+}: {
+  isLoading: boolean;
+  loadError: string | null;
+  onRetry: () => Promise<void>;
+}) {
+  if (loadError) {
+    return (
+      <div role="alert" className="mb-3 flex items-center gap-2 text-sm text-destructive">
+        <span>{loadError}</span>
+        <Button type="button" variant="outline" size="sm" onClick={() => void onRetry()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+  return isLoading ? (
+    <p role="status" className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+      <Spinner aria-hidden />
+      Updating…
+    </p>
+  ) : null;
 }

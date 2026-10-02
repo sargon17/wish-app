@@ -52,6 +52,7 @@ async function embedFetch(
   config: EmbedApiConfig,
   path: string,
   init?: { method: string; body: string },
+  signal?: AbortSignal,
 ) {
   const url = `${config.baseUrl}/api/project/${encodeURIComponent(config.projectId)}${path}`;
 
@@ -59,12 +60,14 @@ async function embedFetch(
   try {
     response = await fetch(url, {
       ...init,
+      signal,
       headers: {
         "x-api-key": config.clientKey,
         ...(init ? { "content-type": "application/json" } : {}),
       },
     });
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw error;
     throw new EmbedApiError("Could not reach the feedback service.", "network_error");
   }
 
@@ -84,16 +87,24 @@ async function embedFetch(
   return response.json();
 }
 
-export async function listEmbedRequests(config: EmbedApiConfig): Promise<EmbedRequest[]> {
-  const payload = await embedFetch(config, "/requests/");
+export async function listEmbedRequests(
+  config: EmbedApiConfig,
+  signal?: AbortSignal,
+): Promise<EmbedRequest[]> {
+  const payload = await embedFetch(config, "/requests/", undefined, signal);
   const requests: EmbedRequest[] = Array.isArray(payload?.requests) ? payload.requests : [];
   return requests.filter((request) => request.kind !== "complaint");
 }
 
-export async function listEmbedUpvotedRequestIds(config: EmbedApiConfig): Promise<Set<string>> {
+export async function listEmbedUpvotedRequestIds(
+  config: EmbedApiConfig,
+  signal?: AbortSignal,
+): Promise<Set<string>> {
   const payload = await embedFetch(
     config,
     `/upvotes?clientId=${encodeURIComponent(config.clientId)}`,
+    undefined,
+    signal,
   );
   // The API returns request ids as strings, not upvote documents.
   const upvotes: string[] = Array.isArray(payload?.upvotes) ? payload.upvotes : [];
@@ -119,8 +130,14 @@ export async function createEmbedRequest(
 export async function listEmbedComments(
   config: EmbedApiConfig,
   requestId: string,
+  signal?: AbortSignal,
 ): Promise<EmbedComment[]> {
-  const payload = await embedFetch(config, `/request/${encodeURIComponent(requestId)}/comments`);
+  const payload = await embedFetch(
+    config,
+    `/request/${encodeURIComponent(requestId)}/comments`,
+    undefined,
+    signal,
+  );
   return Array.isArray(payload?.comments) ? payload.comments : [];
 }
 
@@ -142,8 +159,11 @@ export async function toggleEmbedUpvote(config: EmbedApiConfig, requestId: strin
   });
 }
 
-export async function getEmbedChangelog(config: EmbedApiConfig): Promise<EmbedChangelogFeed> {
-  const payload = await embedFetch(config, "/changelog");
+export async function getEmbedChangelog(
+  config: EmbedApiConfig,
+  signal?: AbortSignal,
+): Promise<EmbedChangelogFeed> {
+  const payload = await embedFetch(config, "/changelog", undefined, signal);
   const entries: EmbedChangelogEntry[] = Array.isArray(payload?.entries) ? payload.entries : [];
   return { project: payload.project, entries };
 }
@@ -151,7 +171,13 @@ export async function getEmbedChangelog(config: EmbedApiConfig): Promise<EmbedCh
 export async function getEmbedWhatsNew(
   config: EmbedApiConfig,
   appVersion: string,
+  signal?: AbortSignal,
 ): Promise<EmbedChangelogEntry | null> {
-  const payload = await embedFetch(config, `/whats-new?version=${encodeURIComponent(appVersion)}`);
+  const payload = await embedFetch(
+    config,
+    `/whats-new?version=${encodeURIComponent(appVersion)}`,
+    undefined,
+    signal,
+  );
   return payload?.entry ?? null;
 }

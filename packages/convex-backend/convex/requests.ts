@@ -1,16 +1,20 @@
 import { ConvexError, v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
 import { normalizeRequestInput, requestInputErrorMessage } from "./lib/requestInput";
 import { getRequestKind } from "./lib/requestKind";
 import { MAX_BULK_REQUESTS } from "./lib/requestLimits";
-import { assertStatusBelongsToProject } from "./lib/requestStatusWorkflow";
+import {
+  assertStatusBelongsToProject,
+  getOrderedStatusesForProject,
+} from "./lib/requestStatusWorkflow";
 import { isHandoffBlocking } from "./lib/workItemHandoff";
 import { unresolvedWorkItemHandoffError } from "./lib/workTrackerErrors";
 import { emitNotificationEvent } from "./notificationEvents";
+import schema from "./schema";
 
 const requestKindValidator = v.union(v.literal("request"), v.literal("complaint"));
 
@@ -70,14 +74,7 @@ export const getByProject = query({
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     await assertProjectOwner(ctx, args.id, user._id);
-    const kind = args.kind ?? "request";
-
-    const requests = await ctx.db
-      .query("requests")
-      .withIndex("by_project", (q) => q.eq("project", args.id))
-      .collect();
-
-    return requests.filter((request) => getRequestKind(request) === kind);
+    return await listProjectRequests(ctx, args.id, args.kind);
   },
 });
 
@@ -123,13 +120,46 @@ export const getRequestByIdInternal = internalQuery({
 export const getByProjectInternal = internalQuery({
   args: { id: v.id("projects"), kind: v.optional(requestKindValidator) },
   handler: async (ctx, args) => {
-    const kind = args.kind ?? "request";
-    const requests = await ctx.db
-      .query("requests")
-      .withIndex("by_project", (q) => q.eq("project", args.id))
-      .collect();
+    return await listProjectRequests(ctx, args.id, args.kind);
+  },
+});
 
-    return requests.filter((request) => getRequestKind(request) === kind);
+async function listProjectRequests(
+  ctx: QueryCtx,
+  projectId: Id<"projects">,
+  kind: Doc<"requests">["kind"] = "request",
+) {
+  const requests = await ctx.db
+    .query("requests")
+    .withIndex("by_project", (q) => q.eq("project", projectId))
+    .collect();
+  return requests.filter((request) => getRequestKind(request) === kind);
+}
+
+export const getWithStatusesByProjectInternal = internalQuery({
+  args: { id: v.id("projects") },
+  returns: v.object({
+    requests: v.array(
+      v.object({
+        ...schema.tables.requests.validator.fields,
+        _id: v.id("requests"),
+        _creationTime: v.number(),
+      }),
+    ),
+    statuses: v.array(
+      v.object({
+        ...schema.tables.requestStatuses.validator.fields,
+        _id: v.id("requestStatuses"),
+        _creationTime: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const [requests, statuses] = await Promise.all([
+      listProjectRequests(ctx, args.id),
+      getOrderedStatusesForProject(ctx, args.id),
+    ]);
+    return { requests, statuses };
   },
 });
 

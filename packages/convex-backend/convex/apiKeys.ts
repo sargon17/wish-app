@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import {
   generateProjectApiKey,
@@ -9,8 +9,18 @@ import {
   getProjectApiKeyPreview,
   hashProjectApiKey,
   normalizeApiKeyScopes,
+  hasApiKeyScope,
+  verifyProjectApiKeyHash,
 } from "./lib/apiKeys";
 import { assertProjectOwner, getCurrentUser } from "./lib/authorization";
+import {
+  API_KEY_RATE_LIMIT,
+  IP_RATE_LIMIT,
+  type ProjectKeyAuthorizationResult,
+} from "./lib/projectKeyAuthorization";
+import { createPublicError, publicErrorCodes } from "./lib/publicErrors";
+import { checkRateLimit } from "./rateLimits";
+import schema from "./schema";
 
 const apiKeyScopeValidator = v.union(v.literal("read"), v.literal("write"), v.literal("admin"));
 const apiKeyStatusValidator = v.union(v.literal("active"), v.literal("revoked"));
@@ -174,35 +184,36 @@ export const migrateLegacyForProject = mutation({
   },
 });
 
+async function getActiveKeysByPrefix(
+  ctx: QueryCtx | MutationCtx,
+  args: Pick<Doc<"apiKeys">, "projectId" | "keyPrefix">,
+) {
+  return await ctx.db
+    .query("apiKeys")
+    .withIndex("by_prefix_status", (q) => q.eq("keyPrefix", args.keyPrefix).eq("status", "active"))
+    .filter((q) => q.eq(q.field("projectId"), args.projectId))
+    .collect();
+}
+
+async function getLegacyPlaceholderKeys(
+  ctx: QueryCtx | MutationCtx,
+  args: Pick<Doc<"apiKeys">, "projectId">,
+) {
+  return await ctx.db
+    .query("apiKeys")
+    .withIndex("by_project_status", (q) => q.eq("projectId", args.projectId).eq("status", "active"))
+    .filter((q) => q.eq(q.field("keyPrefix"), LEGACY_KEY_PREFIX_PLACEHOLDER))
+    .collect();
+}
+
 export const getActiveKeysByPrefixInternal = internalQuery({
-  args: {
-    projectId: v.id("projects"),
-    keyPrefix: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("apiKeys")
-      .withIndex("by_prefix_status", (q) =>
-        q.eq("keyPrefix", args.keyPrefix).eq("status", "active"),
-      )
-      .filter((q) => q.eq(q.field("projectId"), args.projectId))
-      .collect();
-  },
+  args: { projectId: v.id("projects"), keyPrefix: v.string() },
+  handler: getActiveKeysByPrefix,
 });
 
 export const getLegacyPlaceholderKeysInternal = internalQuery({
-  args: {
-    projectId: v.id("projects"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("apiKeys")
-      .withIndex("by_project_status", (q) =>
-        q.eq("projectId", args.projectId).eq("status", "active"),
-      )
-      .filter((q) => q.eq(q.field("keyPrefix"), LEGACY_KEY_PREFIX_PLACEHOLDER))
-      .collect();
-  },
+  args: { projectId: v.id("projects") },
+  handler: getLegacyPlaceholderKeys,
 });
 
 export const markUsedInternal = internalMutation({
@@ -256,5 +267,88 @@ export const getByProjectInternal = internalQuery({
           .collect();
 
     return apiKeys;
+  },
+});
+
+// One transaction keeps revocation, rate limits, and usage writes current.
+export const authorizeRequestInternal = internalMutation({
+  args: {
+    projectId: v.id("projects"),
+    apiKey: v.string(),
+    clientIp: v.string(),
+    requiredScope: apiKeyScopeValidator,
+  },
+  returns: v.union(
+    v.object({
+      ok: v.literal(true),
+      project: v.object({
+        ...schema.tables.projects.validator.fields,
+        _id: v.id("projects"),
+        _creationTime: v.number(),
+      }),
+      apiKey: v.object({
+        ...schema.tables.apiKeys.validator.fields,
+        _id: v.id("apiKeys"),
+        _creationTime: v.number(),
+      }),
+    }),
+    v.object({
+      ok: v.literal(false),
+      error: v.object({
+        code: v.union(...publicErrorCodes.map((code) => v.literal(code))),
+        error: v.optional(v.string()),
+        retryAfterMs: v.optional(v.number()),
+      }),
+    }),
+  ),
+  handler: async (ctx, args): Promise<ProjectKeyAuthorizationResult> => {
+    if (!args.apiKey) return { ok: false, error: createPublicError("missing_api_key") };
+    const project = await ctx.db.get(args.projectId);
+    if (!project) return { ok: false, error: createPublicError("not_found") };
+
+    await migrateLegacyProjectApiKey(ctx, project._id);
+    const ipLimit = await checkRateLimit(ctx, {
+      bucket: `ip:${args.clientIp}`,
+      ...IP_RATE_LIMIT,
+    });
+    // Return denials so consumed rate-limit slots commit with the result.
+    if (!ipLimit.allowed)
+      return {
+        ok: false,
+        error: createPublicError("rate_limited", undefined, ipLimit.retryAfterMs),
+      };
+
+    const keyPrefix = getProjectApiKeyPrefix(args.apiKey);
+    const prefixMatches = await getActiveKeysByPrefix(ctx, { projectId: project._id, keyPrefix });
+    const candidates =
+      prefixMatches.length > 0
+        ? prefixMatches
+        : await getLegacyPlaceholderKeys(ctx, { projectId: project._id });
+    let matched: Doc<"apiKeys"> | undefined;
+    for (const candidate of candidates) {
+      if (await verifyProjectApiKeyHash(candidate.keyHash, args.apiKey)) {
+        matched = candidate;
+        break;
+      }
+    }
+    if (!matched) return { ok: false, error: createPublicError("invalid_api_key") };
+
+    const keyLimit = await checkRateLimit(ctx, {
+      bucket: `key:${matched._id}`,
+      ...API_KEY_RATE_LIMIT,
+    });
+    if (!keyLimit.allowed)
+      return {
+        ok: false,
+        error: createPublicError("rate_limited", undefined, keyLimit.retryAfterMs),
+      };
+    if (!hasApiKeyScope(matched.scopes, args.requiredScope))
+      return { ok: false, error: createPublicError("insufficient_scope") };
+
+    await ctx.db.patch(matched._id, {
+      lastUsedAt: Date.now(),
+      ...(matched.keyPrefix === LEGACY_KEY_PREFIX_PLACEHOLDER ? { keyPrefix } : {}),
+    });
+    return { ok: true, project, apiKey: matched };
   },
 });

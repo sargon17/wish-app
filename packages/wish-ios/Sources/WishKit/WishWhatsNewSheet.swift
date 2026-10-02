@@ -1,11 +1,8 @@
+import CryptoKit
 import Foundation
 import SwiftUI
 
-/// Presents the hosted "What's new" release notes for the current app
-/// version, at most once per version per device.
-///
-/// Requires ``Wish/configure(appId:clientKey:externalUserId:appVersion:baseURL:)``
-/// to have been called first; does nothing otherwise.
+/// Presents ready release notes at most once per version and requester.
 public extension View {
     func wishWhatsNewSheet() -> some View {
         modifier(WishWhatsNewSheetModifier())
@@ -13,82 +10,99 @@ public extension View {
 }
 
 private struct WishWhatsNewSheetModifier: ViewModifier {
-    @State private var isPresented = false
+    @State private var presented: WishWebContent?
+    @State private var activePresentation: WishWebContent?
+    @State private var prepared: WishWebContent?
+    @State private var revision = Wish.configurationRevision
 
     func body(content: Content) -> some View {
         content
-            .task {
-                await checkAndPresent()
+            .task(id: revision) { await prepareAndPresent() }
+            .onReceive(NotificationCenter.default.publisher(for: Wish.configurationChanged).receive(on: RunLoop.main)) { _ in
+                discard()
+                presented = nil
+                revision = Wish.configurationRevision
             }
-            .sheet(isPresented: $isPresented, onDismiss: markCurrentVersionSeen) {
-                WishView(.whatsNew)
+            .onDisappear {
+                if presented == nil { discard() }
+            }
+            .sheet(item: $presented, onDismiss: finishDismissal) { readyContent in
+                WishContentView(content: readyContent)
             }
     }
 
-    private func checkAndPresent() async {
+    @MainActor
+    private func prepareAndPresent() async {
         guard let configuration = Wish.configuration,
               let appVersion = Wish.currentAppVersion,
-              WishWhatsNewSeenStore.seenVersion(appId: configuration.appId) != appVersion
-        else {
+              let url = Wish.embedURL(for: .whatsNew)
+        else { return }
+        let key = WishWhatsNewSeenStore.key(configuration: configuration)
+        guard WishWhatsNewSeenStore.seenVersion(key: key) != appVersion else { return }
+        // Only one automatic operation can prepare at a time. This also avoids
+        // loading twice if multiple root views install the modifier.
+        guard WishWhatsNewPreparation.acquire() else { return }
+        let next = WishWebContent(url: url, destination: .whatsNew, seenKey: key)
+        prepared = next
+        let ready = await next.waitUntilReady()
+        guard ready, !Task.isCancelled, next.isCurrent, prepared === next else {
+            if prepared === next { discard() }
             return
         }
+        // SwiftUI cannot present the next sheet until the old dismissal ends.
+        // Retain its ready content and let that completion present it.
+        if activePresentation == nil { present(next) }
+    }
 
-        let hasPublishedNotes = await fetchHasPublishedNotes(configuration: configuration, appVersion: appVersion)
-        if hasPublishedNotes == true {
-            isPresented = true
+    @MainActor
+    private func present(_ next: WishWebContent) {
+        activePresentation = next
+        presented = next
+    }
+
+    @MainActor
+    private func finishDismissal() {
+        guard let shown = activePresentation else { return }
+        activePresentation = nil
+        if shown.isCurrent, shown.phase == .ready,
+           let version = shown.version, let seenKey = shown.seenKey {
+            WishWhatsNewSeenStore.markSeen(key: seenKey, version: version)
+        }
+        if prepared === shown { discard() }
+        if presented === shown { presented = nil }
+        if let next = prepared, next.isCurrent, next.phase == .ready {
+            present(next)
         }
     }
 
-    private func fetchHasPublishedNotes(configuration: Wish.Configuration, appVersion: String) async -> Bool? {
-        guard var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
-            return nil
-        }
-        components.path = "/api/project/\(configuration.appId)/whats-new/exists"
-        components.queryItems = [URLQueryItem(name: "version", value: appVersion)]
-
-        guard let url = components.url else {
-            return nil
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue(configuration.clientKey, forHTTPHeaderField: "x-api-key")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return nil
-            }
-            let payload = try JSONDecoder().decode(WhatsNewExistsResponse.self, from: data)
-            return payload.hasPublishedNotes
-        } catch {
-            return nil
-        }
-    }
-
-    private func markCurrentVersionSeen() {
-        guard let configuration = Wish.configuration, let appVersion = Wish.currentAppVersion else {
-            return
-        }
-        WishWhatsNewSeenStore.markSeen(appId: configuration.appId, version: appVersion)
+    @MainActor
+    private func discard() {
+        prepared?.cancel()
+        if prepared != nil { WishWhatsNewPreparation.release() }
+        prepared = nil
     }
 }
 
-private struct WhatsNewExistsResponse: Decodable {
-    let hasPublishedNotes: Bool
+@MainActor
+private enum WishWhatsNewPreparation {
+    private static var isPreparing = false
+    static func acquire() -> Bool {
+        guard !isPreparing else { return false }
+        isPreparing = true
+        return true
+    }
+    static func release() { isPreparing = false }
 }
 
-/// Local-only record of the last app version a device has seen "What's new"
-/// notes for, scoped by project so multiple Wish-enabled apps don't collide.
 private enum WishWhatsNewSeenStore {
-    private static func key(appId: String) -> String {
-        "wish.whatsNew.seenVersion.\(appId)"
+    static func key(configuration: Wish.Configuration) -> String {
+        // Use a separate key from the old project-only record so one requester
+        // cannot suppress notes for a different requester or origin.
+        let identity = [configuration.baseURL.absoluteString, configuration.appId, configuration.clientKey, configuration.externalUserId, WishDestination.whatsNew.rawValue]
+        let data = (try? JSONEncoder().encode(identity)) ?? Data()
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        return "wish.whatsNew.seenVersion.v2.\(digest)"
     }
-
-    static func seenVersion(appId: String) -> String? {
-        UserDefaults.standard.string(forKey: key(appId: appId))
-    }
-
-    static func markSeen(appId: String, version: String) {
-        UserDefaults.standard.set(version, forKey: key(appId: appId))
-    }
+    static func seenVersion(key: String) -> String? { UserDefaults.standard.string(forKey: key) }
+    static func markSeen(key: String, version: String) { UserDefaults.standard.set(version, forKey: key) }
 }

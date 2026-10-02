@@ -9,6 +9,19 @@ import { decryptWorkTrackerSecret } from "./lib/workTrackerSecrets";
 
 const REVOCATION_RETRY_MS = 5 * 60 * 1000;
 
+async function cleanupInGroups<T>(records: T[], cleanup: (record: T) => Promise<void>) {
+  // Limit each job to three provider requests and wait for every started record.
+  for (let offset = 0; offset < records.length; offset += 3) {
+    const results = await Promise.allSettled(records.slice(offset, offset + 3).map(cleanup));
+    const rejected = results.find((result) => result.status === "rejected");
+    if (rejected?.status === "rejected") {
+      throw new Error(
+        rejected.reason instanceof Error ? rejected.reason.message : "Linear cleanup failed",
+      );
+    }
+  }
+}
+
 export const getExpiredLinearSetupsInternal = internalQuery({
   args: { now: v.number() },
   handler: async (ctx, args) => {
@@ -45,9 +58,7 @@ export const getPendingLinearRevocationsInternal = internalQuery({
     return await ctx.db
       .query("workTrackerConnections")
       .withIndex("by_pending_revocation", (q) =>
-        q
-          .gt("data.pendingRevocation.retryAt", 0)
-          .lte("data.pendingRevocation.retryAt", Date.now()),
+        q.gt("data.pendingRevocation.retryAt", 0).lte("data.pendingRevocation.retryAt", Date.now()),
       )
       .take(10);
   },
@@ -61,9 +72,7 @@ export const reschedulePendingLinearRevocationInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const connection = await ctx.db.get(args.connectionId);
-    if (
-      connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext
-    ) {
+    if (connection?.data.pendingRevocation?.encryptedCredentials.ciphertext !== args.ciphertext) {
       return;
     }
     await ctx.db.patch(connection._id, {
@@ -83,8 +92,9 @@ export const cleanupExpiredLinearSetupsInternal = internalAction({
       internal.linearWorkTrackerCleanup.getExpiredLinearSetupsInternal,
       { now },
     );
-    for (const setup of setups) {
-      const encrypted = setup.data.stage === "pending" ? undefined : setup.data.encryptedCredentials;
+    await cleanupInGroups(setups, async (setup) => {
+      const encrypted =
+        setup.data.stage === "pending" ? undefined : setup.data.encryptedCredentials;
       let revoked = !encrypted;
       if (encrypted) {
         try {
@@ -105,12 +115,12 @@ export const cleanupExpiredLinearSetupsInternal = internalAction({
         }
       }
       if (revoked) {
-        await ctx.runMutation(
-          internal.linearWorkTrackerCleanup.deleteExpiredLinearSetupInternal,
-          { setupId: setup._id, now },
-        );
+        await ctx.runMutation(internal.linearWorkTrackerCleanup.deleteExpiredLinearSetupInternal, {
+          setupId: setup._id,
+          now,
+        });
       }
-    }
+    });
   },
 });
 
@@ -121,9 +131,9 @@ export const cleanupPendingLinearRevocationsInternal = internalAction({
       internal.linearWorkTrackerCleanup.getPendingLinearRevocationsInternal,
       {},
     );
-    for (const connection of connections) {
+    await cleanupInGroups(connections, async (connection) => {
       const encrypted = connection.data.pendingRevocation?.encryptedCredentials;
-      if (!encrypted) continue;
+      if (!encrypted) return;
       try {
         const credentials = parseStoredCredentials(
           await decryptWorkTrackerSecret(encrypted, getWorkTrackerEncryptionKey()),
@@ -147,6 +157,6 @@ export const cleanupPendingLinearRevocationsInternal = internalAction({
           },
         );
       }
-    }
+    });
   },
 });

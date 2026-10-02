@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "WishKit", targets: ["WishKit"])
     ],
     targets: [
-        .target(name: "WishKit", path: "Sources/WishKit")
+        .target(name: "WishKit", path: "Sources/WishKit"),
+        .testTarget(name: "WishKitTests", dependencies: ["WishKit"])
     ]
 )

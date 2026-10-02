@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import type { MutationCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
 
 export const checkRateLimitInternal = internalMutation({
@@ -8,43 +9,49 @@ export const checkRateLimitInternal = internalMutation({
     limit: v.number(),
     windowMs: v.number(),
   },
-  handler: async (ctx, args) => {
-    const now = Date.now();
-    const existing = await ctx.db
-      .query("apiRateLimits")
-      .withIndex("by_bucket", (q) => q.eq("bucket", args.bucket))
-      .unique();
+  returns: v.object({ allowed: v.boolean(), retryAfterMs: v.number() }),
+  handler: checkRateLimit,
+});
 
-    if (!existing) {
-      await ctx.db.insert("apiRateLimits", {
-        bucket: args.bucket,
-        windowStartedAt: now,
-        count: 1,
-      });
+export async function checkRateLimit(
+  ctx: MutationCtx,
+  args: { bucket: string; limit: number; windowMs: number },
+) {
+  const now = Date.now();
+  const existing = await ctx.db
+    .query("apiRateLimits")
+    .withIndex("by_bucket", (q) => q.eq("bucket", args.bucket))
+    .unique();
 
-      return { allowed: true, retryAfterMs: 0 };
-    }
-
-    if (now - existing.windowStartedAt >= args.windowMs) {
-      await ctx.db.patch(existing._id, {
-        windowStartedAt: now,
-        count: 1,
-      });
-
-      return { allowed: true, retryAfterMs: 0 };
-    }
-
-    if (existing.count >= args.limit) {
-      return {
-        allowed: false,
-        retryAfterMs: Math.max(0, args.windowMs - (now - existing.windowStartedAt)),
-      };
-    }
-
-    await ctx.db.patch(existing._id, {
-      count: existing.count + 1,
+  if (!existing) {
+    await ctx.db.insert("apiRateLimits", {
+      bucket: args.bucket,
+      windowStartedAt: now,
+      count: 1,
     });
 
     return { allowed: true, retryAfterMs: 0 };
-  },
-});
+  }
+
+  if (now - existing.windowStartedAt >= args.windowMs) {
+    await ctx.db.patch(existing._id, {
+      windowStartedAt: now,
+      count: 1,
+    });
+
+    return { allowed: true, retryAfterMs: 0 };
+  }
+
+  if (existing.count >= args.limit) {
+    return {
+      allowed: false,
+      retryAfterMs: Math.max(0, args.windowMs - (now - existing.windowStartedAt)),
+    };
+  }
+
+  await ctx.db.patch(existing._id, {
+    count: existing.count + 1,
+  });
+
+  return { allowed: true, retryAfterMs: 0 };
+}
