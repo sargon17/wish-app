@@ -34,7 +34,10 @@ export const buildMessageInternal = internalQuery({
       return null;
     }
 
-    const connector = await ctx.db.get(delivery.connectorId);
+    const [connector, event] = await Promise.all([
+      ctx.db.get(delivery.connectorId),
+      ctx.db.get(delivery.eventId),
+    ]);
     if (
       !connector ||
       connector.kind !== "telegram" ||
@@ -44,7 +47,6 @@ export const buildMessageInternal = internalQuery({
       return null;
     }
 
-    const event = await ctx.db.get(delivery.eventId);
     if (!event) {
       return null;
     }
@@ -54,13 +56,15 @@ export const buildMessageInternal = internalQuery({
       return null;
     }
 
-    const project = await ctx.db.get(event.projectId);
+    const [project, request, comment] = await Promise.all([
+      ctx.db.get(event.projectId),
+      event.requestId ? ctx.db.get(event.requestId) : null,
+      event.commentId ? ctx.db.get(event.commentId) : null,
+    ]);
     if (!project) {
       return null;
     }
 
-    const request = event.requestId ? await ctx.db.get(event.requestId) : null;
-    const comment = event.commentId ? await ctx.db.get(event.commentId) : null;
     const requestUrl = formatRequestUrl({
       projectSlug: project.projectSlug,
       requestId: request?._id.toString(),
@@ -134,6 +138,7 @@ export const dispatchInternal = internalAction({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok) {

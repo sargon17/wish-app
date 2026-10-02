@@ -14,6 +14,8 @@ public enum Wish {
     }
 
     static var configuration: Configuration?
+    static var configurationRevision = UUID()
+    static let configurationChanged = Notification.Name("wish.configurationChanged")
 
     /// Configures the shared Wish instance.
     ///
@@ -42,6 +44,8 @@ public enum Wish {
             baseURL: baseURL,
             appVersion: appVersion
         )
+        configurationRevision = UUID()
+        NotificationCenter.default.post(name: configurationChanged, object: nil)
     }
 
     /// The app version used for "What's new" lookups: the value passed to
@@ -69,6 +73,10 @@ public enum Wish {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/embed"
         components?.queryItems = queryItems
+        // URLSearchParams reads a raw '+' as a space. Preserve literal plus
+        // signs in requester ids, keys, and versions when building the URL.
+        let encodedQuery = components?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        components?.percentEncodedQuery = encodedQuery
         return components?.url
     }
 }

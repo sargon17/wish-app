@@ -2,7 +2,6 @@ import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
 
-import { getProjectApiKeyPrefix, hasApiKeyScope, verifyProjectApiKeyHash } from "./apiKeys";
 import { createPublicError } from "./publicErrors";
 
 export const API_KEY_RATE_LIMIT = { limit: 120, windowMs: 60_000 };
@@ -77,81 +76,10 @@ export async function authorizeProjectKeyRequest(
     return { ok: false, error: createPublicError("missing_api_key") };
   }
 
-  const project = await c.env.runQuery(internal.projects.getProjectByIdInternal, {
-    id: projectId as Id<"projects">,
+  return await c.env.runMutation(internal.apiKeys.authorizeRequestInternal, {
+    projectId: projectId as Id<"projects">,
+    apiKey,
+    clientIp: getClientIpAddress(c),
+    requiredScope,
   });
-  if (!project) {
-    return { ok: false, error: createPublicError("not_found") };
-  }
-
-  await c.env.runMutation(internal.apiKeys.migrateLegacyForProjectInternal, {
-    projectId: project._id,
-  });
-
-  const clientIp = getClientIpAddress(c);
-  const ipRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
-    bucket: `ip:${clientIp}`,
-    limit: IP_RATE_LIMIT.limit,
-    windowMs: IP_RATE_LIMIT.windowMs,
-  });
-
-  if (!ipRateLimit.allowed) {
-    return {
-      ok: false,
-      error: createPublicError("rate_limited", undefined, ipRateLimit.retryAfterMs),
-    };
-  }
-
-  const keyPrefix = getProjectApiKeyPrefix(apiKey);
-  const prefixMatches = await c.env.runQuery(internal.apiKeys.getActiveKeysByPrefixInternal, {
-    projectId: project._id,
-    keyPrefix,
-  });
-  const legacyMatches =
-    prefixMatches.length > 0
-      ? []
-      : await c.env.runQuery(internal.apiKeys.getLegacyPlaceholderKeysInternal, {
-          projectId: project._id,
-        });
-
-  const candidateApiKeys = [...prefixMatches, ...legacyMatches];
-  let matchedApiKey: Doc<"apiKeys"> | null = null;
-
-  for (const candidate of candidateApiKeys) {
-    const isValid = await verifyProjectApiKeyHash(candidate.keyHash, apiKey);
-    if (!isValid) {
-      continue;
-    }
-
-    matchedApiKey = candidate;
-    break;
-  }
-
-  if (!matchedApiKey) {
-    return { ok: false, error: createPublicError("invalid_api_key") };
-  }
-
-  const keyRateLimit = await c.env.runMutation(internal.rateLimits.checkRateLimitInternal, {
-    bucket: `key:${matchedApiKey._id}`,
-    limit: API_KEY_RATE_LIMIT.limit,
-    windowMs: API_KEY_RATE_LIMIT.windowMs,
-  });
-
-  if (!keyRateLimit.allowed) {
-    return {
-      ok: false,
-      error: createPublicError("rate_limited", undefined, keyRateLimit.retryAfterMs),
-    };
-  }
-
-  if (!hasApiKeyScope(matchedApiKey.scopes, requiredScope)) {
-    return { ok: false, error: createPublicError("insufficient_scope") };
-  }
-
-  await c.env.runMutation(internal.apiKeys.markUsedInternal, {
-    apiKeyId: matchedApiKey._id,
-    keyPrefix,
-  });
-
-  return { ok: true, project, apiKey: matchedApiKey };
 }

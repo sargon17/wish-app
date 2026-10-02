@@ -2,7 +2,7 @@ import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "./_generated/server";
+import type { ActionCtx, MutationCtx, QueryCtx } from "./_generated/server";
 import {
   action,
   internalAction,
@@ -24,6 +24,7 @@ import {
   workItemHandoffRecoveryValidator,
   workTrackerProviderValidator,
 } from "./lib/workTrackerTypes";
+import { reconcileLinearHandoff } from "./linearWorkItemHandoffs";
 
 async function getOwnedHandoff(
   ctx: MutationCtx | QueryCtx,
@@ -392,19 +393,20 @@ export const send = action({
 
 export const reconcileInternal = internalAction({
   args: { handoffId: v.id("workItemHandoffs") },
-  handler: async (ctx, args): Promise<Doc<"workItemHandoffs"> | null> => {
-    const handoff: Doc<"workItemHandoffs"> | null = await ctx.runQuery(
-      internal.workItemHandoffs.getByIdInternal,
-      args,
-    );
-    if (!handoff || handoff.lifecycle.state !== "unknown") return handoff;
-
-    switch (handoff.provider) {
-      case "linear":
-        return await ctx.runAction(internal.linearWorkItemHandoffs.reconcileInternal, args);
-    }
-  },
+  handler: reconcileHandoff,
 });
+
+async function reconcileHandoff(
+  ctx: ActionCtx,
+  args: { handoffId: Id<"workItemHandoffs"> },
+): Promise<Doc<"workItemHandoffs"> | null> {
+  const handoff = await ctx.runQuery(internal.workItemHandoffs.getByIdInternal, args);
+  if (!handoff || handoff.lifecycle.state !== "unknown") return handoff;
+  switch (handoff.provider) {
+    case "linear":
+      return await reconcileLinearHandoff(ctx, args);
+  }
+}
 
 export const check = action({
   args: {
@@ -420,7 +422,7 @@ export const check = action({
     if (!handoff || handoff.lifecycle.state !== "unknown") {
       throw new Error("Work Item Handoff is not awaiting reconciliation");
     }
-    return await ctx.runAction(internal.workItemHandoffs.reconcileInternal, {
+    return await reconcileHandoff(ctx, {
       handoffId: handoff._id,
     });
   },

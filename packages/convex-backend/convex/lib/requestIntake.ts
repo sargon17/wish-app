@@ -1,5 +1,5 @@
 import { api, internal } from "../_generated/api";
-import type { Doc, Id } from "../_generated/dataModel";
+import type { Id } from "../_generated/dataModel";
 
 import type { ProjectKeyAuthorizationContext } from "./projectKeyAuthorization";
 import { authorizeProjectKeyRequest } from "./projectKeyAuthorization";
@@ -11,22 +11,18 @@ export async function listRequests(c: ProjectKeyAuthorizationContext, projectId:
     return authorization;
   }
 
-  const requests = await c.env.runQuery(internal.requests.getByProjectInternal, {
-    id: authorization.project._id,
-  });
-  const requestStatuses = await c.env.runQuery(internal.requestStatuses.getByProjectInternal, {
-    id: authorization.project._id,
-  });
-
+  const { requests, statuses } = await c.env.runQuery(
+    internal.requests.getWithStatusesByProjectInternal,
+    { id: authorization.project._id },
+  );
+  const statusById = new Map(statuses.map((status) => [status._id, status]));
   return {
     ok: true as const,
     project: authorization.project,
-    requests: requests.map((request: Doc<"requests">) => {
-      const computedStatus = requestStatuses.find(
-        (status: Doc<"requestStatuses">) => status._id === request.status,
-      )!;
-      return { ...request, computedStatus };
-    }),
+    requests: requests.map((request) => ({
+      ...request,
+      computedStatus: statusById.get(request.status),
+    })),
   };
 }
 
